@@ -1,0 +1,8 @@
+--- meson.build.orig	2020-07-14 13:27:57.000000000 +0200
++++ meson.build	2020-07-14 13:28:04.000000000 +0200
+@@ -35,5 +35,3 @@
+ test('cli', cli_test,
+   args : glome_cli,
+   timeout : 120)
+-
+-subdir('login')
