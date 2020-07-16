@@ -10,7 +10,7 @@ authentication and authorization for low dependency environments.
 ### Requirements
 
 -   C standard library (C99)
--   OpenSSL >=1.1
+-   OpenSSL >=1.1.1
 
 ### Example
 
@@ -66,3 +66,43 @@ unverified: 0x2b4dc85086e41a5c616301d90
 $ echo $?
 0
 ```
+
+## Building
+
+Building the GLOME library requires
+
+-   Compiler conforming to C99 (e.g. gcc, clang)
+-   Meson >=0.49.2
+-   OpenSSL headers >=1.1.1
+
+### Instructions
+
+GLOME is built using [Meson](https://mesonbuild.com/). First, initialize the
+Meson build directory. You only have to do this once per Meson configuration.
+
+```shell
+$ meson build
+```
+
+NOTE: You can customize the installation target by passing the `--prefix` flag.
+
+Build the shared library `libglome.so` and the command line utility `glome`
+inside the build root `./build`.
+
+```shell
+$ ninja -C build
+```
+
+Now run the tests.
+
+```shell
+$ meson test -C build
+```
+
+Install both the binary and the library into the configured prefix (the default
+prefix is `/usr/local/`, which will require admin privileges).
+
+```shell
+$ meson install -C build
+```
+
