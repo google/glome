@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    container:
+      image: "python:3.5-buster"
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install dependencies
+      # Note: most of these come with our base image, but we explicitly declare
+      # these dependencies here so we're on the safe side.
+      run: >
+        apt-get update &&
+        DEBIAN_FRONTEND=noninteractive apt-get install -qq
+        build-essential meson pkg-config libssl-dev libconfuse-dev
+    - name: setup
+      run: meson build
+    - name: build
+      run: ninja -C build
+    - name: test
+      run: meson test -C build
