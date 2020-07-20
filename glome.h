@@ -36,11 +36,9 @@ int glome_derive_key(const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
                      uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH]);
 
 // Generates or verifies the GLOME tag for the message. Requires passing in the
-// public/private key pair of the local peer and the public key of the remote
-// peer.
+// private key of the local peer and the public key of the remote peer.
 int glome_tag(bool verify, unsigned char counter,
               const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
-              const uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
               const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
               const uint8_t *message, size_t message_len,
               uint8_t tag[GLOME_MAX_TAG_LENGTH]);
