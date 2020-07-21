@@ -14,9 +14,11 @@
 
 #include "glome.h"
 
-#include <glib.h>
+#include <check.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static void decode_hex(uint8_t* dst, const char* in) {
   size_t len = strlen(in);
@@ -26,7 +28,7 @@ static void decode_hex(uint8_t* dst, const char* in) {
   }
 }
 
-static void test_vector1() {
+START_TEST(test_vector_1) {
   uint8_t ka_priv[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   uint8_t ka_pub[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t kb_pub[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
@@ -45,14 +47,18 @@ static void test_vector1() {
       expected_tag,
       "9c44389f462d35d0672faf73a5e118f8b9f5c340bbe8d340e2b947c205ea4fa3");
 
-  g_assert(glome_derive_key(ka_priv, ka_pub) == 0);
-  g_assert(glome_tag(/* verify */ false, counter, ka_priv, ka_pub, kb_pub,
-        (const uint8_t*)msg, strlen(msg), tag) == 0);
+  ck_assert_int_eq(glome_derive_key(ka_priv, ka_pub), 0);
+  ck_assert_int_eq(glome_tag(/* verify */ false, counter, ka_priv, ka_pub, kb_pub,
+        (const uint8_t*)msg, strlen(msg), tag), 0);
 
-  g_assert_cmpmem(tag, sizeof tag, expected_tag, sizeof expected_tag);
+  /* only with check >= 0.11:
+   * ck_assert_mem_eq(tag, expected_tag, sizeof expected_tag);
+   */
+  ck_assert_int_eq(memcmp(tag, expected_tag, sizeof expected_tag), 0);
 }
+END_TEST
 
-static void test_vector2() {
+START_TEST(test_vector_2) {
   uint8_t ka_pub[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t kb_priv[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   uint8_t kb_pub[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
@@ -71,18 +77,28 @@ static void test_vector2() {
       expected_tag,
       "06476f1f314b06c7f96e5dc62b2308268cbdb6140aefeeb55940731863032277");
 
-  g_assert(glome_derive_key(kb_priv, kb_pub) == 0);
-  g_assert(glome_tag(/* verify */ false, counter, kb_priv, kb_pub, ka_pub,
-        (const uint8_t*)msg, strlen(msg), tag) == 0);
+  ck_assert_int_eq(glome_derive_key(kb_priv, kb_pub), 0);
+  ck_assert_int_eq(glome_tag(/* verify */ false, counter, kb_priv, kb_pub, ka_pub,
+        (const uint8_t*)msg, strlen(msg), tag), 0);
 
-  g_assert_cmpmem(tag, sizeof tag, expected_tag, sizeof expected_tag);
+  /* only with check >= 0.11:
+   * ck_assert_mem_eq(tag, expected_tag, sizeof expected_tag);
+   */
+  ck_assert_int_eq(memcmp(tag, expected_tag, sizeof expected_tag), 0);
 }
+END_TEST
 
 int main (int argc, char *argv[]) {
-  g_test_init(&argc, &argv, NULL);
+  Suite* s = suite_create("protocol-spec");
+  TCase* tc = tcase_create("test-vectors");
 
-  g_test_add_func("/test-vector1", test_vector1);
-  g_test_add_func("/test-vector2", test_vector2);
+  tcase_add_test(tc, test_vector_1);
+  tcase_add_test(tc, test_vector_2);
+  suite_add_tcase(s, tc);
 
-  return g_test_run();
+  SRunner* sr = srunner_create(s);
+  srunner_run_all(sr, CK_NORMAL);
+  int number_failed = srunner_ntests_failed(sr);
+  srunner_free(sr);
+  return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

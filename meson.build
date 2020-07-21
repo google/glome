@@ -38,7 +38,7 @@ if not build_tests.disabled()
     args : glome_cli,
     timeout : 120)
 
-  glib_dep = dependency('glib-2.0')
+  glib_dep = dependency('check')
   glome_test = executable('glome_test', 'glome_test.c', dependencies : glib_dep,
     link_with : glome_lib, include_directories : glome_incdir)
   test('glome', glome_test)
