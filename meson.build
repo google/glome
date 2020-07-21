@@ -31,7 +31,15 @@ install_headers('glome.h')
 glome_cli = executable('glome', 'cli/main.c', link_with : glome_lib,
   install : true)
 
-cli_test = find_program('cli/test.sh')
-test('cli', cli_test,
-  args : glome_cli,
-  timeout : 120)
+build_tests = get_option('tests')
+if not build_tests.disabled()
+  cli_test = find_program('cli/test.sh')
+  test('cli', cli_test,
+    args : glome_cli,
+    timeout : 120)
+
+  glib_dep = dependency('glib-2.0')
+  glome_test = executable('glome_test', 'glome_test.c', dependencies : glib_dep,
+    link_with : glome_lib, include_directories : glome_incdir)
+  test('glome', glome_test)
+endif
