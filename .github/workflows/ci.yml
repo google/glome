@@ -7,6 +7,9 @@ on:
     branches: [ master ]
 
 jobs:
+  # ubuntu-18.04 is used as it is the latest fully supported base OS
+  # right now.
+  # See https://github.com/actions/virtual-environments#available-environments
   pr_presubmit:
     runs-on: ubuntu-18.04
     container:
@@ -22,3 +25,23 @@ jobs:
       run: ninja -C build
     - name: test
       run: meson test -C build
+
+  pr_code_format:
+    runs-on: ubuntu-18.04
+    container:
+      # Use Ubuntu 20.04 for a newer clang-format
+      image: "ubuntu:20.04"
+    steps:
+    - uses: actions/checkout@v2
+    - name: install dependencies
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt-get install -y clang-format
+    - name: check libglome format
+      run: |
+        clang-format --Werror --dry-run --style=google \
+          glome.c glome.h glome_test.c
+    - name: check glome-cli format
+      run: |
+        clang-format --Werror --dry-run --style=google cli/main.c
