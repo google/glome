@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
   fprintf(stderr, "counter:    %ld\n", counter);
   fprintf(stderr, "verify:     %d\n", verification);
 
-  if (glome_tag(verification, counter, private_key, public_key, peer_key,
+  if (glome_tag(verification, counter, private_key, peer_key,
                 (uint8_t *)message, message == NULL ? 0 : strlen(message),
                 tag)) {
     error(EXIT_FAILURE, 0, "MAC tag generation failed");

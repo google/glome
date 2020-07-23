@@ -60,12 +60,12 @@ int glome_derive_key(const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
 
 int glome_tag(bool verify, unsigned char counter,
               const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
-              const uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
               const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
               const uint8_t *message, size_t message_len,
               uint8_t tag[GLOME_MAX_TAG_LENGTH]) {
   uint8_t hmac_key[X25519_SHARED_KEY_LEN + 2 * GLOME_MAX_PUBLIC_KEY_LENGTH] = {
       0};
+  uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
 
   EVP_PKEY *evp_peer_key = EVP_PKEY_new_raw_public_key(
       EVP_PKEY_X25519, NULL, peer_key, GLOME_MAX_PUBLIC_KEY_LENGTH);
@@ -86,12 +86,23 @@ int glome_tag(bool verify, unsigned char counter,
     return 1;
   }
 
+  // Derive public key.
+  size_t public_key_length = GLOME_MAX_PUBLIC_KEY_LENGTH;
+  int err = (EVP_PKEY_get_raw_public_key(evp_private_key, public_key,
+                                         &public_key_length) != 1 ||
+             public_key_length != GLOME_MAX_PUBLIC_KEY_LENGTH);
+  if (err) {
+    EVP_PKEY_free(evp_peer_key);
+    EVP_PKEY_free(evp_private_key);
+    return 1;
+  }
+
   // X25519 shared secret
   size_t shared_key_length = X25519_SHARED_KEY_LEN;
-  int err = (EVP_PKEY_derive_init(ctx) != 1 ||
-             EVP_PKEY_derive_set_peer(ctx, evp_peer_key) != 1 ||
-             EVP_PKEY_derive(ctx, hmac_key, &shared_key_length) != 1 ||
-             shared_key_length != X25519_SHARED_KEY_LEN);
+  err = (EVP_PKEY_derive_init(ctx) != 1 ||
+         EVP_PKEY_derive_set_peer(ctx, evp_peer_key) != 1 ||
+         EVP_PKEY_derive(ctx, hmac_key, &shared_key_length) != 1 ||
+         shared_key_length != X25519_SHARED_KEY_LEN);
 
   EVP_PKEY_CTX_free(ctx);
   EVP_PKEY_free(evp_peer_key);

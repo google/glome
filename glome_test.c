@@ -46,7 +46,7 @@ static void test_vector1() {
       "9c44389f462d35d0672faf73a5e118f8b9f5c340bbe8d340e2b947c205ea4fa3");
 
   g_assert_true(glome_derive_key(ka_priv, ka_pub) == 0);
-  g_assert_true(glome_tag(/* verify */ false, counter, ka_priv, ka_pub, kb_pub,
+  g_assert_true(glome_tag(/* verify */ false, counter, ka_priv, kb_pub,
                           (const uint8_t *)msg, strlen(msg), tag) == 0);
 
   g_assert_cmpmem(tag, sizeof tag, expected_tag, sizeof expected_tag);
@@ -72,7 +72,7 @@ static void test_vector2() {
       "06476f1f314b06c7f96e5dc62b2308268cbdb6140aefeeb55940731863032277");
 
   g_assert_true(glome_derive_key(kb_priv, kb_pub) == 0);
-  g_assert_true(glome_tag(/* verify */ false, counter, kb_priv, kb_pub, ka_pub,
+  g_assert_true(glome_tag(/* verify */ false, counter, kb_priv, ka_pub,
                           (const uint8_t *)msg, strlen(msg), tag) == 0);
 
   g_assert_cmpmem(tag, sizeof tag, expected_tag, sizeof expected_tag);
