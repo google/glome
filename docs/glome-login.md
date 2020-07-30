@@ -197,7 +197,7 @@ and response tag length of 60 bits.
 | `prefixN`              | `d0f59d0b17cb155a1b9cd2b5cdea3a17f37a200e95e3651af2c88e1c5fc8108e` |
 | ![T][T]                | `9721ee687b827249dbe6c244ba459216cf01d525012163025df358eb87c89059` |
 |                        |                                                                    |
-| Request URL            | `/v1/XtD1hSDwCYkwp1R0i33ctD73Wg2_Og0mOBr066SpjqqbTmo=/my-server.local/shell/root/` |
+| Request URL            | `/v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/` |
 | Response token         | `lyHuaHuCck`                                                       |
 
 #### Vector 2
