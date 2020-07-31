@@ -41,3 +41,5 @@ cli_test = find_program('cli/test.sh')
 test('cli', cli_test,
   args : glome_cli,
   timeout : 120)
+
+subdir('login')
