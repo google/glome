@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pyglome",
-    version="0.0.1",
+    version="0.0.2",
     author="Google LLC",
     description="A Python implementation of GLOME protocol",
     long_description=long_description,

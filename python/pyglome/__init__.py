@@ -41,4 +41,4 @@ Bob ends he will need to do the following:
 
 # Bring glome module to top level
 from pyglome.glome import (Glome, TagCheckError, IncorrectTagError,
-                           TagGenerationError, generate_keys)
+                           TagGenerationError, generate_keys, AutoGlome)

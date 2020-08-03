@@ -19,13 +19,16 @@ Module that implements unittests cases for Glome Class.
 import unittest
 import sys
 
-import test.glome_test
+import test.glome_test, test.autoglome_test
 
 
 def suite():
     """Suite of test to run"""
-    suite = unittest.TestLoader().loadTestsFromModule(test.glome_test)
-    return suite
+    glome_tests = unittest.TestLoader().loadTestsFromModule(test.glome_test)
+    autoglome_tests = unittest.TestLoader().loadTestsFromModule(
+        test.autoglome_test)
+
+    return unittest.TestSuite([glome_tests, autoglome_tests])
 
 
 if __name__ == '__main__':
