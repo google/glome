@@ -82,6 +82,7 @@ jobs:
         cd python
         python -m test
 
+
   pr_java_test:
     runs-on: ubuntu-18.04
     container:
@@ -92,3 +93,23 @@ jobs:
       run: |
         mvn compile
         mvn test
+
+  golang_presubmit:
+    runs-on: ubuntu-18.04
+    container:
+      image: "golang:1.15.1-buster"
+    steps:
+    - uses: actions/checkout@v2
+    - name: install dependencies from go get
+      run: |
+        go get -u golang.org/x/lint/golint
+        go get -u golang.org/x/crypto/curve25519
+    - name: run gofmt test
+      run: gofmt -d go/glome/*.go
+    - name: run golint test
+      run: golint go/glome/*.go
+    - name: run unit tests
+      run: |
+        cd go/glome
+        go test
+
