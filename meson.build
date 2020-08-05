@@ -37,7 +37,7 @@ glome_test = executable('glome_test', 'glome_test.c', dependencies : glib_dep,
   link_with : glome_lib, include_directories : glome_incdir)
 test('glome', glome_test)
 
-cli_test = find_program('cli/test.sh')
+cli_test = find_program(meson.current_source_dir() + '/cli/test.sh')
 test('cli', cli_test,
   args : glome_cli,
   timeout : 120)
