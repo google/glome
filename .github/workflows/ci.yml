@@ -30,6 +30,8 @@ jobs:
         DESTDIR=out meson install -C build
         find build/out/
         test -x build/out/usr/local/bin/glome
+        test -x build/out/usr/local/sbin/glome-login
+        test -f build/out/usr/local/etc/glome/config
         test -f build/out/usr/local/include/glome.h
         # Dereference the library and check that it points to a valid file.
         test -f build/out/usr/local/lib/x86_64-linux-gnu/libglome.so
