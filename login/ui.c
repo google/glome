@@ -178,7 +178,7 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
       case '?':
       case 'h':
         usage(argv[0]);
-        errorf(flags_help, DEFAULT_AUTH_DELAY,  DEFAULT_INPUT_TIMEOUT);
+        errorf(flags_help, DEFAULT_AUTH_DELAY, DEFAULT_INPUT_TIMEOUT);
         return 2;
       default:
         return -1;  // PANIC
