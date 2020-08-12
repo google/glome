@@ -24,7 +24,7 @@ jobs:
     - name: build
       run: ninja -C build
     - name: test
-      run: meson test -C build
+      run: meson test -C build --print-errorlogs
     - name: install
       run: |
         DESTDIR=out meson install -C build
