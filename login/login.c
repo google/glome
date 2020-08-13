@@ -245,7 +245,8 @@ int login_run(login_config_t* config, const char** error_tag) {
       case LOCKDOWN_ENABLED:
         return failure(EXITCODE_LOCKDOWN, error_tag, "lockdown-enabled");
       default:
-        return failure(EXITCODE_LOCKDOWN_ERROR, error_tag, "unknown-lockdown-state");
+        return failure(EXITCODE_LOCKDOWN_ERROR, error_tag,
+                       "unknown-lockdown-state");
     }
   }
 

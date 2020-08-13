@@ -55,3 +55,11 @@ jobs:
     - name: check glome-cli format
       run: |
         clang-format --Werror --dry-run --style=google cli/main.c
+    - name: check glome-login format
+      run: |
+        clang-format --Werror --dry-run --style=google \
+          login/config.c login/crypto.c login/crypto_test.c login/lockdown.c \
+          login/login.c login/login_test.c login/main.c login/ui.c \
+          login/base64.h login/config.h login/crypto.h login/lockdown.h \
+          login/login.h login/ui.h
+
