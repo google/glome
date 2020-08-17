@@ -113,7 +113,7 @@ class Glome:
             min_peer_tag_len: Desired length (in bytes) for the tag.
               Must be an integer in range 1-32.
         Raises:
-            TagLengthOutOfBoundsExceptionr: Raised whenever min_peer_tag_len is not in
+            ValueError: Raised whenever min_peer_tag_len is not in
               range 1-32.
         """
 

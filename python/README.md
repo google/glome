@@ -47,7 +47,7 @@ except pyglome.TagCheckError as tag_error:
 ### Key generation.
 
 Should you want to use a preexisting key, it should match the format
-`X25519Private/PublicKey` provide in [pyca/cryptography](https://cryptography.io/en/latest/).
+`X25519Private/PublicKey` provided in [pyca/cryptography](https://cryptography.io/en/latest/).
 Such key can be easily read from a bytes object as follows:
 
 ```python
@@ -62,3 +62,18 @@ make some new keys from `os.urandom` bytes.
 ### Documentation
 
 For more information see the in-code documentation.
+
+### Test
+
+In the test folder we have scripts that implement test classes based on unittest. To run all tests use:
+
+```
+python -m test
+```
+from this directory. If only a particular test module is wanted to be executed, then run:
+
+```
+python -m test.my_module_name
+```
+
+where `my_module_name` is the name of the test module to be executed (the name of the file without the .py). 
