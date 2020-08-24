@@ -54,8 +54,8 @@ jobs:
           glome.c glome.h glome_test.c
     - name: check glome-cli format
       run: |
-        clang-format --Werror --dry-run --style=google cli/main.c
-
+        clang-format --Werror --dry-run --style=google \
+          cli/*.c cli/*.h
     - name: check glome-login format
       run: |
         clang-format --Werror --dry-run --style=google \
