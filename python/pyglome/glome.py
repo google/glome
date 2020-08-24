@@ -105,7 +105,7 @@ class Glome:
                  min_peer_tag_len: int = MAX_TAG_LEN):
         """Initialize Glome class.
 
-        Performs the handshake and generates keys. 
+        Performs the handshake and generates keys.
 
         Args:
             peer_key: Your peer's public key.
@@ -217,3 +217,149 @@ def generate_keys() -> KeyPair:
     private = x25519.X25519PrivateKey.from_private_bytes(
         os.urandom(Glome.MAX_TAG_LEN))
     return KeyPair(private, private.public_key())
+
+
+class AutoGlome:
+    """Adds counter managing functionalities for GLOME protocol.
+
+    This class is initialized by providing your peer's public key and
+    optionally your private key. If a private key is not provided, one is
+    automatically generated making use of `generate_keys`. On initialization,
+    two counter (sending and receiving) are created and set to 0. Provides
+    methods tag (to generate new tags) and check (to check receiving tags).
+    """
+
+    def __init__(self,
+                 peer_key: x25519.X25519PublicKey,
+                 my_private_key: x25519.X25519PrivateKey = None,
+                 *,
+                 min_peer_tag_len: int = Glome.MAX_TAG_LEN,
+                 skippable_range: int = 0):
+        """Initialize AutoGlome class.
+
+        Performs the handshake, generates keys and counters.
+        Args:
+           peer_key: Your peer's public key.
+           my_private_key: Your private key.
+           min_peer_tag_len: Desired length (in bytes) for the tag.
+             Must be an integer in range 1-32. keyword only.
+           skippable_range: Number of messages that can be missed. keyword only.
+             Must be non-negative. For more information please go to check method's
+             documentation.
+        Raises:
+           ValueError: Raised whenever min_peer_tag_len is not in range 1-32 or
+             skippable_length is a negative integer.
+        """
+        if skippable_range < 0:
+            raise ValueError(
+                'Skippable_range must be non-negative, not {}'.format(
+                    skippable_range))
+
+        self.glome = Glome(peer_key,
+                           my_private_key,
+                           min_peer_tag_len=min_peer_tag_len)
+        self._sending_counter = 0
+        self._receiving_counter = 0
+        self.skippable_range = skippable_range
+
+    @property
+    def sending_counter(self) -> int:
+        """Number of tags shared from the user to the peer.
+
+        It is incremented each time a new tag is generated. It is always
+        one byte long. When the counter gets past 255 it overflows at 0.
+
+        Setter raises ValueError if provided integer is not in range 0-255.
+        """
+        return self._sending_counter
+
+    @sending_counter.setter
+    def sending_counter(self, value: int):
+        if not 0 <= value <= 255:
+            raise ValueError('Counter must be in range 0-255')
+        self._sending_counter = value
+
+    @property
+    def receiving_counter(self) -> int:
+        """Number of tags the user receives from the peer.
+
+        It is always one byte long. When the counter gets past 255 it restarts at
+        0. Every time a message is successfully checked, the receiving_counter is
+        set to the next value after the last successful one. Note that if
+        skippable_range is n the counter might be increased by any amount in
+        range 1-n+1 after a successful check.
+
+        Setter raises ValueError if provided counter is not in range 0-255.
+        """
+        return self._receiving_counter
+
+    @receiving_counter.setter
+    def receiving_counter(self, value: int):
+        if not 0 <= value <= 255:
+            raise ValueError('Counter must be in range 0-255')
+        self._receiving_counter = value
+
+    @property
+    def user_keys(self) -> KeyPair:
+        """User's private and public keys used in handshake."""
+        return self.glome.user_keys
+
+    @property
+    def peer_key(self) -> x25519.X25519PublicKey:
+        """Peer's public key used in handshake."""
+        return self.glome.peer_key
+
+    def tag(self, msg: bytes) -> bytes:
+        """Generates a tag from a message.
+
+        Generates a tag matching some provided message and the internal
+        sending counter. This tag is generated following GLOME protocol
+        specification in the context of a communication from the users to
+        theirs peers.
+
+        Args:
+           msg: Message to be transmitted.
+        Returns:
+           tag: Tag matching counter and msg.
+        Raises:
+           TagGenerationError: Raised whenever the method failed to generate tag
+             due to ValueError in the arguments.
+        """
+        tag = self.glome.tag(msg, self.sending_counter)
+        self._sending_counter = (self._sending_counter + 1) % 256
+        return tag
+
+    def check(self, tag: bytes, msg: bytes):
+        """Check whether a tag is correct for some message.
+
+        Checks if a tag matches some provided message and internal receiving
+        counter. The method generates the matching tag following GLOME protocol
+        specification in the context of a communication from the users' peers to
+        the users and then is compared with the tag provided. If tag checking if
+        not successful, the receiving counter remains unchanged.
+
+        If skippable_range if greater than 0, the method try to check the tag
+        against all counters in range [receiving_counter, receiving_counter +
+        skippable_range], in order, until one is successful. If no one is successful,
+        an exceptions is raised and receiving counter remains unchanged.
+
+        Args:
+           tag: Object with the generated tag.
+           msg: Object containing received message.
+        Returns:
+           None.
+        Raises:
+           IncorrectTagError: Raised whenever the tag is incorrect.
+        """
+        old_counter = self._receiving_counter
+        for i in range(self.skippable_range + 1):
+            try:
+                self.glome.check(tag, msg, self.receiving_counter)
+                self._receiving_counter = (self._receiving_counter + 1) % 256
+                return None
+            except IncorrectTagError as ite:
+                self._receiving_counter = (self._receiving_counter + 1) % 256
+
+        #If no counter matches.
+        self._receiving_counter = old_counter
+        raise IncorrectTagError('Tag provided does not match correct tag')

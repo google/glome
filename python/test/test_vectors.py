@@ -11,18 +11,36 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+This module includes test vectors from the protocol reference.
+"""
 
 
 class TestVector:
-    """Class that encapsulate needed components for testing."""
+    """Class that encapsulate needed components for testing.
 
-    def __init__(self, kap, ka, kbp, kb, counter, msg, sk, tag):
+    Consider a use case where an user A sends a message to user B.
+
+    Attributes:
+      kap: A's private key.
+      ka: A's public key.
+      kbp: B's private key.
+      kb:  B's public key.
+      counter: number of messages already shared.
+      msg: message to share.
+      sk: shared secret betweens A and B.
+      tag: tag that matches ka, kb, counter and msg.
+    """
+
+    def __init__(self, kap: str, ka: str, kbp: str, kb: str, counter: int,
+                 msg: str, sk: str, tag: str):
+        """Constructor for TestVector Class."""
         self.kap = bytes.fromhex(kap)
         self.ka = bytes.fromhex(ka)
         self.kbp = bytes.fromhex(kbp)
         self.kb = bytes.fromhex(kb)
         self.counter = counter
-        self.msg = msg
+        self.msg = msg.encode(encoding="ascii")
         self.sk = bytes.fromhex(sk)
         self.tag = bytes.fromhex(tag)
 
@@ -33,7 +51,7 @@ TEST1 = TestVector(
     kbp='5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb',
     kb='de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f',
     counter=0,
-    msg='The quick brown fox'.encode(),
+    msg='The quick brown fox',
     sk='4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742',
     tag='9c44389f462d35d0672faf73a5e118f8b9f5c340bbe8d340e2b947c205ea4fa3')
 
@@ -43,6 +61,6 @@ TEST2 = TestVector(
     kbp='fee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1dead',
     kb='872f435bb8b89d0e3ad62aa2e511074ee195e1c39ef6a88001418be656e3c376',
     counter=100,
-    msg='The quick brown fox'.encode(),
+    msg='The quick brown fox',
     sk='4b1ee05fcd2ae53ebe4c9ec94915cb057109389a2aa415f26986bddebf379d67',
     tag='06476f1f314b06c7f96e5dc62b2308268cbdb6140aefeeb55940731863032277')
