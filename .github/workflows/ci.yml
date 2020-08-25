@@ -63,3 +63,20 @@ jobs:
           login/base64.h login/config.h login/crypto.h login/lockdown.h \
           login/login.h login/ui.h
 
+  python_presubmit:
+    runs-on: ubuntu-18.04
+    container:
+      image: "python:3.6-buster"
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install dependencies from PyPI
+      run: python -m pip install cryptography yapf pylint
+    - name: run yapf test
+      run: yapf -d --style google python/pyglome/*.py python/test/*.py
+    - name: run pylint test
+      run: pylint python/pyglome/*.py
+    - name: run unit tests
+      run: |
+        cd python
+        python -m test

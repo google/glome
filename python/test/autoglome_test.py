@@ -22,7 +22,6 @@ from cryptography.hazmat.primitives.asymmetric import x25519
 import pyglome
 
 
-
 class AutoGlomeTestVector:
     """Class that encapsulate needed components for testing AutoGlome Class."""
 
