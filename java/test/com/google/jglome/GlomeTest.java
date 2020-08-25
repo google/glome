@@ -31,7 +31,7 @@ import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 /**
- * Contains tests for main.com.google.jglome.Glome functionality.
+ * Contains tests for com.google.jglome.Glome functionality.
  */
 public class GlomeTest {
 

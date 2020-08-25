@@ -1,4 +1,4 @@
-# PyGLOME
+# jGLOME
 **This is not an officially supported Google product.**
 
 This module contains a Java implementation for the GLOME
@@ -7,8 +7,8 @@ protocol.
 ## Usage
 
 Let's say Alice and Bob want to establish a communication. Then both parties
-should know their peer's public key. There is an example of Glome object and 
-tag generation for Alice:
+should know their peer's public key. This is an example of how Alice can use 
+the Glome object to generate a tag:
 
 ```Java
 import com.google.jglome.Glome;
