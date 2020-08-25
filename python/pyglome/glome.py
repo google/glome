@@ -72,6 +72,10 @@ class TagGenerationError(Error):
     """Raised whenever a tag could not be generated."""
 
 
+class ExchangeError(Error):
+    """Raised whenever the x25519 key exchange fails."""
+
+
 def _public_key_encode(public_key: x25519.X25519PublicKey):
     return public_key.public_bytes(serialization.Encoding.Raw,
                                    serialization.PublicFormat.Raw)
@@ -113,8 +117,9 @@ class Glome:
             min_peer_tag_len: Desired length (in bytes) for the tag.
               Must be an integer in range 1-32.
         Raises:
-            ValueError: Raised whenever min_peer_tag_len is not in
-              range 1-32.
+            ValueError: Raised whenever min_peer_tag_len is not in range 1-32.
+            ExchangeError: Raised whenever null shared secret is derived from
+              user/peer key pair.
         """
 
         if my_private_key is None:
@@ -126,7 +131,11 @@ class Glome:
             raise ValueError('min_peer_tag_len must be in range {}-{}'.format(
                 Glome.MIN_TAG_LEN, Glome.MAX_TAG_LEN))
 
-        shared_secret = my_private_key.exchange(peer_key)
+        try:
+            shared_secret = my_private_key.exchange(peer_key)
+        except ValueError as value_error:
+            raise ExchangeError(
+                'Failed to deduce shared secret') from value_error
 
         self._send_key = shared_secret + _public_key_encode(
             peer_key) + _public_key_encode(my_public_key)
@@ -249,6 +258,8 @@ class AutoGlome:
         Raises:
            ValueError: Raised whenever min_peer_tag_len is not in range 1-32 or
              skippable_length is a negative integer.
+           ExchangeError: Raised whenever null shared secret is derived from
+              user/peer key pair.
         """
         if skippable_range < 0:
             raise ValueError(
