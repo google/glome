@@ -352,12 +352,12 @@ class AutoGlome:
            IncorrectTagError: Raised whenever the tag is incorrect.
         """
         old_counter = self._receiving_counter
-        for i in range(self.skippable_range + 1):
+        for _ in range(self.skippable_range + 1):
             try:
                 self.glome.check(tag, msg, self.receiving_counter)
                 self._receiving_counter = (self._receiving_counter + 1) % 256
                 return None
-            except IncorrectTagError as ite:
+            except IncorrectTagError:
                 self._receiving_counter = (self._receiving_counter + 1) % 256
 
         #If no counter matches.
