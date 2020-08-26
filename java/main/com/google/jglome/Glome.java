@@ -75,8 +75,11 @@ public final class Glome {
         throws MinPeerTagLengthOutOfBoundsException {
       if (minPeerTagLength < MIN_TAG_LENGTH || minPeerTagLength > MAX_TAG_LENGTH) {
         throw new MinPeerTagLengthOutOfBoundsException(
-            String.format("minPeerTagLength argument should be in [%d..%d] range. Got %d.",
-                MIN_TAG_LENGTH, MAX_TAG_LENGTH, minPeerTagLength));
+            String.format(
+                "minPeerTagLength argument should be in [%d..%d] range. Got %d.",
+                MIN_TAG_LENGTH, MAX_TAG_LENGTH, minPeerTagLength
+            )
+        );
       }
       this.minPeerTagLength = minPeerTagLength;
       this.peerKey = peerKey;
@@ -204,8 +207,11 @@ public final class Glome {
       throws CounterOutOfBoundsException, WrongTagException {
     if (peerTag.length < minPeerTagLength || peerTag.length > MAX_TAG_LENGTH) {
       throw new WrongTagException(
-          String.format("The received tag has invalid length. Expected %d or more, got %d.",
-              minPeerTagLength, peerTag.length));
+          String.format(
+              "The received tag has invalid length. Expected value in range [%d..%d], got %d.",
+              minPeerTagLength, MAX_TAG_LENGTH, peerTag.length
+          )
+      );
     }
 
     byte[] truncatedTag = Arrays.copyOf(generateTag(msg, cnt, this.peerMacKey), peerTag.length);
@@ -223,13 +229,14 @@ public final class Glome {
    * @throws CounterOutOfBoundsException if {@code cnt} is out of [MIN_CNT_VALUE..MAX_CNT_VALUE]
    * range.
    */
-  private byte[] generateTag(byte[] msg, int cnt, Mac mac)
-      throws CounterOutOfBoundsException {
+  private byte[] generateTag(byte[] msg, int cnt, Mac mac) throws CounterOutOfBoundsException {
     if (cnt < MIN_CNT_VALUE || cnt > MAX_CNT_VALUE) {
       throw new CounterOutOfBoundsException(
-          String
-              .format("Counter should be in [%d..%d] range. Got %d.", MIN_CNT_VALUE, MAX_CNT_VALUE,
-                  cnt));
+          String.format(
+              "Counter should be in [%d..%d] range. Got %d.",
+              MIN_CNT_VALUE, MAX_CNT_VALUE, cnt
+          )
+      );
     }
 
     byte[] finalMsg = new byte[msg.length + 1];

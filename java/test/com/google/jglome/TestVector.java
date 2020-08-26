@@ -65,8 +65,9 @@ public class TestVector {
   }
 
   private static byte[] fromHexString(String str) {
+    // add a specific byte value as a prefix in case of leading zeros
     byte[] bytes = new BigInteger("10" + str.replaceAll("\\s", ""), 16).toByteArray();
-    return Arrays.copyOfRange(bytes, 1, bytes.length);
+    return Arrays.copyOfRange(bytes, 1, bytes.length); // remove first fake byte
   }
 
   // Message from Alice to Bob.
@@ -78,7 +79,8 @@ public class TestVector {
       "9c44389f462d35d0672faf73a5e118f8b9f5c340bbe8d340e2b947c205ea4fa3",
       "4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742",
       "The quick brown fox",
-      0);
+      0
+  );
 
   // Message from Bob to Alice.
   final static TestVector testVector2 = new TestVector(
@@ -89,7 +91,8 @@ public class TestVector {
       "06476f1f314b06c7f96e5dc62b2308268cbdb6140aefeeb55940731863032277",
       "4b1ee05fcd2ae53ebe4c9ec94915cb057109389a2aa415f26986bddebf379d67",
       "The quick brown fox",
-      100);
+      100
+  );
 
   final static List<TestVector> TEST_VECTORS = List.of(testVector1, testVector2);
 

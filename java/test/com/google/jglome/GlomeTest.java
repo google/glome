@@ -20,13 +20,14 @@ import static com.google.jglome.Glome.MIN_CNT_VALUE;
 import static com.google.jglome.Glome.MIN_TAG_LENGTH;
 import static com.google.jglome.TestVector.TEST_VECTORS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.jglome.Glome.CounterOutOfBoundsException;
 import com.google.jglome.Glome.GlomeBuilder;
 import com.google.jglome.Glome.MinPeerTagLengthOutOfBoundsException;
 import com.google.jglome.Glome.WrongTagException;
-import java.security.InvalidKeyException;
 import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
@@ -60,70 +61,79 @@ public class GlomeTest {
   KeyPair[] aKeys = new KeyPair[N_TEST_VECTORS];
   KeyPair[] bKeys = new KeyPair[N_TEST_VECTORS];
 
-  GlomeTest() throws MinPeerTagLengthOutOfBoundsException, InvalidKeyException {
+  GlomeTest() {
     for (int i = 0; i < N_TEST_VECTORS; i++) {
       TestVector testVector = TEST_VECTORS.get(i);
       aKeys[i] = new KeyPair(testVector.getKa(), testVector.getKah());
       bKeys[i] = new KeyPair(testVector.getKb(), testVector.getKbh());
-      glomeManagers[i][0] = new GlomeBuilder(bKeys[i].getPublicKey(), 32)
-          .setPrivateKey(aKeys[i].getPrivateKey())
-          .build();
-      glomeManagers[i][1] = new GlomeBuilder(aKeys[i].getPublicKey(), 28)
-          .setPrivateKey(bKeys[i].getPrivateKey())
-          .build();
+      int finalI = i;
+      glomeManagers[i][0] = assertDoesNotThrow(() ->
+          new GlomeBuilder(bKeys[finalI].getPublicKey(), 32)
+              .setPrivateKey(aKeys[finalI].getPrivateKey())
+              .build()
+      );
+      glomeManagers[i][1] = assertDoesNotThrow(() ->
+          new GlomeBuilder(aKeys[finalI].getPublicKey(), 28)
+              .setPrivateKey(bKeys[finalI].getPrivateKey())
+              .build()
+      );
     }
   }
 
   @Test
-  public void testShouldFailWhenMinPeerTagLengthIsOutOfBounds() {
+  public void testShouldFail_whenMinPeerTagLengthIsOutOfBounds() {
     int[] minPeerTagLength = new int[]{MIN_TAG_LENGTH - 1, MAX_TAG_LENGTH + 1};
 
     for (int len : minPeerTagLength) {
-      try {
-        new GlomeBuilder(aKeys[0].getPublicKey(), len);
-      } catch (MinPeerTagLengthOutOfBoundsException e) {
-        assertEquals(e.getMessage(),
-            String.format("minPeerTagLength argument should be in [%d..%d] range. Got %d.",
-                MIN_TAG_LENGTH, MAX_TAG_LENGTH, len));
-      }
+      MinPeerTagLengthOutOfBoundsException e = assertThrows(
+          MinPeerTagLengthOutOfBoundsException.class,
+          () -> new GlomeBuilder(aKeys[0].getPublicKey(), len)
+      );
+      assertEquals(
+          e.getMessage(),
+          String.format(
+              "minPeerTagLength argument should be in [%d..%d] range. Got %d.",
+              MIN_TAG_LENGTH, MAX_TAG_LENGTH, len
+          )
+      );
     }
   }
 
   @Test
   public void checkCorrectMinPeerTagLength() {
     for (int len = MIN_TAG_LENGTH; len <= MAX_TAG_LENGTH; len++) {
-      try {
-        new GlomeBuilder(aKeys[0].getPublicKey(), len);
-      } catch (MinPeerTagLengthOutOfBoundsException e) {
-        assertEquals(e.getMessage(),
-            String.format("minPeerTagLength argument should be in [%d..%d] range. Got %d.",
-                MIN_TAG_LENGTH, MAX_TAG_LENGTH, len));
-      }
+      int finalLen = len;
+      assertDoesNotThrow(() -> new GlomeBuilder(aKeys[0].getPublicKey(), finalLen));
     }
   }
 
   @Test
-  public void testShouldFailWhenCounterIsOutOfBounds() {
+  public void testShouldFail_whenCounterIsOutOfBounds() {
     TestVector vector = TEST_VECTORS.get(0);
     int[] counters = new int[]{MIN_CNT_VALUE - 1, MAX_CNT_VALUE + 1};
 
     for (int cnt : counters) {
-      try {
-        glomeManagers[0][0].generateTag(vector.getMsg(), cnt);
-      } catch (CounterOutOfBoundsException e) {
-        assertEquals(e.getMessage(),
-            String.format("Counter should be in [%d..%d] range. Got %d.", MIN_CNT_VALUE,
-                MAX_CNT_VALUE, cnt));
-      }
+      CounterOutOfBoundsException e = assertThrows(
+          CounterOutOfBoundsException.class,
+          () -> glomeManagers[0][0].generateTag(vector.getMsg(), cnt)
+      );
+      assertEquals(
+          e.getMessage(),
+          String.format(
+              "Counter should be in [%d..%d] range. Got %d.",
+              MIN_CNT_VALUE, MAX_CNT_VALUE, cnt
+          )
+      );
     }
   }
 
   @Test
-  public void checkCorrectCounters() throws CounterOutOfBoundsException {
+  public void checkCorrectCounters() {
     TestVector vector = TEST_VECTORS.get(0);
 
     for (int cnt = MIN_CNT_VALUE; cnt < MAX_CNT_VALUE; cnt++) {
-      glomeManagers[0][0].generateTag(vector.getMsg(), cnt);
+      int finalCnt = cnt;
+      assertDoesNotThrow(() -> glomeManagers[0][0].generateTag(vector.getMsg(), finalCnt));
     }
   }
 
@@ -136,42 +146,71 @@ public class GlomeTest {
   }
 
   @Test
-  public void testTagGeneration() throws CounterOutOfBoundsException {
+  public void testTagGeneration() {
     for (int i = 0; i < N_TEST_VECTORS; i++) {
       TestVector vector = TEST_VECTORS.get(i);
       int sender = i % 2;
-      assertArrayEquals(vector.getTag(),
-          glomeManagers[i][sender].generateTag(vector.getMsg(), vector.getCnt()));
+      int finalI = i;
+      assertArrayEquals(
+          vector.getTag(),
+          assertDoesNotThrow(() ->
+              glomeManagers[finalI][sender].generateTag(vector.getMsg(), vector.getCnt())
+          )
+      );
     }
   }
 
   @Test
-  public void testCheckTag() throws WrongTagException, CounterOutOfBoundsException {
+  public void testCheckTag() {
     for (int i = 0; i < N_TEST_VECTORS; i++) {
       TestVector vector = TEST_VECTORS.get(i);
       int receiver = 1 - i % 2;
-      glomeManagers[i][receiver].checkTag(vector.getTag(), vector.getMsg(), vector.getCnt());
+      int finalI = i;
+      assertDoesNotThrow(() ->
+          glomeManagers[finalI][receiver]
+              .checkTag(vector.getTag(), vector.getMsg(), vector.getCnt())
+      );
     }
   }
 
   @Test
-  public void testCorrectTruncatedTag() throws WrongTagException, CounterOutOfBoundsException {
+  public void testCorrectTruncatedTag() {
     TestVector vector = TEST_VECTORS.get(0);
-    glomeManagers[0][1]
-        .checkTag(Arrays.copyOf(vector.getTag(), 29), vector.getMsg(), vector.getCnt());
+    assertDoesNotThrow(() ->
+        glomeManagers[0][1]
+            .checkTag(Arrays.copyOf(vector.getTag(), 29), vector.getMsg(), vector.getCnt())
+    );
   }
 
   @Test
-  public void testShouldFailWhenIncorrectTruncatedTag() throws CounterOutOfBoundsException {
+  public void testShouldFail_whenIncorrectTruncatedTag() {
     TestVector vector = TEST_VECTORS.get(0);
     byte[] truncatedTag = Arrays.copyOf(vector.getTag(), 29);
     truncatedTag[28] = 0;
 
-    try {
-      glomeManagers[0][1].checkTag(truncatedTag, vector.getMsg(), vector.getCnt());
-    } catch (WrongTagException e) {
-      assertEquals("The received tag doesn't match the expected tag.", e.getMessage());
-    }
+    WrongTagException e = assertThrows(
+        WrongTagException.class,
+        () -> glomeManagers[0][1].checkTag(truncatedTag, vector.getMsg(), vector.getCnt())
+    );
+
+    assertEquals("The received tag doesn't match the expected tag.", e.getMessage());
+  }
+
+  @Test
+  public void testShouldFail_whenInvalidTagLen() {
+    TestVector vector = TEST_VECTORS.get(0);
+    byte[] truncatedTag = Arrays.copyOf(vector.getTag(), 27);
+
+    WrongTagException e = assertThrows(WrongTagException.class,
+        () -> glomeManagers[0][1].checkTag(truncatedTag, vector.getMsg(), vector.getCnt())
+    );
+
+    assertEquals(
+        String.format(
+            "The received tag has invalid length. Expected value in range [%d..%d], got %d.",
+            28, MAX_TAG_LENGTH, truncatedTag.length),
+        e.getMessage()
+    );
   }
 
 }
