@@ -62,19 +62,19 @@ public class GlomeTest {
   KeyPair[] bKeys = new KeyPair[N_TEST_VECTORS];
 
   GlomeTest() {
-    for (int i = 0; i < N_TEST_VECTORS; i++) {
-      TestVector testVector = TEST_VECTORS.get(i);
-      aKeys[i] = new KeyPair(testVector.getKa(), testVector.getKah());
-      bKeys[i] = new KeyPair(testVector.getKb(), testVector.getKbh());
-      int finalI = i;
-      glomeManagers[i][0] = assertDoesNotThrow(() ->
-          new GlomeBuilder(bKeys[finalI].getPublicKey(), 32)
-              .setPrivateKey(aKeys[finalI].getPrivateKey())
+    for (int tv = 0; tv < N_TEST_VECTORS; tv++) {
+      TestVector testVector = TEST_VECTORS.get(tv);
+      aKeys[tv] = new KeyPair(testVector.getKa(), testVector.getKah());
+      bKeys[tv] = new KeyPair(testVector.getKb(), testVector.getKbh());
+      int finalTV = tv;
+      glomeManagers[tv][0] = assertDoesNotThrow(() ->
+          new GlomeBuilder(bKeys[finalTV].getPublicKey(), 32)
+              .setPrivateKey(aKeys[finalTV].getPrivateKey())
               .build()
       );
-      glomeManagers[i][1] = assertDoesNotThrow(() ->
-          new GlomeBuilder(aKeys[finalI].getPublicKey(), 28)
-              .setPrivateKey(bKeys[finalI].getPrivateKey())
+      glomeManagers[tv][1] = assertDoesNotThrow(() ->
+          new GlomeBuilder(aKeys[finalTV].getPublicKey(), 28)
+              .setPrivateKey(bKeys[finalTV].getPrivateKey())
               .build()
       );
     }
@@ -101,9 +101,9 @@ public class GlomeTest {
 
   @Test
   public void checkCorrectMinPeerTagLength() {
-    for (int len = MIN_TAG_LENGTH; len <= MAX_TAG_LENGTH; len++) {
-      int finalLen = len;
-      assertDoesNotThrow(() -> new GlomeBuilder(aKeys[0].getPublicKey(), finalLen));
+    for (int tagLen = MIN_TAG_LENGTH; tagLen <= MAX_TAG_LENGTH; tagLen++) {
+      int finalTagLen = tagLen;
+      assertDoesNotThrow(() -> new GlomeBuilder(aKeys[0].getPublicKey(), finalTagLen));
     }
   }
 
@@ -139,22 +139,22 @@ public class GlomeTest {
 
   @Test
   public void derivedKeyShouldEqualOriginalKey() {
-    for (int i = 0; i < N_TEST_VECTORS; i++) {
-      assertArrayEquals(aKeys[i].getPublicKey(), glomeManagers[i][0].userPublicKey());
-      assertArrayEquals(bKeys[i].getPublicKey(), glomeManagers[i][1].userPublicKey());
+    for (int tv = 0; tv < N_TEST_VECTORS; tv++) {
+      assertArrayEquals(aKeys[tv].getPublicKey(), glomeManagers[tv][0].userPublicKey());
+      assertArrayEquals(bKeys[tv].getPublicKey(), glomeManagers[tv][1].userPublicKey());
     }
   }
 
   @Test
   public void testTagGeneration() {
-    for (int i = 0; i < N_TEST_VECTORS; i++) {
-      TestVector vector = TEST_VECTORS.get(i);
-      int sender = i % 2;
-      int finalI = i;
+    for (int tv = 0; tv < N_TEST_VECTORS; tv++) {
+      TestVector vector = TEST_VECTORS.get(tv);
+      int sender = tv % 2;
+      int finalTV = tv;
       assertArrayEquals(
           vector.getTag(),
           assertDoesNotThrow(() ->
-              glomeManagers[finalI][sender].generateTag(vector.getMsg(), vector.getCnt())
+              glomeManagers[finalTV][sender].generateTag(vector.getMsg(), vector.getCnt())
           )
       );
     }
@@ -162,12 +162,12 @@ public class GlomeTest {
 
   @Test
   public void testCheckTag() {
-    for (int i = 0; i < N_TEST_VECTORS; i++) {
-      TestVector vector = TEST_VECTORS.get(i);
-      int receiver = 1 - i % 2;
-      int finalI = i;
+    for (int tv = 0; tv < N_TEST_VECTORS; tv++) {
+      TestVector vector = TEST_VECTORS.get(tv);
+      int receiver = 1 - tv % 2;
+      int finalTV = tv;
       assertDoesNotThrow(() ->
-          glomeManagers[finalI][receiver]
+          glomeManagers[finalTV][receiver]
               .checkTag(vector.getTag(), vector.getMsg(), vector.getCnt())
       );
     }
@@ -201,7 +201,8 @@ public class GlomeTest {
     TestVector vector = TEST_VECTORS.get(0);
     byte[] truncatedTag = Arrays.copyOf(vector.getTag(), 27);
 
-    WrongTagException e = assertThrows(WrongTagException.class,
+    WrongTagException e = assertThrows(
+        WrongTagException.class,
         () -> glomeManagers[0][1].checkTag(truncatedTag, vector.getMsg(), vector.getCnt())
     );
 
