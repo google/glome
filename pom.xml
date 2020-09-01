@@ -6,9 +6,19 @@
 
     <groupId>com.google.jglome</groupId>
     <artifactId>glome</artifactId>
+    <packaging>jar</packaging>
     <version>1.0</version>
+
     <build>
+        <sourceDirectory>java/main</sourceDirectory>
+        <testSourceDirectory>java/test</testSourceDirectory>
+
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.0</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -20,11 +30,19 @@
         </plugins>
     </build>
 
+
     <dependencies>
         <dependency>
             <groupId>com.google.crypto.tink</groupId>
             <artifactId>tink</artifactId>
             <version>1.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.junit.jupiter.</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.4.2</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
