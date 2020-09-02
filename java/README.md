@@ -11,8 +11,8 @@ should know their peer's public key. This is an example of how Alice can use
 the Glome object to generate a tag:
 
 ```Java
-import Glome;
-import Glome.GlomeBuilder;
+import com.google.jglome.Glome;
+import com.google.jglome.Glome.GlomeBuilder;
 
 public class Main {
 
@@ -35,9 +35,9 @@ Then Alice should send Bob both `msg`, `tag` and Alice's public key.
 As soon as Bob receives them he will need to do the following:
 
 ```Java
-import Glome;
-import Glome.GlomeBuilder;
-import Glome.WrongTagException;
+import com.google.jglome.Glome;
+import com.google.jglome.Glome.GlomeBuilder;
+import com.google.jglome.Glome.WrongTagException;
 
 public class Main {
 
@@ -68,8 +68,8 @@ The library maintains both usage of preexisting keys and key generation. If you
 want to use a special key pair you may create a Glome object in the following way:
 
 ```Java
-import Glome;
-import Glome.GlomeBuilder;
+import com.google.jglome.Glome;
+import com.google.jglome.Glome.GlomeBuilder;
 
 public class Main {
 
@@ -94,7 +94,7 @@ which is written in the above section.
 ### Requirements
 
 -   Java >= 8
--   // TODO tink
+-   Tink > 1.4.0
 
 ### Instructions
 

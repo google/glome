@@ -18,6 +18,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -108,6 +109,7 @@ public class TestVector {
       100
   );
 
-  final static List<TestVector> TEST_VECTORS = List.of(testVector1, testVector2);
+  final static List<TestVector> TEST_VECTORS = Collections
+      .unmodifiableList(Arrays.asList(testVector1, testVector2));
 
 }
