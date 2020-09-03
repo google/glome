@@ -37,10 +37,10 @@ public final class Glome {
   private final byte[] userPublicKey;
   private final byte[] userPrivateKey;
 
-  public final static int MIN_CNT_VALUE = 0;
-  public final static int MAX_CNT_VALUE = 255;
-  public final static int MAX_TAG_LENGTH = 32;
-  public final static int MIN_TAG_LENGTH = 1;
+  public static final int MIN_CNT_VALUE = 0;
+  public static final int MAX_CNT_VALUE = 255;
+  public static final int MAX_TAG_LENGTH = 32;
+  public static final int MIN_TAG_LENGTH = 1;
 
   /**
    * Builder class for Glome object.
@@ -249,7 +249,7 @@ public final class Glome {
   /**
    * Exception, which is thrown whenever a counter is out of [MIN_CNT_VALUE..MAX_CNT_VALUE] range.
    */
-  public final static class CounterOutOfBoundsException extends Exception {
+  public static final class CounterOutOfBoundsException extends Exception {
 
     CounterOutOfBoundsException(String msg) {
       super(msg);
@@ -261,7 +261,7 @@ public final class Glome {
    * Exception, which is thrown whenever a minimum tag length is out of
    * [MIN_TAG_LENGTH..MAX_TAG_LENGTH] range.
    */
-  public final static class MinPeerTagLengthOutOfBoundsException extends Exception {
+  public static final class MinPeerTagLengthOutOfBoundsException extends Exception {
 
     MinPeerTagLengthOutOfBoundsException(String msg) {
       super(msg);
@@ -273,7 +273,7 @@ public final class Glome {
    * Exception, which is thrown whenever the received tag has invalid length or it's not equal to
    * the prefix of a correct tag.
    */
-  public final static class WrongTagException extends Exception {
+  public static final class WrongTagException extends Exception {
 
     WrongTagException(String msg) {
       super(msg);

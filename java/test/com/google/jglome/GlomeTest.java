@@ -55,7 +55,7 @@ public class GlomeTest {
     }
   }
 
-  final static int N_TEST_VECTORS = TEST_VECTORS.size();
+  static final int N_TEST_VECTORS = TEST_VECTORS.size();
 
   Glome[][] glomeManagers = new Glome[N_TEST_VECTORS][2]; // first is for A, second is for B
   KeyPair[] aKeys = new KeyPair[N_TEST_VECTORS];
