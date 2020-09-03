@@ -55,3 +55,14 @@ jobs:
     - name: check glome-cli format
       run: |
         clang-format --Werror --dry-run --style=google cli/main.c
+
+  pr_java_test:
+    runs-on: ubuntu-18.04
+    container:
+      image: "maven:3.6.3-jdk-8"
+    steps: 
+    - uses: actions/checkout@v2
+    - name: test java
+      run: |
+        mvn compile
+        mvn test
