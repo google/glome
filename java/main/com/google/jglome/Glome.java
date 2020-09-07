@@ -69,7 +69,7 @@ public final class Glome {
      * @param peerKey peer's public key.
      * @param minPeerTagLength minimum length for peer's tags.
      * @throws MinPeerTagLengthOutOfBoundsException if a minimum tag length is out of
-     * [MIN_TAG_LENGTH..MAX_TAG_LENGTH] range.
+     *     [MIN_TAG_LENGTH..MAX_TAG_LENGTH] range.
      */
     public GlomeBuilder(byte[] peerKey, int minPeerTagLength)
         throws MinPeerTagLengthOutOfBoundsException {
@@ -185,39 +185,10 @@ public final class Glome {
    * @param msg message from a peer.
    * @param cnt number of previously sent messages from the user to the peer.
    * @throws CounterOutOfBoundsException if {@code cnt} is out of [MIN_CNT_VALUE..MAX_CNT_VALUE]
-   * range.
+   *     range.
    */
   public byte[] generateTag(byte[] msg, int cnt) throws CounterOutOfBoundsException {
     return generateTag(msg, cnt, this.userMacKey);
-  }
-
-  /**
-   * Checks whether the peer's tag matches received message and some counter.
-   *
-   * @param peerTag tag from a peer.
-   * @param msg message from a peer.
-   * @param cnt number of previously sent messages from the user to the peer.
-   * @throws CounterOutOfBoundsException if {@code cnt} is out of [MIN_CNT_VALUE..MAX_CNT_VALUE]
-   * range.
-   * @throws WrongTagException if the peer's tag has invalid length (less than {@code
-   * minPeerTagLength} or more than MAX_TAG_LENGTH) or it's not equal to the prefix of a correct
-   * tag.
-   */
-  public void checkTag(byte[] peerTag, byte[] msg, int cnt)
-      throws CounterOutOfBoundsException, WrongTagException {
-    if (peerTag.length < minPeerTagLength || peerTag.length > MAX_TAG_LENGTH) {
-      throw new WrongTagException(
-          String.format(
-              "The received tag has invalid length. Expected value in range [%d..%d], got %d.",
-              minPeerTagLength, MAX_TAG_LENGTH, peerTag.length
-          )
-      );
-    }
-
-    byte[] truncatedTag = Arrays.copyOf(generateTag(msg, cnt, this.peerMacKey), peerTag.length);
-    if (!Arrays.equals(peerTag, truncatedTag)) {
-      throw new WrongTagException("The received tag doesn't match the expected tag.");
-    }
   }
 
   /**
@@ -227,7 +198,7 @@ public final class Glome {
    * @param cnt number of previously sent messages from the user to the peer.
    * @param mac MAC key of a sender.
    * @throws CounterOutOfBoundsException if {@code cnt} is out of [MIN_CNT_VALUE..MAX_CNT_VALUE]
-   * range.
+   *     range.
    */
   private byte[] generateTag(byte[] msg, int cnt, Mac mac) throws CounterOutOfBoundsException {
     if (cnt < MIN_CNT_VALUE || cnt > MAX_CNT_VALUE) {
@@ -244,6 +215,35 @@ public final class Glome {
     arraycopy(msg, 0, finalMsg, 1, msg.length);
 
     return mac.doFinal(finalMsg);
+  }
+
+  /**
+   * Checks whether the peer's tag matches received message and some counter.
+   *
+   * @param peerTag tag from a peer.
+   * @param msg message from a peer.
+   * @param cnt number of previously sent messages from the user to the peer.
+   * @throws CounterOutOfBoundsException if {@code cnt} is out of [MIN_CNT_VALUE..MAX_CNT_VALUE]
+   *     range.
+   * @throws WrongTagException if the peer's tag has invalid length (less than {@code
+   * minPeerTagLength} or more than MAX_TAG_LENGTH) or it's not equal to the prefix of a correct
+   *     tag.
+   */
+  public void checkTag(byte[] peerTag, byte[] msg, int cnt)
+      throws CounterOutOfBoundsException, WrongTagException {
+    if (peerTag.length < minPeerTagLength || peerTag.length > MAX_TAG_LENGTH) {
+      throw new WrongTagException(
+          String.format(
+              "The received tag has invalid length. Expected value in range [%d..%d], got %d.",
+              minPeerTagLength, MAX_TAG_LENGTH, peerTag.length
+          )
+      );
+    }
+
+    byte[] truncatedTag = Arrays.copyOf(generateTag(msg, cnt, this.peerMacKey), peerTag.length);
+    if (!Arrays.equals(peerTag, truncatedTag)) {
+      throw new WrongTagException("The received tag doesn't match the expected tag.");
+    }
   }
 
   /**

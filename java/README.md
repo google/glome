@@ -99,7 +99,7 @@ If you would like the keys to be generated, please see the previous section.
 ### Instructions
 
 jGLOME is built using [Maven](https://maven.apache.org/). To compile the project,
-run the following from the project directory:
+run the following from the root directory:
 
 `mvn compile`
 

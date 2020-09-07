@@ -88,7 +88,7 @@ jobs:
       image: "maven:3.6.3-jdk-8"
     steps: 
     - uses: actions/checkout@v2
-    - name: test java
+    - name: run linter and test java
       run: |
         mvn compile
         mvn test
