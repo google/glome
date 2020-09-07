@@ -102,9 +102,9 @@ public final class Glome {
      */
     public Glome build() throws InvalidKeyException {
       if (userPrivateKey == null) {
-        this.userPrivateKey = X25519.generatePrivateKey();
+        userPrivateKey = X25519.generatePrivateKey();
       }
-      this.userPublicKey = X25519.publicFromPrivate(this.userPrivateKey);
+      userPublicKey = X25519.publicFromPrivate(userPrivateKey);
       initMacKeys();
 
       return new Glome(this);
@@ -158,12 +158,12 @@ public final class Glome {
   }
 
   private Glome(GlomeBuilder builder) {
-    this.userPublicKey = builder.userPublicKey;
-    this.userPrivateKey = builder.userPrivateKey;
-    this.peerKey = builder.peerKey;
-    this.minPeerTagLength = builder.minPeerTagLength;
-    this.userMacKey = builder.userMacKey;
-    this.peerMacKey = builder.peerMacKey;
+    userPublicKey = builder.userPublicKey;
+    userPrivateKey = builder.userPrivateKey;
+    peerKey = builder.peerKey;
+    minPeerTagLength = builder.minPeerTagLength;
+    userMacKey = builder.userMacKey;
+    peerMacKey = builder.peerMacKey;
   }
 
   public byte[] peerKey() {
@@ -188,7 +188,7 @@ public final class Glome {
    *     range.
    */
   public byte[] generateTag(byte[] msg, int cnt) throws CounterOutOfBoundsException {
-    return generateTag(msg, cnt, this.userMacKey);
+    return generateTag(msg, cnt, userMacKey);
   }
 
   /**
@@ -240,7 +240,7 @@ public final class Glome {
       );
     }
 
-    byte[] truncatedTag = Arrays.copyOf(generateTag(msg, cnt, this.peerMacKey), peerTag.length);
+    byte[] truncatedTag = Arrays.copyOf(generateTag(msg, cnt, peerMacKey), peerTag.length);
     if (!Arrays.equals(peerTag, truncatedTag)) {
       throw new WrongTagException("The received tag doesn't match the expected tag.");
     }

@@ -32,7 +32,8 @@ public class Main {
 ```
 
 Then Alice should send Bob both `msg`, `tag` and Alice's public key.
-As soon as Bob receives them he will need to do the following:
+As soon as the information is received by Bob, the following can be done 
+to verify it:
 
 ```Java
 import com.google.jglome.Glome;
