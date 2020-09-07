@@ -51,13 +51,13 @@ public final class Glome {
     private final int minPeerTagLength;
     private byte[] userPublicKey;
     private byte[] userPrivateKey;
-    private Mac userMacKey;
-    private Mac peerMacKey;
+    private Mac userMac;
+    private Mac peerMac;
 
     {
       try {
-        userMacKey = Mac.getInstance("HmacSHA256");
-        peerMacKey = Mac.getInstance("HmacSHA256");
+        userMac = Mac.getInstance("HmacSHA256");
+        peerMac = Mac.getInstance("HmacSHA256");
       } catch (NoSuchAlgorithmException e) {
         throw new AssertionError(e.getMessage());
       }
@@ -117,8 +117,8 @@ public final class Glome {
      */
     private void initMacKeys() throws InvalidKeyException {
       byte[] sharedSecret = X25519.computeSharedSecret(userPrivateKey, peerKey);
-      initMacKey(userMacKey, sharedSecret, peerKey, userPublicKey);
-      initMacKey(peerMacKey, sharedSecret, userPublicKey, peerKey);
+      initMacKey(userMac, sharedSecret, peerKey, userPublicKey);
+      initMacKey(peerMac, sharedSecret, userPublicKey, peerKey);
     }
 
     /**
@@ -162,20 +162,20 @@ public final class Glome {
     userPrivateKey = builder.userPrivateKey;
     peerKey = builder.peerKey;
     minPeerTagLength = builder.minPeerTagLength;
-    userMacKey = builder.userMacKey;
-    peerMacKey = builder.peerMacKey;
+    userMacKey = builder.userMac;
+    peerMacKey = builder.peerMac;
   }
 
   public byte[] peerKey() {
-    return peerKey;
+    return peerKey.clone();
   }
 
   public byte[] userPublicKey() {
-    return userPublicKey;
+    return userPublicKey.clone();
   }
 
   public byte[] userPrivateKey() {
-    return userPrivateKey;
+    return userPrivateKey.clone();
   }
 
   /**
