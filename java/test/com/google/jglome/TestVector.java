@@ -26,14 +26,14 @@ import java.util.List;
  */
 public class TestVector {
 
-  private byte[] ka; // A's public key
-  private byte[] kb; // B's public key
-  private byte[] kah; // A's ephemeral private key
-  private byte[] kbh; // B's private key
-  private byte[] ks; // shared secret
-  private byte[] tag; // generated tag
-  private byte[] msg; // message to be sent
-  private int cnt; // counter of messaged that has been sent from the sending side to the receiving
+  private final byte[] ka; // A's public key
+  private final byte[] kb; // B's public key
+  private final byte[] kah; // A's ephemeral private key
+  private final byte[] kbh; // B's private key
+  private final byte[] ks; // shared secret
+  private final byte[] tag; // generated tag
+  private final byte[] msg; // message to be sent
+  private final int cnt; // counter of messaged that has been sent from the sending side to the receiving
 
   public byte[] getKa() {
     return ka;

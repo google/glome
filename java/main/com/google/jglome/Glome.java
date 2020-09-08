@@ -29,10 +29,10 @@ import javax.crypto.spec.SecretKeySpec;
  */
 public final class Glome {
 
-  private byte[] peerKey;
-  private Mac userMacKey;
-  private Mac peerMacKey;
-  private int minPeerTagLength;
+  private final byte[] peerKey;
+  private final Mac userMac;
+  private final Mac peerMac;
+  private final int minPeerTagLength;
 
   private final byte[] userPublicKey;
   private final byte[] userPrivateKey;
@@ -51,8 +51,8 @@ public final class Glome {
     private final int minPeerTagLength;
     private byte[] userPublicKey;
     private byte[] userPrivateKey;
-    private Mac userMac;
-    private Mac peerMac;
+    private final Mac userMac;
+    private final Mac peerMac;
 
     {
       try {
@@ -162,8 +162,8 @@ public final class Glome {
     userPrivateKey = builder.userPrivateKey;
     peerKey = builder.peerKey;
     minPeerTagLength = builder.minPeerTagLength;
-    userMacKey = builder.userMac;
-    peerMacKey = builder.peerMac;
+    userMac = builder.userMac;
+    peerMac = builder.peerMac;
   }
 
   public byte[] peerKey() {
@@ -188,7 +188,7 @@ public final class Glome {
    *     range.
    */
   public byte[] generateTag(byte[] msg, int cnt) throws CounterOutOfBoundsException {
-    return generateTag(msg, cnt, userMacKey);
+    return generateTag(msg, cnt, userMac);
   }
 
   /**
@@ -240,7 +240,7 @@ public final class Glome {
       );
     }
 
-    byte[] truncatedTag = Arrays.copyOf(generateTag(msg, cnt, peerMacKey), peerTag.length);
+    byte[] truncatedTag = Arrays.copyOf(generateTag(msg, cnt, peerMac), peerTag.length);
     if (!Arrays.equals(peerTag, truncatedTag)) {
       throw new WrongTagException("The received tag doesn't match the expected tag.");
     }
