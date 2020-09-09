@@ -20,6 +20,7 @@ import com.google.crypto.tink.subtle.X25519;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.util.Arrays;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -41,6 +42,8 @@ public final class Glome {
   public static final int MAX_CNT_VALUE = 255;
   public static final int MAX_TAG_LENGTH = 32;
   public static final int MIN_TAG_LENGTH = 1;
+  public static final int PUBLIC_KEY_LENGTH = 32;
+  public static final int PRIVATE_KEY_LENGTH = 32;
 
   /**
    * Builder class for Glome object.
@@ -70,9 +73,10 @@ public final class Glome {
      * @param minPeerTagLength minimum length for peer's tags.
      * @throws MinPeerTagLengthOutOfBoundsException if a minimum tag length is out of
      *     [MIN_TAG_LENGTH..MAX_TAG_LENGTH] range.
+     * @throws InvalidKeySize if key's size is invalid.
      */
     public GlomeBuilder(byte[] peerKey, int minPeerTagLength)
-        throws MinPeerTagLengthOutOfBoundsException {
+        throws MinPeerTagLengthOutOfBoundsException, InvalidKeySize {
       if (minPeerTagLength < MIN_TAG_LENGTH || minPeerTagLength > MAX_TAG_LENGTH) {
         throw new MinPeerTagLengthOutOfBoundsException(
             String.format(
@@ -80,6 +84,10 @@ public final class Glome {
                 MIN_TAG_LENGTH, MAX_TAG_LENGTH, minPeerTagLength
             )
         );
+      }
+      if (peerKey.length != PUBLIC_KEY_LENGTH) {
+        throw new InvalidKeySize(String.format("peerKey has invalid size. Expected %d, got %d.",
+            PUBLIC_KEY_LENGTH, peerKey.length));
       }
       this.minPeerTagLength = minPeerTagLength;
       this.peerKey = peerKey;
@@ -90,8 +98,16 @@ public final class Glome {
      *
      * @param userPrivateKey user's private key.
      * @return current GlomeBuilder object.
+     * @throws InvalidKeySize if key's size is invalid.
      */
-    public GlomeBuilder setPrivateKey(byte[] userPrivateKey) {
+    public GlomeBuilder setPrivateKey(byte[] userPrivateKey) throws InvalidKeySize {
+      if (userPrivateKey.length != PRIVATE_KEY_LENGTH) {
+        throw new InvalidKeySize(
+            String.format(
+                "userPrivateKey has invalid size. Expected %d, got %d.",
+                PRIVATE_KEY_LENGTH, userPrivateKey.length)
+        );
+      }
       this.userPrivateKey = userPrivateKey;
       return this;
     }
@@ -276,6 +292,17 @@ public final class Glome {
   public static final class WrongTagException extends Exception {
 
     WrongTagException(String msg) {
+      super(msg);
+    }
+
+  }
+
+  /**
+   * Exception, which is thrown whenever the key has invalid size.
+   */
+  public static final class InvalidKeySize extends Exception {
+
+    InvalidKeySize(String msg) {
       super(msg);
     }
 

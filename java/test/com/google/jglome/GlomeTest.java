@@ -18,6 +18,8 @@ import static com.google.jglome.Glome.MAX_CNT_VALUE;
 import static com.google.jglome.Glome.MAX_TAG_LENGTH;
 import static com.google.jglome.Glome.MIN_CNT_VALUE;
 import static com.google.jglome.Glome.MIN_TAG_LENGTH;
+import static com.google.jglome.Glome.PRIVATE_KEY_LENGTH;
+import static com.google.jglome.Glome.PUBLIC_KEY_LENGTH;
 import static com.google.jglome.TestVector.TEST_VECTORS;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -26,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.google.jglome.Glome.CounterOutOfBoundsException;
 import com.google.jglome.Glome.GlomeBuilder;
+import com.google.jglome.Glome.InvalidKeySize;
 import com.google.jglome.Glome.MinPeerTagLengthOutOfBoundsException;
 import com.google.jglome.Glome.WrongTagException;
 import java.util.Arrays;
@@ -78,6 +81,36 @@ public class GlomeTest {
               .build()
       );
     }
+  }
+
+  @Test
+  public void testShouldFail_whenInvalidKeySizes() {
+    InvalidKeySize e1 = assertThrows(
+        InvalidKeySize.class,
+        () -> new GlomeBuilder(bKeys[0].getPublicKey(), 32)
+            .setPrivateKey(Arrays.copyOf(aKeys[1].getPrivateKey(), 31)).build()
+    );
+    InvalidKeySize e2 = assertThrows(
+        InvalidKeySize.class,
+        () -> new GlomeBuilder(
+            Arrays.copyOf(bKeys[0].getPublicKey(), 31), 32
+        ).build()
+    );
+
+    assertEquals(
+        e1.getMessage(),
+        String.format(
+            "userPrivateKey has invalid size. Expected %d, got %d.",
+            PUBLIC_KEY_LENGTH, 31
+        )
+    );
+    assertEquals(
+        e2.getMessage(),
+        String.format(
+            "peerKey has invalid size. Expected %d, got %d.",
+            PRIVATE_KEY_LENGTH, 31
+        )
+    );
   }
 
   @Test
