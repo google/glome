@@ -88,7 +88,8 @@ public class GlomeTest {
     InvalidKeySize e1 = assertThrows(
         InvalidKeySize.class,
         () -> new GlomeBuilder(bKeys[0].getPublicKey(), 32)
-            .setPrivateKey(Arrays.copyOf(aKeys[1].getPrivateKey(), 31)).build()
+            .setPrivateKey(Arrays.copyOf(aKeys[1].getPrivateKey(), 31))
+            .build()
     );
     InvalidKeySize e2 = assertThrows(
         InvalidKeySize.class,
@@ -120,13 +121,21 @@ public class GlomeTest {
     for (int len : minPeerTagLength) {
       MinPeerTagLengthOutOfBoundsException e = assertThrows(
           MinPeerTagLengthOutOfBoundsException.class,
-          () -> new GlomeBuilder(aKeys[0].getPublicKey(), len)
+          () -> new GlomeBuilder(aKeys[0].getPublicKey(), len),
+          String.format(
+              "Test testShouldFail_whenMinPeerTagLengthIsOutOfBounds failed: method hasn't thrown an Exception. Loop variable len = %d.",
+              len
+          )
       );
       assertEquals(
           e.getMessage(),
           String.format(
               "minPeerTagLength argument should be in [%d..%d] range. Got %d.",
               MIN_TAG_LENGTH, MAX_TAG_LENGTH, len
+          ),
+          String.format(
+              "Test testShouldFail_whenMinPeerTagLengthIsOutOfBounds failed: exceptions messages are different. Loop variable len = %d.",
+              len
           )
       );
     }
@@ -148,13 +157,21 @@ public class GlomeTest {
     for (int cnt : counters) {
       CounterOutOfBoundsException e = assertThrows(
           CounterOutOfBoundsException.class,
-          () -> glomeManagers[0][0].generateTag(vector.getMsg(), cnt)
+          () -> glomeManagers[0][0].generateTag(vector.getMsg(), cnt),
+          String.format(
+              "Test testShouldFail_whenCounterIsOutOfBounds failed: method hasn't thrown an Exception. Loop variable cnt = %d.",
+              cnt
+          )
       );
       assertEquals(
           e.getMessage(),
           String.format(
               "Counter should be in [%d..%d] range. Got %d.",
               MIN_CNT_VALUE, MAX_CNT_VALUE, cnt
+          ),
+          String.format(
+              "Test testShouldFail_whenCounterIsOutOfBounds failed: exceptions messages are different. Loop variable cnt = %d.",
+              cnt
           )
       );
     }
@@ -166,15 +183,33 @@ public class GlomeTest {
 
     for (int cnt = MIN_CNT_VALUE; cnt < MAX_CNT_VALUE; cnt++) {
       int finalCnt = cnt;
-      assertDoesNotThrow(() -> glomeManagers[0][0].generateTag(vector.getMsg(), finalCnt));
+      assertDoesNotThrow(
+          () -> glomeManagers[0][0].generateTag(vector.getMsg(), finalCnt),
+          String.format(
+              "Test checkCorrectCounters failed: method has thrown an Exception. Loop variable cnt = %d.",
+              cnt
+          )
+      );
     }
   }
 
   @Test
   public void derivedKeyShouldEqualOriginalKey() {
     for (int tv = 0; tv < N_TEST_VECTORS; tv++) {
-      assertArrayEquals(aKeys[tv].getPublicKey(), glomeManagers[tv][0].userPublicKey());
-      assertArrayEquals(bKeys[tv].getPublicKey(), glomeManagers[tv][1].userPublicKey());
+      assertArrayEquals(
+          aKeys[tv].getPublicKey(), glomeManagers[tv][0].userPublicKey(),
+          String.format(
+              "Test derivedKeyShouldEqualOriginalKey failed: keys for A are different. Loop variable tv = %d.",
+              tv
+          )
+      );
+      assertArrayEquals(
+          bKeys[tv].getPublicKey(), glomeManagers[tv][1].userPublicKey(),
+          String.format(
+              "Test derivedKeyShouldEqualOriginalKey failed: keys for B are different. Loop variable tv = %d.",
+              tv
+          )
+      );
     }
   }
 
@@ -187,7 +222,11 @@ public class GlomeTest {
       assertArrayEquals(
           vector.getTag(),
           assertDoesNotThrow(() ->
-              glomeManagers[finalTV][sender].generateTag(vector.getMsg(), vector.getCnt())
+              glomeManagers[finalTV][sender].generateTag(vector.getMsg(), vector.getCnt()),
+              String.format(
+                  "Test testTagGeneration failed: method has thrown an Exception. Loop variable tv = %d.",
+                  tv
+              )
           )
       );
     }
@@ -201,7 +240,11 @@ public class GlomeTest {
       int finalTV = tv;
       assertDoesNotThrow(() ->
           glomeManagers[finalTV][receiver]
-              .checkTag(vector.getTag(), vector.getMsg(), vector.getCnt())
+              .checkTag(vector.getTag(), vector.getMsg(), vector.getCnt()),
+          String.format(
+              "Test testCheckTag failed: method has thrown an Exception. Loop variable tv = %d.",
+              tv
+          )
       );
     }
   }
