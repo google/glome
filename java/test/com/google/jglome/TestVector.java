@@ -67,7 +67,7 @@ public class TestVector {
     return cnt;
   }
 
-  TestVector(String ka, String kb, String kah, String kbh, String tag, String ks, String msg,
+  public TestVector(String ka, String kb, String kah, String kbh, String tag, String ks, String msg,
       int cnt) {
     this.ka = fromHexString(ka);
     this.kb = fromHexString(kb);

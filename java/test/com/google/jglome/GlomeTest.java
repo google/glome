@@ -44,7 +44,7 @@ public class GlomeTest {
     private final byte[] publicKey;
     private final byte[] privateKey;
 
-    KeyPair(byte[] publicKey, byte[] privateKey) {
+    public KeyPair(byte[] publicKey, byte[] privateKey) {
       this.publicKey = publicKey;
       this.privateKey = privateKey;
     }
@@ -64,7 +64,7 @@ public class GlomeTest {
   private final KeyPair[] aKeys = new KeyPair[N_TEST_VECTORS];
   private final KeyPair[] bKeys = new KeyPair[N_TEST_VECTORS];
 
-  GlomeTest() {
+  public GlomeTest() {
     for (int tv = 0; tv < N_TEST_VECTORS; tv++) {
       TestVector testVector = TEST_VECTORS.get(tv);
       aKeys[tv] = new KeyPair(testVector.getKa(), testVector.getKah());
