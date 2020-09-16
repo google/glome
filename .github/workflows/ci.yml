@@ -112,4 +112,3 @@ jobs:
       run: |
         cd go/glome
         go test
-

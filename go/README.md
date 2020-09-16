@@ -2,7 +2,7 @@
 **This is not an officially supported Google product.**
 
 This repository contains a Golang implementation for the GLOME protocol. You can
-find the library as well as the tests in the folder `glome`. 
+find the library as well as the tests in the folder `glome`.
 
 
 ## Go API
