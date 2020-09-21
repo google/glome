@@ -12,8 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-glome_cli = executable('glome', 'main.c', link_with : glome_lib,
-  include_directories : glome_incdir, install : true)
+openssl_dep = dependency('openssl', version : '>=1.1')
+
+glome_cli = executable(
+  'glome',
+  [
+    'main.c',
+    'commands.h',
+    'commands.c',
+  ],
+  dependencies: openssl_dep,
+  link_with : glome_lib,
+  include_directories : glome_incdir,
+  install : true)
 
 cli_test = find_program('test.sh')
 test('cli', cli_test,

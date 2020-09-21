@@ -33,18 +33,22 @@ t=$(mktemp -d glometest.XXX)
 trap "rm -rf -- '${t?}'" EXIT
 
 for side in 0 1; do
-        "$binary" "${t}/${side}" >"${t}/${side}.pub" 2>/dev/null
+        "$binary" genkey | tee "${t}/${side}" | "$binary" pubkey >"${t}/${side}.pub"
 done
 
 for counter in $(seq 0 "$iterations"); do
   msg="$RANDOM"
   for side in 0 1; do
     peer=$((1 - "$side"))
-    tag=$("$binary" "${t}/${side}" "${t}/${peer}.pub" "$msg" "$counter")
+    tag=$(printf %s "$msg" | "$binary" tag --key "${t}/${side}" --peer "${t}/${peer}.pub" --counter "$counter")
     for len in $(seq 2 2 64); do
-      if ! "$binary" "${t}/${peer}" "${t}/${side}.pub" "$msg" "$counter" "${tag:0:$len}"; then
+      if ! printf %s "$msg" | "$binary" verify -k "${t}/${peer}" -p "${t}/${side}.pub" -c "$counter" -t "${tag:0:$len}"; then
         let errors++
         echo "FAIL: side=${side} peer=${peer} msg=${msg} counter=${counter}"
+      fi
+      if printf %s "wrong-$msg" | "$binary" verify -k "${t}/${peer}" -p "${t}/${side}.pub" -c "$counter" -t "${tag:0:$len}"; then
+        let errors++
+        echo "FAIL: incorrectly verified! side=${side} peer=${peer} msg=${msg} counter=${counter}"
       fi
     done
   done
