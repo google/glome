@@ -16,11 +16,10 @@
 package glome
 
 import (
-	"fmt"
-	"io"
-
 	"crypto/hmac"
 	"crypto/sha256"
+	"fmt"
+	"io"
 
 	"golang.org/x/crypto/curve25519"
 )
@@ -241,6 +240,6 @@ func (d *Dialog) Check(tag []byte, msg []byte, counter uint8) bool {
 		prefixSize = uint(len(tag))
 	}
 
-	want := generateTag(msg, counter, d.receivingKey())[:prefixSize]
-	return hmac.Equal(want, tag)
+	expected := generateTag(msg, counter, d.receivingKey())[:prefixSize]
+	return hmac.Equal(expected, tag)
 }
