@@ -19,7 +19,7 @@ Module that implements unittests cases for Glome Class.
 import unittest
 import sys
 
-import test.glome_test, test.autoglome_test
+import test.glome_test, test.autoglome_test, test.fuzzing_test
 
 
 def suite():
@@ -27,8 +27,9 @@ def suite():
     glome_tests = unittest.TestLoader().loadTestsFromModule(test.glome_test)
     autoglome_tests = unittest.TestLoader().loadTestsFromModule(
         test.autoglome_test)
+    fuzzing_tests = unittest.TestLoader().loadTestsFromModule(test.fuzzing_test)
 
-    return unittest.TestSuite([glome_tests, autoglome_tests])
+    return unittest.TestSuite([glome_tests, autoglome_tests, fuzzing_tests])
 
 
 if __name__ == '__main__':

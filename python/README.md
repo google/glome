@@ -65,7 +65,7 @@ For more information see the in-code documentation.
 
 ### Test
 
-In the test folder we have scripts that implement test classes based on unittest. To run all tests use:
+In the test folder we have scripts that implement test classes based on unittest. To run all unittest use:
 
 ```
 python -m test
@@ -76,4 +76,8 @@ from this directory. If you only want to execute a particular test module, then 
 python -m test.my_module_name
 ```
 
-where `my_module_name` is the name of the test module to be executed (the name of the file without the .py).
+where `my_module_name` is the name of the test module to be executed (the name of the file without the .py). A simple fuzzing test was also done and can be found on `fuzzing_test.py`. This test is not run along the unittest, to run it use:
+```
+python -m test.fuzzing_test
+```
+from this directory.
