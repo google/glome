@@ -76,7 +76,9 @@ from this directory. If you only want to execute a particular test module, then 
 python -m test.my_module_name
 ```
 
-where `my_module_name` is the name of the test module to be executed (the name of the file without the .py). A simple fuzzing test was also done and can be found on `fuzzing_test.py`. This test is not run along the unittest, to run it use:
+where `my_module_name` is the name of the test module to be executed (the name of the file without the .py). 
+
+To run the fuzzing test use:
 ```
 python -m test.fuzzing_test
 ```

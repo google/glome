@@ -129,6 +129,34 @@ def autoglome_test(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
     _autoglome(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
                skippable)
 
+@hypothesis.settings(max_examples=10**5)
+@hypothesis.given(
+    hypothesis.strategies.binary(),  #private_bytes
+    hypothesis.strategies.binary(),  #public_bytes
+    hypothesis.strategies.binary(),  #msg
+    hypothesis.strategies.binary(min_size=32, max_size=32),  #tag
+    hypothesis.strategies.integers(),  #counter
+    hypothesis.strategies.integers())  #min_tag_len
+def glome_unsized_keys_test(private_bytes, public_bytes, msg, tag, counter, min_tag_len):
+    """Add hypothesis decorator to _glome function"""
+    _glome(private_bytes, public_bytes, msg, tag, counter, min_tag_len)
+
+
+@hypothesis.settings(max_examples=10**5)
+@hypothesis.given(
+    hypothesis.strategies.binary(),  #private_bytes
+    hypothesis.strategies.binary(),  #public_bytes
+    hypothesis.strategies.binary(),  #msg
+    hypothesis.strategies.binary(min_size=32, max_size=32),  #tag
+    hypothesis.strategies.integers(),  #counter
+    hypothesis.strategies.integers(),  #min_tag_len
+    hypothesis.strategies.integers())  #skippable
+def autoglome_unsized_keys_test(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
+                   skippable):
+    """Add hypothesis decorator to _autoglome function"""
+    _autoglome(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
+               skippable)
+
 
 class GlomeTest1(unittest.TestCase):
     """Test Class that check one iteration of each function.
@@ -167,3 +195,5 @@ class GlomeTest1(unittest.TestCase):
 if __name__ == "__main__":
     glome_test()
     autoglome_test()
+    glome_unsized_keys_test()
+    autoglome_unsized_keys_test()
