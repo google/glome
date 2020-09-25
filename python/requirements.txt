@@ -1,0 +1,9 @@
+####### pyglome requirements.txt #######
+#
+###### Requirements for core library ######
+cryptography >= 2.5
+#
+###### Requirements for testing and CI ######
+yapf
+pylint
+hypothesis
