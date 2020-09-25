@@ -129,6 +129,7 @@ def autoglome_test(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
     _autoglome(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
                skippable)
 
+
 @hypothesis.settings(max_examples=10**5)
 @hypothesis.given(
     hypothesis.strategies.binary(),  #private_bytes
@@ -137,7 +138,8 @@ def autoglome_test(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
     hypothesis.strategies.binary(min_size=32, max_size=32),  #tag
     hypothesis.strategies.integers(),  #counter
     hypothesis.strategies.integers())  #min_tag_len
-def glome_unsized_keys_test(private_bytes, public_bytes, msg, tag, counter, min_tag_len):
+def glome_unsized_keys_test(private_bytes, public_bytes, msg, tag, counter,
+                            min_tag_len):
     """Add hypothesis decorator to _glome function"""
     _glome(private_bytes, public_bytes, msg, tag, counter, min_tag_len)
 
@@ -151,8 +153,8 @@ def glome_unsized_keys_test(private_bytes, public_bytes, msg, tag, counter, min_
     hypothesis.strategies.integers(),  #counter
     hypothesis.strategies.integers(),  #min_tag_len
     hypothesis.strategies.integers())  #skippable
-def autoglome_unsized_keys_test(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
-                   skippable):
+def autoglome_unsized_keys_test(private_bytes, public_bytes, msg, tag, counter,
+                                min_tag_len, skippable):
     """Add hypothesis decorator to _autoglome function"""
     _autoglome(private_bytes, public_bytes, msg, tag, counter, min_tag_len,
                skippable)
