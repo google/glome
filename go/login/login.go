@@ -173,7 +173,7 @@ func (r *URLResponse) EncToken() string {
 	return base64.URLEncoding.EncodeToString(r.Tag(glome.MaxTagSize)) // TODO: passing the tag len as param?
 }
 
-// Client side glome-login handler. Should be constructed under NewClient constructor.
+// Client implements the client-side of the glome-login protocol. Should be constructed under NewClient constructor.
 type Client struct {
 	ServerKey   glome.PublicKey  // server's public key
 	UserKey     glome.PrivateKey // user's private key
@@ -258,8 +258,7 @@ func (c *Client) Response() *URLResponse {
 	return c.response
 }
 
-// Server side glome-login lib handler. Receives the server's private key fetcher function,
-// which returns an error if the key couldn't be calculated.
+// Server implements the server-side of the glome-login protocol.
 type Server struct {
 	KeyFetcher func(uint8) (glome.PrivateKey, error) // helper function to fetch the server's private key
 }
