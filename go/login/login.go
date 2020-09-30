@@ -158,12 +158,9 @@ func NewResponse(serviceKeyID uint8, serviceKey glome.PublicKey, userKey glome.P
 	return &r, nil
 }
 
-// ValidateAuthCode checks if the received tag corresponding to the base64-url encoded message constructed from the Message.
+// ValidateAuthCode checks if the received tag corresponding to the tag calculated under message constructed from the Message.
 // Returns true if the received tag is empty.
 func (r *URLResponse) ValidateAuthCode(tag []byte) bool {
-	if len(tag) == 0 {
-		return true
-	}
 	return r.d.Check(tag, r.Msg.Construct(false), 0)
 }
 
@@ -226,7 +223,7 @@ func (c *Client) constructHandshake() string {
 	return base64.URLEncoding.EncodeToString(handshake[:])
 }
 
-// ValidateAuthCode checks if the received tag corresponding to the base64-url encoded message constructed from the Message.
+// ValidateAuthCode checks if the received tag corresponding to the tag calculated under message constructed from the Message.
 // Returns ErrResponseNotInitialized if the Client.response is not initialized.
 func (c *Client) ValidateAuthCode(tag string) (bool, error) {
 	dTag, err := base64.URLEncoding.DecodeString(completeBase64S(tag))
@@ -306,11 +303,11 @@ func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 	}
 
 	message := strings.TrimPrefix(url, parsed[0])
-	if message == "" { // <message> is empty
-		if response.ValidateAuthCode(response.HandshakeInfo.MessageTagPrefix) != true {
-			return nil, ErrIncorrectTag
+	if len(message) == 0 { // <message> is empty
+		if len(response.HandshakeInfo.MessageTagPrefix) == 0 {
+			return &response, nil
 		}
-		return &response, nil
+		return nil, ErrIncorrectTag
 	}
 	if message[len(message)-1] == '/' { // check last slash
 		parsed, err := parseMsg(strings.TrimSuffix(message, "/"))
@@ -319,6 +316,9 @@ func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 		}
 		response.Msg = *parsed
 
+		if len(response.HandshakeInfo.MessageTagPrefix) == 0 {
+			return &response, nil
+		}
 		if response.ValidateAuthCode(response.HandshakeInfo.MessageTagPrefix) != true {
 			return nil, ErrIncorrectTag
 		}

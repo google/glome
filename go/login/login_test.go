@@ -183,12 +183,6 @@ func TestURLParsedCorrectly(t *testing.T) {
 					fatal(fmt.Sprintf("Expected: %#v, got: %#v.", m.expected, m.got), t, "TestURLParsedCorrectly", i+1)
 				}
 			}
-
-			// Check handshake parsed correctly
-			h := responses[i].HandshakeInfo
-			if responses[i].ValidateAuthCode(h.MessageTagPrefix) != true {
-				fatal("The tags are different.", t, "TestURLParsedCorrectly", i+1)
-			}
 		})
 	}
 }
