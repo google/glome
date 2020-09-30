@@ -132,6 +132,7 @@ func NewResponse(serviceKeyID uint8, serviceKey glome.PublicKey, userKey glome.P
 
 	if serviceKeyID == 0 {
 		// If no key ID was specified, send the first key byte as the ID.
+		// TODO(#60): Fix this up once there is clarify on key prefix usage.
 		prefix = serviceKey[0] & 0x7f
 	} else {
 		prefix = serviceKeyID & 0x7f
