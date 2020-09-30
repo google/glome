@@ -138,8 +138,7 @@ func NewResponse(serviceKeyID uint8, serviceKey glome.PublicKey, userKey glome.P
 	if err != nil {
 		return nil, err
 	}
-	HandshakeInfo := Handshake{prefix, *userPublic, r.Tag(tagLen)}
-	r.HandshakeInfo = HandshakeInfo
+	r.HandshakeInfo = Handshake{prefix, *userPublic, r.Tag(tagLen)}
 
 	return &r, nil
 }
@@ -296,8 +295,7 @@ func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 		return &response, nil
 	}
 	if url[len(url)-1] == '/' { // check last slash
-		url = strings.TrimSuffix(url, "/")
-		hostAndAction := strings.SplitN(url, "/", 2)
+		hostAndAction := strings.TrimSuffix(url, "/")
 
 		msg, err := parseMsg(hostAndAction)
 		if err != nil {
@@ -364,23 +362,25 @@ func parseHandshake(handshake string) (*Handshake, error) {
 
 // parseMsg returns the parsed version of the URL message.
 // The message should satisfy the following format: [<hostid-type>:]<hostid>[/<action>].
-func parseMsg(m []string) (*Message, error) {
+func parseMsg(hostAndAction string) (*Message, error) {
 	var hostIDType, hostID, action string
-	u, err := url.QueryUnescape(m[0])
+
+	split := strings.SplitN(hostAndAction, "/", 2)
+	host, err := url.QueryUnescape(split[0])
 	if err != nil {
 		return nil, err
 	}
 
-	var host = strings.SplitN(u, ":", 2)
-	if len(host) == 2 { // <hostid-type> is present
-		hostIDType = host[0]
-		hostID = host[1]
+	var h = strings.SplitN(host, ":", 2)
+	if len(h) == 2 { // <hostid-type> is present
+		hostIDType = h[0]
+		hostID = h[1]
 	} else {
-		hostID = host[0]
+		hostID = h[0]
 	}
 
-	if len(m) == 2 { // <action> is not empty
-		action = m[1]
+	if len(split) == 2 { // <action> is present
+		action = split[1]
 	}
 
 	return &Message{hostIDType, hostID, action}, nil

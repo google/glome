@@ -159,7 +159,6 @@ func parsedResponses(t *testing.T) []URLResponse {
 			if err != nil {
 				fatal(fmt.Sprintf("Expected: parsed URL, got error: %#v.", err.Error()), t, "parsedResponses", i+1)
 			}
-
 			parsedResponses = append(parsedResponses, *resp)
 		})
 	}
@@ -169,7 +168,6 @@ func parsedResponses(t *testing.T) []URLResponse {
 
 func TestURLParsedCorrectly(t *testing.T) {
 	responses := parsedResponses(t)
-
 	for i, tv := range tvs {
 		t.Run("Test vector "+fmt.Sprint(i+1), func(t *testing.T) {
 			// Check message parsed correctly
@@ -198,7 +196,6 @@ func TestURLParsedCorrectly(t *testing.T) {
 
 func TestServerToken(t *testing.T) {
 	responses := parsedResponses(t)
-
 	for i, tv := range tvs {
 		t.Run("Test vector "+fmt.Sprint(i+1), func(t *testing.T) {
 			if !(strings.HasPrefix(responses[i].EncToken(), tv.token)) {
@@ -218,7 +215,7 @@ func TestURLResponseConstruction(t *testing.T) {
 				fatal(fmt.Sprintf("Error while constructing URL: %s.", err.Error()), t, "TestURLResponseConstruction", i+1)
 			}
 
-			if !(resp == tv.url) {
+			if resp != tv.url {
 				fatal(fmt.Sprintf("The URLs are different: expected %#v, got %#v.", tv.url, resp), t, "TestURLResponseConstruction", i+1)
 			}
 
