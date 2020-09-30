@@ -34,7 +34,7 @@ var (
 	// ErrInvalidURLFormat denotes that the URL has a wrong format.
 	ErrInvalidURLFormat = fmt.Errorf("URL is malformed")
 	// ErrInvalidHandshakeLen denotes that the handshake is too short.
-	ErrInvalidHandshakeLen = fmt.Errorf("handshake length is small: should be at least %d", minHandshakeLen)
+	ErrInvalidHandshakeLen = fmt.Errorf("handshake length is too small: should be at least %d", minHandshakeLen)
 	// ErrVersionNotSupported denotes that the version of glome-login URL format is not supported.
 	ErrVersionNotSupported = fmt.Errorf("version not supported")
 	// ErrInvalidPrefixType denotes that the prefix type is invalid.
