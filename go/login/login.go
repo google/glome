@@ -52,12 +52,10 @@ var (
 )
 
 // Message represents the context required for authorization.
-// It contains HostIDType - type of identity, HostID - identity of the target (e.g. hostname, serial number, etc.),
-// Action - action that is being authorized.
 type Message struct {
-	HostIDType string
-	HostID     string
-	Action     string
+	HostIDType string // type of identity
+	HostID     string // identity of the target (e.g. hostname, serial number, etc.)
+	Action     string // action that is being authorized
 }
 
 // Construct returns a message from a Message according to the format: [<hostid-type>:]<hostid>[/<action>].
@@ -93,22 +91,18 @@ func escape(s string) string {
 }
 
 // Handshake struct represents the context required for constructing the handshake.
-// It contains Prefix - either service key or its id, UserKey - user's public ephemeral key,
-// MessageTagPrefix - tag calculated under Message.
 type Handshake struct {
-	Prefix           byte
-	UserKey          glome.PublicKey
-	MessageTagPrefix []byte
+	Prefix           byte            // either service key id or its last 7 bits of the first byte
+	UserKey          glome.PublicKey // user's public ephemeral key
+	MessageTagPrefix []byte          // prefix of a tag calculated under Message
 }
 
 // URLResponse represents the context required for the construction of the URL.
-// It contains V - URL format version (currently always 1), HandshakeInfo - handshake info,
-// Msg - message info, d - glome.Dialog for the tag managing.
 type URLResponse struct {
-	V             byte
-	HandshakeInfo Handshake
-	Msg           Message
-	d             *glome.Dialog
+	V             byte          // URL format version (currently always 1)
+	HandshakeInfo Handshake     // handshake info including prefix, user's public key and message tag prefix
+	Msg           Message       // message info including host and action
+	d             *glome.Dialog // glome.Dialog for the tag managing
 }
 
 // NewResponse returns a new URLResponse corresponding to the given arguments.
@@ -164,14 +158,14 @@ func (r *URLResponse) EncToken() string {
 
 // Client side glome-login handler. Should be constructed under NewClient constructor.
 type Client struct {
-	ServiceKey   glome.PublicKey
-	UserKey      glome.PrivateKey
-	ServiceKeyID uint8
-	TagLen       uint
-	response     *URLResponse
+	ServerKey   glome.PublicKey  // server's public key
+	UserKey     glome.PrivateKey // user's private key
+	ServerKeyId uint8            // server's key id
+	TagLen      uint             // tag of a length to be sent to server. Should be in [0..glome.MaxTagLength] range.
+	response    *URLResponse     // URl challenge
 }
 
-// NewClient is a Client constructor. Sets Client.ServiceKey, Client.UserKey, Client.ServiceKeyID, Client.TagLen
+// NewClient is a Client constructor. Sets Client.ServerKey, Client.UserKey, Client.ServerKeyId, Client.TagLen
 // to the corresponding values and Client.response to nil.
 func NewClient(sk glome.PublicKey, uk glome.PrivateKey, sID uint8, tagLen uint) *Client {
 	return &Client{sk, uk, sID, tagLen, nil}
@@ -179,7 +173,7 @@ func NewClient(sk glome.PublicKey, uk glome.PrivateKey, sID uint8, tagLen uint) 
 
 // Construct returns a request to the server according to the format: /v<V>/<glome-handshake>[/<message>]/.
 func (c *Client) Construct(V byte, hostIDType string, hostID string, action string) (string, error) {
-	r, err := NewResponse(c.ServiceKeyID, c.ServiceKey, c.UserKey, V, hostIDType, hostID, action, c.TagLen)
+	r, err := NewResponse(c.ServerKeyId, c.ServerKey, c.UserKey, V, hostIDType, hostID, action, c.TagLen)
 	if err != nil {
 		return "", err
 	}
@@ -249,7 +243,7 @@ func (c *Client) Response() *URLResponse {
 // Server side glome-login lib handler. Receives the server's private key fetcher function,
 // which returns an error if the key couldn't be calculated.
 type Server struct {
-	KeyFetcher func(uint8) (glome.PrivateKey, error)
+	KeyFetcher func(uint8) (glome.PrivateKey, error) // helper function to fetch the server's private key
 }
 
 // ParseURLResponse parses the url, checks whether it is formed correctly and validates the client's tag, received from the URL.
@@ -287,27 +281,26 @@ func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 		return nil, err
 	}
 
-	url = strings.TrimPrefix(url, parsed[0])
-	if url == "" { // <message> is empty
+	message := strings.TrimPrefix(url, parsed[0])
+	if message == "" { // <message> is empty
 		if response.ValidateAuthCode(response.HandshakeInfo.MessageTagPrefix) != true {
 			return nil, ErrIncorrectTag
 		}
 		return &response, nil
 	}
-	if url[len(url)-1] == '/' { // check last slash
-		hostAndAction := strings.TrimSuffix(url, "/")
-
-		msg, err := parseMsg(hostAndAction)
+	if message[len(message)-1] == '/' { // check last slash
+		parsed, err := parseMsg(strings.TrimSuffix(message, "/"))
 		if err != nil {
 			return nil, err
 		}
-		response.Msg = *msg
+		response.Msg = *parsed
 
 		if response.ValidateAuthCode(response.HandshakeInfo.MessageTagPrefix) != true {
 			return nil, ErrIncorrectTag
 		}
 		return &response, nil
 	}
+
 	return nil, ErrInvalidURLFormat
 }
 
