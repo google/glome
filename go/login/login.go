@@ -159,7 +159,6 @@ func NewResponse(serviceKeyID uint8, serviceKey glome.PublicKey, userKey glome.P
 }
 
 // ValidateAuthCode checks if the received tag corresponding to the tag calculated under message constructed from the Message.
-// Returns true if the received tag is empty.
 func (r *URLResponse) ValidateAuthCode(tag []byte) bool {
 	return r.d.Check(tag, r.Msg.Construct(false), 0)
 }
