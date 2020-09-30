@@ -26,30 +26,51 @@ import (
 )
 
 const (
-	// Minimal acceptable length of a handshake. 1 byte for the prefix, 32 bytes for the key
+	// Minimal acceptable length of a handshake. 1 byte for the Prefix, 32 bytes for the key
 	minHandshakeLen = 1 + glome.PublicKeySize
-)
-
-var (
-	// ErrInvalidURLFormat denotes that the URL has a wrong format.
-	ErrInvalidURLFormat = fmt.Errorf("URL is malformed")
-	// ErrInvalidHandshakeLen denotes that the handshake is too short.
-	ErrInvalidHandshakeLen = fmt.Errorf("handshake length is too small: should be at least %d", minHandshakeLen)
-	// ErrVersionNotSupported denotes that the version of glome-login URL format is not supported.
-	ErrVersionNotSupported = fmt.Errorf("version not supported")
-	// ErrInvalidPrefixType denotes that the prefix type is invalid.
-	ErrInvalidPrefixType = fmt.Errorf("invalid prefix type")
-	// ErrIncorrectTag denotes that received tag is incorrect.
-	ErrIncorrectTag = fmt.Errorf("invalid tag")
-	// ErrResponseNotInitialized denotes that the response is not initialized.
-	ErrResponseNotInitialized = fmt.Errorf("response is not initialized")
-	// ErrServerKeyNotFound server key not found.
-	ErrServerKeyNotFound = fmt.Errorf("server key not found")
 )
 
 var (
 	validURLPrefix = regexp.MustCompile(`/(?P<v>v[1-9][0-9]*)/(?P<handshake>[\w=-]+)/`)
 )
+
+var (
+	// ErrInvalidHandshakeLen denotes that the handshake is too short.
+	ErrInvalidHandshakeLen = fmt.Errorf("handshake length is too small: should be at least %d", minHandshakeLen)
+	// ErrInvalidPrefixType denotes that the Prefix type is invalid.
+	ErrInvalidPrefixType = fmt.Errorf("invalid prefix type: should be a 0")
+	// ErrIncorrectTag denotes that received tag is incorrect.
+	ErrIncorrectTag = fmt.Errorf("invalid tag")
+	// ErrResponseNotInitialized denotes that the response is not initialized.
+	ErrResponseNotInitialized = fmt.Errorf("response is not initialized")
+)
+
+// ErrInvalidURLFormat denotes that the URL has a wrong format.
+type ErrInvalidURLFormat struct {
+	URL string
+}
+
+// ErrServerKeyNotFound server key not found.
+type ErrServerKeyNotFound struct {
+	Prefix byte
+}
+
+// ErrVersionNotSupported denotes that the V of glome-login URL format is not supported.
+type ErrVersionNotSupported struct {
+	V int
+}
+
+func (err *ErrInvalidURLFormat) Error() string {
+	return fmt.Sprintf("URL %v doesn't satisfy the format %s.", err.URL, validURLPrefix.String())
+}
+
+func (err *ErrServerKeyNotFound) Error() string {
+	return fmt.Sprintf("Server key not found for prefix %d.", err.Prefix)
+}
+
+func (err *ErrVersionNotSupported) Error() string {
+	return fmt.Sprintf("Version not supported: %d.", err.V)
+}
 
 // Message represents the context required for authorization.
 type Message struct {
@@ -94,13 +115,13 @@ func escape(s string) string {
 type Handshake struct {
 	Prefix           byte            // either service key id or its last 7 bits of the first byte
 	UserKey          glome.PublicKey // user's public ephemeral key
-	MessageTagPrefix []byte          // prefix of a tag calculated under Message
+	MessageTagPrefix []byte          // Prefix of a tag calculated under Message
 }
 
 // URLResponse represents the context required for the construction of the URL.
 type URLResponse struct {
-	V             byte          // URL format version (currently always 1)
-	HandshakeInfo Handshake     // handshake info including prefix, user's public key and message tag prefix
+	V             byte          // URL format V (currently always 1)
+	HandshakeInfo Handshake     // handshake info including Prefix, user's public key and message tag Prefix
 	Msg           Message       // message info including host and action
 	d             *glome.Dialog // glome.Dialog for the tag managing
 }
@@ -123,7 +144,7 @@ func NewResponse(serviceKeyID uint8, serviceKey glome.PublicKey, userKey glome.P
 
 	if serviceKeyID == 0 {
 		// If no key ID was specified, send the first key byte as the ID.
-		// TODO(#60): Fix this up once there is clarify on key prefix usage.
+		// TODO(#60): Fix this up once there is clarify on key Prefix usage.
 		prefix = serviceKey[0] & 0x7f
 	} else {
 		prefix = serviceKeyID & 0x7f
@@ -190,7 +211,7 @@ func (c *Client) Construct(V byte, hostIDType string, hostID string, action stri
 
 // constructHandshake returns base64-url encoded handshake. The handshake is constructed following the format:
 //		glome-handshake := base64url(
-//    		<prefix-type>
+//    		<Prefix-type>
 //    		<prefix7>
 //    		<eph-key>
 //    		[<prefixN>]
@@ -206,6 +227,7 @@ func (c *Client) constructHandshake() string {
 }
 
 // ValidateAuthCode checks if the received tag corresponding to the base64-url encoded message constructed from the Message.
+// Returns ErrResponseNotInitialized if the Client.response is not initialized.
 func (c *Client) ValidateAuthCode(tag string) (bool, error) {
 	dTag, err := base64.URLEncoding.DecodeString(completeBase64S(tag))
 	if err != nil {
@@ -247,13 +269,15 @@ type Server struct {
 }
 
 // ParseURLResponse parses the url, checks whether it is formed correctly and validates the client's tag, received from the URL.
+// Returns ErrInvalidURLFormat if the URL is malformed, ErrServerKeyNotFound is there is no key corresponding to prefix,
+// ErrIncorrectTag if the client's tag is invalid.
 func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 	response := URLResponse{}
 
 	names := validURLPrefix.SubexpNames()[1:]        // as "The name for the first sub-expression is names[1].."
 	parsed := validURLPrefix.FindStringSubmatch(url) // save first element (full substring) to be trimmed later in url
 	if parsed == nil {
-		return nil, ErrInvalidURLFormat
+		return nil, &ErrInvalidURLFormat{url}
 	}
 	reqParts := map[string]string{}
 	for i := 0; i < len(names); i++ {
@@ -274,7 +298,7 @@ func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 
 	sPrivKey, err := s.KeyFetcher(handshake.Prefix)
 	if err != nil {
-		return nil, ErrServerKeyNotFound
+		return nil, &ErrServerKeyNotFound{handshake.Prefix}
 	}
 	response.d, err = sPrivKey.TruncatedExchange(&handshake.UserKey, 1)
 	if err != nil {
@@ -301,31 +325,34 @@ func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 		return &response, nil
 	}
 
-	return nil, ErrInvalidURLFormat
+	return nil, &ErrInvalidURLFormat{url}
 }
 
-// parseVersion returns the parsed version of the URL format version. Returns ErrVersionNotSupported error,
-// if the parsed version is not supported.
+// parseVersion returns the parsed version of the URL format version. Returns ErrVersionNotSupported,
+// if the version is not supported.
 func parseVersion(v string) (byte, error) {
-	num, err := strconv.Atoi(v[1:])
+	parsed, err := strconv.Atoi(v[1:])
 	if err != nil {
 		return 0, err
 	}
-	if num != 1 { // current version
-		return 0, ErrVersionNotSupported
+	if parsed != 1 { // current parsed
+		return 0, &ErrVersionNotSupported{parsed}
 	}
 
-	return byte(num), nil
+	return byte(parsed), nil
 }
 
-// parseHandshake returns the parsed version of the URL handshake.
+// parseHandshake returns the parsed V of the URL handshake.
 // The handshake should satisfy the following format:
 //		glome-handshake := base64url(
-//    		<prefix-type>
+//    		<Prefix-type>
 //    		<prefix7>
 //    		<eph-key>
 //    		[<prefixN>]
 //  	).
+// Returns ErrInvalidHandshakeLen if the tag length is less than minHandshakeLen,
+// ErrInvalidPrefixType if prefix-type is different from 0,
+// glome.ErrInvalidTagSize if the tag length is bigger than glome.MaxTagSize.
 func parseHandshake(handshake string) (*Handshake, error) {
 	dHandshake, err := base64.URLEncoding.DecodeString(handshake)
 	if err != nil {
@@ -336,7 +363,7 @@ func parseHandshake(handshake string) (*Handshake, error) {
 	}
 
 	prefix := dHandshake[0]
-	if prefix>>7 != 0 { // check prefix-type
+	if prefix>>7 != 0 { // check Prefix-type
 		return nil, ErrInvalidPrefixType
 	}
 
@@ -353,7 +380,7 @@ func parseHandshake(handshake string) (*Handshake, error) {
 	return &Handshake{prefix, *userKey, msgTagPrefix}, nil
 }
 
-// parseMsg returns the parsed version of the URL message.
+// parseMsg returns the parsed V of the URL message.
 // The message should satisfy the following format: [<hostid-type>:]<hostid>[/<action>].
 func parseMsg(hostAndAction string) (*Message, error) {
 	var hostIDType, hostID, action string
