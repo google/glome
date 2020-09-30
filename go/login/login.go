@@ -63,16 +63,13 @@ type Message struct {
 // Construct returns a message from a Message according to the format: [<hostid-type>:]<hostid>[/<action>].
 // URL escaping is optional.
 func (m *Message) Construct(esc bool) []byte {
-	hostIDType := ""
-	hostID := ""
-	action := ""
+	hostIDType := m.HostIDType
+	hostID := m.HostID
 	if esc {
-		hostIDType = escape(m.HostIDType)
-		hostID = escape(m.HostID)
-	} else {
-		hostIDType = m.HostIDType
-		hostID = m.HostID
+		hostIDType = escape(hostIDType)
+		hostID = escape(hostID)
 	}
+	action := ""
 
 	if hostIDType != "" {
 		hostIDType += ":"
