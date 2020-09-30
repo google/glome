@@ -51,7 +51,7 @@ var (
 	validURLPrefix = regexp.MustCompile(`/(?P<v>v[1-9][0-9]*)/(?P<handshake>[\w=-]+)/`)
 )
 
-// Message struct represents the context required for authorization.
+// Message represents the context required for authorization.
 // It contains HostIDType - type of identity, HostID - identity of the target (e.g. hostname, serial number, etc.),
 // Action - action that is being authorized.
 type Message struct {
