@@ -101,7 +101,7 @@ type Handshake struct {
 	MessageTagPrefix []byte
 }
 
-// URLResponse struct represents the context required for the URL constructing.
+// URLResponse represents the context required for the construction of the URL.
 // It contains V - URL format version (currently always 1), HandshakeInfo - handshake info,
 // Msg - message info, d - glome.Dialog for the tag managing.
 type URLResponse struct {
