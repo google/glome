@@ -244,6 +244,7 @@ func completeBase64S(s string) string {
 	}
 }
 
+// Response is a getter for Client.response.
 func (c *Client) Response() *URLResponse {
 	return c.response
 }
