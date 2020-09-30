@@ -160,12 +160,12 @@ func (r *URLResponse) EncToken() string {
 type Client struct {
 	ServerKey   glome.PublicKey  // server's public key
 	UserKey     glome.PrivateKey // user's private key
-	ServerKeyId uint8            // server's key id
+	ServerKeyID uint8            // server's key id
 	TagLen      uint             // tag of a length to be sent to server. Should be in [0..glome.MaxTagLength] range.
 	response    *URLResponse     // URl challenge
 }
 
-// NewClient is a Client constructor. Sets Client.ServerKey, Client.UserKey, Client.ServerKeyId, Client.TagLen
+// NewClient is a Client constructor. Sets Client.ServerKey, Client.UserKey, Client.ServerKeyID, Client.TagLen
 // to the corresponding values and Client.response to nil.
 func NewClient(sk glome.PublicKey, uk glome.PrivateKey, sID uint8, tagLen uint) *Client {
 	return &Client{sk, uk, sID, tagLen, nil}
@@ -173,7 +173,7 @@ func NewClient(sk glome.PublicKey, uk glome.PrivateKey, sID uint8, tagLen uint) 
 
 // Construct returns a request to the server according to the format: /v<V>/<glome-handshake>[/<message>]/.
 func (c *Client) Construct(V byte, hostIDType string, hostID string, action string) (string, error) {
-	r, err := NewResponse(c.ServerKeyId, c.ServerKey, c.UserKey, V, hostIDType, hostID, action, c.TagLen)
+	r, err := NewResponse(c.ServerKeyID, c.ServerKey, c.UserKey, V, hostIDType, hostID, action, c.TagLen)
 	if err != nil {
 		return "", err
 	}
