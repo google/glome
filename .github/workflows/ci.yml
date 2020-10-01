@@ -97,6 +97,8 @@ jobs:
     runs-on: ubuntu-18.04
     container:
       image: "golang:1.15.1-buster"
+    env:
+      GITHUB_WORKSPACE: /go/src/github.com/google/glome
     steps:
     - uses: actions/checkout@v2
     - name: install dependencies from go get
