@@ -33,7 +33,7 @@ is exchanged.
     reducing the likelihood of human errors (e.g. incomplete URL copy and
     paste).
 *   Server's public key can be identified by:
-    *   7-bit key service key identifier and message tag prefix (of any
+    *   7-bit service key identifier and message tag prefix (of any
         length, including 0).
     *   7-bit service key prefix and message tag prefix (of any length,
         including 0),
