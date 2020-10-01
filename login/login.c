@@ -144,7 +144,7 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                 const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
                 size_t prefix_tag_len, char** url, int* url_len,
                 const char** error_tag) {
-  if (prefix_tag_len >= GLOME_MAX_TAG_LENGTH) {
+  if (prefix_tag_len > GLOME_MAX_TAG_LENGTH) {
     return failure(EXITCODE_PANIC, error_tag, "prefix-tag-too-large");
   }
   // glome-handshake := base64url(
