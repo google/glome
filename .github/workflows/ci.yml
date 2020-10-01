@@ -104,10 +104,8 @@ jobs:
         go get -u golang.org/x/lint/golint
         go get -u golang.org/x/crypto/curve25519
     - name: run gofmt test
-      run: gofmt -d go/glome/*.go
+      run: go fmt ./go/...
     - name: run golint test
-      run: golint go/glome/*.go
+      run: golint -set_exit_status=1 ./go/...
     - name: run unit tests
-      run: |
-        cd go/glome
-        go test
+      run: go test ./go/...
