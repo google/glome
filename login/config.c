@@ -44,12 +44,12 @@ int parse_config_file(login_config_t* config) {
   cfg_t* cfg = cfg_init(opts, CFGF_NONE);
   cfg_set_error_function(cfg, print_config_error);
 
-  int required = config->config_file != NULL;
+  int required = config->config_path != NULL;
   if (!required) {
-    config->config_file = DEFAULT_CONFIG_FILE;
+    config->config_path = DEFAULT_CONFIG_FILE;
   }
 
-  int r = cfg_parse(cfg, config->config_file);
+  int r = cfg_parse(cfg, config->config_path);
   if (required && r == CFG_FILE_ERROR) {
     perror("ERROR: config file could not be read");
     cfg_free(cfg);
