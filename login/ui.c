@@ -108,7 +108,7 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
     long l;
     switch (c) {
       case 'c':
-        config->config_file = optarg;
+        config->config_path = optarg;
         break;
       case 'd':
         errno = 0;
