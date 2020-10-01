@@ -16,6 +16,8 @@ Core libraries:
 
  - [libglome](glome.h) *C*
  - [PyGLOME](python) *Python*
+ - [jGLOME](java) *Java*
+ - [GLOME-Go](go/glome) *Go*
 
 Binaries:
 
