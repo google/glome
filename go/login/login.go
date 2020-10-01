@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	// Minimal acceptable length of a handshake. 1 byte for the Prefix, 32 bytes for the key
+	// Minimal acceptable length of a handshake. 1 byte for the Prefix, 32 bytes for the key.
 	minHandshakeLen = 1 + glome.PublicKeySize
 )
 
@@ -37,7 +37,7 @@ var (
 var (
 	// ErrInvalidHandshakeLen denotes that the handshake is too short.
 	ErrInvalidHandshakeLen = fmt.Errorf("handshake length is too small: should be at least %d", minHandshakeLen)
-	// ErrInvalidPrefixType denotes that the Prefix type is invalid.
+	// ErrInvalidPrefixType denotes that the prefix-type is invalid.
 	ErrInvalidPrefixType = fmt.Errorf("invalid prefix type: should be a 0")
 	// ErrIncorrectTag denotes that received tag is incorrect.
 	ErrIncorrectTag = fmt.Errorf("invalid tag")
@@ -50,7 +50,7 @@ type ErrInvalidURLFormat struct {
 	URL string
 }
 
-// ErrServerKeyNotFound server key not found.
+// ErrServerKeyNotFound denotes that there is no private server key associated with a Prefix.
 type ErrServerKeyNotFound struct {
 	Prefix byte
 }
@@ -178,8 +178,8 @@ type Client struct {
 	ServerKey   glome.PublicKey  // server's public key
 	UserKey     glome.PrivateKey // user's private key
 	ServerKeyID uint8            // server's key id
-	TagLen      uint             // tag of a length to be sent to server. Should be in [0..glome.MaxTagLength] range.
-	response    *URLResponse     // URl challenge
+	TagLen      uint             // length of a tag to be sent to the server. Should be in [0..glome.MaxTagLength] range.
+	response    *URLResponse     // URL challenge
 }
 
 // NewClient is a Client constructor. Sets Client.ServerKey, Client.UserKey, Client.ServerKeyID, Client.TagLen
@@ -207,7 +207,7 @@ func (c *Client) Construct(V byte, hostIDType string, hostID string, action stri
 
 // constructHandshake returns base64-url encoded handshake. The handshake is constructed following the format:
 //		glome-handshake := base64url(
-//    		<Prefix-type>
+//    		<prefix-type>
 //    		<prefix7>
 //    		<eph-key>
 //    		[<prefixN>]
@@ -343,7 +343,7 @@ func parseVersion(v string) (byte, error) {
 // parseHandshake returns the parsed V of the URL handshake.
 // The handshake should satisfy the following format:
 //		glome-handshake := base64url(
-//    		<Prefix-type>
+//    		<prefix-type>
 //    		<prefix7>
 //    		<eph-key>
 //    		[<prefixN>]

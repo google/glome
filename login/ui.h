@@ -52,7 +52,7 @@ typedef struct login_config {
   char* username;
 
   // Configuration file to parse.
-  const char* config_file;
+  const char* config_path;
 
   // Login binary for fallback authentication.
   const char* login_path;
