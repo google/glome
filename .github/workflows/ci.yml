@@ -97,17 +97,18 @@ jobs:
     runs-on: ubuntu-18.04
     container:
       image: "golang:1.15.1-buster"
-    env:
-      GITHUB_WORKSPACE: /go/src/github.com/google/glome
+    defaults:
+      run:
+        working-directory: go
     steps:
     - uses: actions/checkout@v2
-    - name: install dependencies from go get
+    - name: verify format
+      run: |
+        gofmt -d .
+        test "$(gofmt -d .)" = ""
+    - name: run golint
       run: |
         go get -u golang.org/x/lint/golint
-        go get -u golang.org/x/crypto/curve25519
-    - name: run gofmt test
-      run: go fmt ./go/...
-    - name: run golint test
-      run: golint -set_exit_status=1 ./go/...
+        golint -set_exit_status=1 ./...
     - name: run unit tests
-      run: go test ./go/...
+      run: go test ./...
