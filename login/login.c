@@ -313,8 +313,7 @@ int login_run(login_config_t* config, const char** error_tag) {
   fflush(NULL);
 
   if (config->input_timeout_sec) {
-    struct sigaction action;
-    action.sa_handler = &timeout_handler;
+    struct sigaction action = {.sa_handler = &timeout_handler};
     if (sigaction(SIGALRM, &action, NULL) < 0) {
       perror("error while setting up the handler");
       // Continue nonetheless as the handler is not critical.
