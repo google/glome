@@ -41,16 +41,6 @@ func (e ErrDuplicatedKeyIndex) Error() string {
 	return fmt.Sprintf("key index already in use, found: %v", e.Index)
 }
 
-// ErrKeyIndexNotFound denotes that an index was not found, so no key can be
-// returned from it.
-type ErrKeyIndexNotFound struct {
-	Index uint8
-}
-
-func (e ErrKeyIndexNotFound) Error() string {
-	return fmt.Sprintf("key index %v not found", e.Index)
-}
-
 // A PrivateKey represent a Private key for the login server. It is a pair composed of a private key
 // and its pairing index.
 type PrivateKey struct {
@@ -137,20 +127,20 @@ func (k *KeyManager) ServiceKeys() []PublicKey {
 }
 
 // Return a function that implements key fetching. The function
-// returns ErrInvalidKeyIndex if index is not in {0,...,127}, and ErrIndexNotFound
+// returns ErrInvalidKeyIndex if index is not in {0,...,127}, and nil
 // if the provided index does not match any key.
-func (k *KeyManager) keyFetcher() func(uint8) (glome.PrivateKey, error) {
-	return func(index uint8) (glome.PrivateKey, error) {
+func (k *KeyManager) keyFetcher() func(uint8) (*glome.PrivateKey, error) {
+	return func(index uint8) (*glome.PrivateKey, error) {
 		if index > 127 {
-			return glome.PrivateKey{}, ErrInvalidKeyIndex{Index: index}
+			return nil, ErrInvalidKeyIndex{Index: index}
 		}
 
 		key, found := k.Read(index)
 		if !found {
-			return glome.PrivateKey{}, ErrKeyIndexNotFound{Index: index}
+			return nil, nil
 		}
 
-		return key, nil
+		return &key, nil
 	}
 }
 

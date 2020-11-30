@@ -140,8 +140,8 @@ func clientsAndServers(t *testing.T, tvs []testVector) ([]Client, []Server) {
 		clients = append(clients, *NewClient(keyPairs[tv][1].pub, keyPairs[tv][0].priv, serviceKeyIDs[tv], clientTagsLen[tv]))
 		sPrivKey := keyPairs[tv][1].priv
 		servers = append(servers,
-			Server{func(u uint8) (glome.PrivateKey, error) {
-				return sPrivKey, nil
+			Server{func(u uint8) (*glome.PrivateKey, error) {
+				return &sPrivKey, nil
 			}})
 	}
 	return clients, servers

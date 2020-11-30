@@ -260,7 +260,11 @@ func (c *Client) Response() *URLResponse {
 
 // Server implements the server-side of the glome-login protocol.
 type Server struct {
-	KeyFetcher func(uint8) (glome.PrivateKey, error) // helper function to fetch the server's private key
+	// Fetch the server's private key given a version ID. Caller is responsible
+	// for not modifying the returned private key. If the key is authoritatively
+	// found to not exist for a given version it is expected that (nil, nil) is
+	// returned.
+	KeyFetcher func(uint8) (*glome.PrivateKey, error)
 }
 
 // ParseURLResponse parses the url, checks whether it is formed correctly and validates the client's tag, received from the URL.
@@ -293,6 +297,9 @@ func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 
 	sPrivKey, err := s.KeyFetcher(handshake.Prefix)
 	if err != nil {
+		return nil, err
+	}
+	if sPrivKey == nil {
 		return nil, &ErrServerKeyNotFound{handshake.Prefix}
 	}
 	response.d, err = sPrivKey.TruncatedExchange(&handshake.UserKey, 1)
