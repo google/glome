@@ -217,7 +217,7 @@ int login_run(login_config_t* config, const char** error_tag) {
         config->auth_delay_sec);
   }
   if (config->options & SYSLOG) {
-    openlog("otac-login", LOG_PID | LOG_CONS, LOG_AUTH);
+    openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
   }
 
   // Reboot the machine if requested before checking lockdown mode.
