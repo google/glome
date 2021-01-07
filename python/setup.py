@@ -7,7 +7,7 @@ setuptools.setup(
     name="pyglome",
     version="0.0.2",
     author="Google LLC",
-    description="A Python implementation of GLOME protocol",
+    description="A Python implementation of the GLOME protocol",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/google/glome",
