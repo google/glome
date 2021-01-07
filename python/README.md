@@ -53,7 +53,7 @@ Such a key can be easily read from a bytes object as follows:
 ```python
 from cryptography.hazmat.primitives.asymmetric import x25519
 my_private_key = x25519.X25519PrivateKey.from_private_bytes(private_key_bytes)
-my_public_key = x25519.X25519PublicKey.from_private_bytes(public_key_bytes)
+my_public_key = x25519.X25519PublicKey.from_public_bytes(public_key_bytes)
 ```
 
 We provide a key generation function `generate_keys` that uses these methods to
