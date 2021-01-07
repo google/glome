@@ -35,7 +35,6 @@
 #define DEFAULT_AUTH_DELAY 1
 #define DEFAULT_INPUT_TIMEOUT 180
 #define DEFAULT_USERNAME "root"
-#define DEFAULT_REBOOT_USER "reboot"
 
 // Options
 #define SKIP_LOCKDOWN (1 << 1)

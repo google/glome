@@ -70,9 +70,7 @@ static const char flags_help[] =
 
     "\n -u URL    use given URL prefix"
 
-    "\n -r USER   reboot the machine when user logs in as USER "
-    "(default: " DEFAULT_REBOOT_USER
-    ")"
+    "\n -r USER   reboot the machine when USER is entered as username"
 
     "\n -s        suppress syslog logging (default: false)"
 
@@ -92,7 +90,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
   memset(config, 0, sizeof(login_config_t));
 
   // Setting defaults.
-  config->reboot_user = DEFAULT_REBOOT_USER;
   config->login_path = DEFAULT_LOGIN_PATH;
   config->lockdown_path = NULL;
   config->url_prefix = NULL;
@@ -209,7 +206,8 @@ int postprocess_config(login_config_t* config) {
     return -1;
   }
 
-  if (strcmp(config->username, config->reboot_user) == 0) {
+  if (config->reboot_user != NULL && config->reboot_user[0] != '\0' &&
+      strcmp(config->username, config->reboot_user) == 0) {
     config->options |= REBOOT;
   }
   return 0;
