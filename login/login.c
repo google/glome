@@ -15,7 +15,6 @@
 #include "login.h"
 
 #include <assert.h>
-#include <bits/local_lim.h>
 #include <glib.h>
 #include <glome.h>
 #include <netdb.h>

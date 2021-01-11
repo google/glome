@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <errno.h>
-#include <error.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <limits.h>
