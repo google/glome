@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Copyright 2020 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,39 +15,43 @@
 
 set -eu
 
-binary="$(realpath ${1?})"
+binary="$(dirname "$1")/$(basename "$1")"
 iterations="${2:-0}"
 
-if [[ ! -x "$binary" ]]; then
+if ! test -x "$binary"; then
   echo "ERROR: $binary is not an executable"
   exit 1
 fi
 
-if (( iterations < 0 || iterations > 255 )); then
+if [ "$iterations" -lt 0 ] || [ "$iterations" -gt 255 ]; then
   echo "ERROR: the number of iterations must be within 0..255 (was: $iterations)"
   exit 2
 fi
 
-errors=0
-t=$(mktemp -d glometest.XXX)
-trap "rm -rf -- '${t?}'" EXIT
+t=$(mktemp -d)
+cleanup() {
+  rm -rf -- "${t?}"
+}
+trap cleanup EXIT
 
 for side in 0 1; do
         "$binary" genkey | tee "${t}/${side}" | "$binary" pubkey >"${t}/${side}.pub"
 done
 
+errors=0
 for counter in $(seq 0 "$iterations"); do
-  msg="$RANDOM"
+  msg="$(head -c 2 /dev/urandom | od -t u2 -A n)"
   for side in 0 1; do
-    peer=$((1 - "$side"))
+    peer=$((1 - side))
     tag=$(printf %s "$msg" | "$binary" tag --key "${t}/${side}" --peer "${t}/${peer}.pub" --counter "$counter")
     for len in $(seq 2 2 64); do
-      if ! printf %s "$msg" | "$binary" verify -k "${t}/${peer}" -p "${t}/${side}.pub" -c "$counter" -t "${tag:0:$len}"; then
-        let errors++
+      shorttag=$(printf %s "$tag" | head -c "$len")
+      if ! printf %s "$msg" | "$binary" verify -k "${t}/${peer}" -p "${t}/${side}.pub" -c "$counter" -t "${shorttag}"; then
+        errors=$((errors + 1))
         echo "FAIL: side=${side} peer=${peer} msg=${msg} counter=${counter}"
       fi
-      if printf %s "wrong-$msg" | "$binary" verify -k "${t}/${peer}" -p "${t}/${side}.pub" -c "$counter" -t "${tag:0:$len}"; then
-        let errors++
+      if printf %s "wrong-$msg" | "$binary" verify -k "${t}/${peer}" -p "${t}/${side}.pub" -c "$counter" -t "${shorttag}"; then
+        errors=$((errors + 1))
         echo "FAIL: incorrectly verified! side=${side} peer=${peer} msg=${msg} counter=${counter}"
       fi
     done
