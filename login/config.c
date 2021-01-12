@@ -63,7 +63,8 @@ int parse_config_file(login_config_t* config) {
 
   cfg_t* cfg_service = cfg_getsec(cfg, "service");
   if (cfg_service != NULL) {
-    if (service_key != NULL) {
+    if (service_key != NULL &&
+        is_zeroed(config->service_key, sizeof config->service_key)) {
       if (decode_hex(config->service_key, sizeof config->service_key,
                      service_key)) {
         errorf("ERROR: Failed to hex decode service key\n");
@@ -77,10 +78,10 @@ int parse_config_file(login_config_t* config) {
       cfg_free(cfg);
       return -4;
     }
-    if (service_key_version > 0) {
+    if (service_key_version > 0 && config->service_key_id == 0) {
       config->service_key_id = service_key_version;
     }
-    if (url_prefix != NULL) {
+    if (url_prefix != NULL && config->url_prefix == NULL) {
       config->url_prefix = strdup(url_prefix);
     }
   }

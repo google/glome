@@ -19,6 +19,7 @@
 #include <glib.h>
 #include <glome.h>
 #include <netdb.h>
+#include <openssl/crypto.h>
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -36,19 +37,6 @@
 #include "ui.h"
 
 #define PROMPT "> "
-
-// How many bytes of authorization code do we require.
-// Each byte has 6-bits of entropy due to Base64 encoding.
-//
-// For an auth code consisting of 48 bits of entropy with one second delays
-// between attempts, the probability of sustaining a brute-force attack lasting
-// a year is ~99.9999888%.
-//
-// This can be calculated using: (1-2**(-N))**(365*24*60*60/delay)
-// where N is the number of bits of token’s entropy and delay is in seconds.
-//
-// We increase this a bit more and choose 60-bits of entropy.
-#define MIN_ENCODED_AUTHCODE_LEN 10
 
 #define DMI_UUID_PATH "/sys/class/dmi/id/product_uuid"
 #define DMI_UUID_SIZE 36
@@ -79,14 +67,14 @@ static int get_hostname(char* buf, size_t buflen) {
   return 0;
 }
 
-static int failure(int code, const char** error_tag, const char* message) {
+int failure(int code, const char** error_tag, const char* message) {
   if (error_tag != NULL && *error_tag == NULL) {
     *error_tag = message;
   }
   return code;
 }
 
-static int get_machine_id(char* buf, size_t buflen, const char** error_tag) {
+int get_machine_id(char* buf, size_t buflen, const char** error_tag) {
   if (get_hostname(buf, buflen) == 0) {
     return 0;
   }
@@ -372,8 +360,7 @@ int login_run(login_config_t* config, const char** error_tag) {
     return EXITCODE_INTERRUPTED;
   }
 
-  // We can use insecure strncmp() because it's a *one-time* code.
-  if (strncmp(input, authcode_encoded, bytes_read) != 0) {
+  if (CRYPTO_memcmp(input, authcode_encoded, bytes_read) != 0) {
     if (config->options & SYSLOG) {
       syslog(LOG_WARNING, "authcode rejected (%s)", config->username);
     }

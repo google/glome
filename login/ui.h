@@ -48,7 +48,7 @@ typedef struct login_config {
   uint8_t options;
 
   // Username to log in as.
-  char* username;
+  const char* username;
 
   // Configuration file to parse.
   const char* config_path;
@@ -82,7 +82,7 @@ typedef struct login_config {
   uint8_t secret_key[PRIVATE_KEY_LENGTH];
 
   // Explicitly set host-id to use in the login request.
-  char* host_id;
+  const char* host_id;
 } login_config_t;
 
 // decode_hex converts a hex-encoded string into the equivalent bytes.

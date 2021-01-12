@@ -31,6 +31,19 @@
 #define EXITCODE_TIMEOUT 9
 #define EXITCODE_PANIC 42
 
+// How many bytes of authorization code do we require.
+// Each byte has 6-bits of entropy due to Base64 encoding.
+//
+// For an auth code consisting of 48 bits of entropy with one second delays
+// between attempts, the probability of sustaining a brute-force attack lasting
+// a year is ~99.9999888%.
+//
+// This can be calculated using: (1-2**(-N))**(365*24*60*60/delay)
+// where N is the number of bits of token’s entropy and delay is in seconds.
+//
+// We increase this a bit more and choose 60-bits of entropy.
+#define MIN_ENCODED_AUTHCODE_LEN 10
+
 // login_run executes the main login logic challenging the user for an
 // authenticate code unless fallback authentication has been requested.
 //
@@ -58,5 +71,12 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                 const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
                 size_t prefix_tag_len, char** url, int* url_len,
                 const char** error_tag);
+
+// Set the error_tag to the given error token and return the error code.
+int failure(int code, const char** error_tag, const char* message);
+
+// Store the identifier of the current machine in the buf array.
+// On error, the error_tag is set to an error token which should NOT be freed.
+int get_machine_id(char* buf, size_t buflen, const char** error_tag);
 
 #endif  // LOGIN_H_
