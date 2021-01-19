@@ -19,7 +19,7 @@ install_data(
   rename : 'config',
   install_dir : join_paths(get_option('sysconfdir'), 'glome'))
 
-login_lib = shared_library(
+login_lib = static_library(
     'glome-login',
     [
         'base64.h',
@@ -37,7 +37,7 @@ login_lib = shared_library(
     dependencies : [openssl_dep, glib_dep, confuse_dep],
     link_with : glome_lib,
     include_directories : glome_incdir,
-    install : true, soversion : '0')
+    install : false)
 
 pkg.generate(login_lib,
   description : 'glome-login, an authentication system built upon GLOME')
