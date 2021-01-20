@@ -122,3 +122,12 @@ jobs:
         golint -set_exit_status=1 ./...
     - name: run unit tests
       run: go test ./...
+
+  shell_presubmit:
+    runs-on: ubuntu-18.04
+    container:
+      image: "koalaman/shellcheck-alpine:v0.7.1"
+    steps:
+    - uses: actions/checkout@v2
+    - name: test POSIX conformance and lint
+      run: find . -name "*.sh" | xargs shellcheck --shell=sh
