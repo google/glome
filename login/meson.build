@@ -23,6 +23,8 @@ login_lib = shared_library(
     'glome-login',
     [
         'base64.h',
+        'config.c',
+        'config.h',
         'crypto.c',
         'crypto.h',
         'lockdown.c',
@@ -32,7 +34,7 @@ login_lib = shared_library(
         'ui.c',
         'ui.h',
     ],
-    dependencies : [openssl_dep, glib_dep],
+    dependencies : [openssl_dep, glib_dep, confuse_dep],
     link_with : glome_lib,
     include_directories : glome_incdir,
     install : true, soversion : '0')
@@ -44,14 +46,22 @@ glome_login = executable(
     'glome-login',
     [
         'main.c',
-        'config.c',
-        'config.h',
     ],
-    dependencies : confuse_dep,
     link_with : login_lib,
     include_directories : glome_incdir,
     install : true,
     install_dir : get_option('sbindir'))
+
+cc = meson.get_compiler('c')
+libpam = cc.find_library('pam')
+pam_glome = shared_library('pam_glome',
+    'pam.c',
+    dependencies : [libpam, openssl_dep],
+    link_with : [glome_lib, login_lib],
+    include_directories : glome_incdir,
+    name_prefix : '',
+    install : true,
+    install_dir : join_paths(get_option('libdir'), 'security'))
 
 # TODO: Make tests compilation based on get_option('tests')
 login_test = executable(

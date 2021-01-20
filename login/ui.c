@@ -63,8 +63,8 @@ static const char flags_help[] =
     "\n -i PATH   if set, the PATH must exist and contain '0\\n' (0x30 0x0a)"
     "\n           for the login to be permitted "
 
-    "\n -k KEY    use KEY as the hex-encoded service key (defaults to the "
-    "embedded key)"
+    "\n -k KEY    use hex-encoded KEY as the service key (defaults to key "
+    "from configuration file)"
 
     "\n -l PATH   use PATH instead of " DEFAULT_LOGIN_PATH
 
