@@ -40,7 +40,7 @@ done
 
 errors=0
 for counter in $(seq 0 "$iterations"); do
-  msg="$(head -c 2 /dev/urandom | od -t u2 -A n)"
+  msg="Hello, world!"
   for side in 0 1; do
     peer=$((1 - side))
     tag=$(printf %s "$msg" | "$binary" tag --key "${t}/${side}" --peer "${t}/${peer}.pub" --counter "$counter")
