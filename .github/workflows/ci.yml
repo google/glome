@@ -12,19 +12,28 @@ jobs:
   # See https://github.com/actions/virtual-environments#available-environments
   pr_presubmit:
     runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        container:
+        - "python:3.5-buster"
+        - "alpine:3.12"
     container:
-      image: "python:3.5-buster"
+      image: ${{ matrix.container }}
 
     steps:
     - uses: actions/checkout@v2
-    - name: install dependencies
+    - name: install Debian dependencies
+      if: ${{ matrix.container == 'python:3.5-buster' }}
       run: ./kokoro/rodete/fetch_dependencies.sh
+    - name: install Alpine dependencies
+      if: ${{ matrix.container == 'alpine:3.12' }}
+      run: ./kokoro/alpine/fetch_dependencies.sh
     - name: setup build directory
       run: meson build
     - name: build
       run: ninja -C build
     - name: test
-      run: meson test -C build
+      run: meson test --print-errorlogs -C build
     - name: install
       run: |
         DESTDIR=out meson install -C build
@@ -34,6 +43,7 @@ jobs:
         test -f build/out/usr/local/etc/glome/config
         test -f build/out/usr/local/include/glome.h
         # Dereference the library and check that it points to a valid file.
+        test -f build/out/usr/local/lib/libglome.so || \
         test -f build/out/usr/local/lib/x86_64-linux-gnu/libglome.so
 
   pr_code_format:
@@ -112,3 +122,12 @@ jobs:
         golint -set_exit_status=1 ./...
     - name: run unit tests
       run: go test ./...
+
+  shell_presubmit:
+    runs-on: ubuntu-18.04
+    container:
+      image: "koalaman/shellcheck-alpine:v0.7.1"
+    steps:
+    - uses: actions/checkout@v2
+    - name: test POSIX conformance and lint
+      run: find . -name "*.sh" | xargs shellcheck --shell=sh
