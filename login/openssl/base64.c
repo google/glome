@@ -26,7 +26,7 @@ size_t base64url_encode(const uint8_t* src, size_t src_len, uint8_t* dst,
   size_t len = ENCODED_BUFSIZE(src_len);
   // The ENCODED_BUFSIZE macro has not been tested for operation close
   // to the overflow point, but up to SIZE_MAX/2 it behaves fine.
-  if (src_len >= SIZE_MAX/2) {
+  if (src_len >= SIZE_MAX / 2) {
     return 0;
   }
   if (len > dst_len) {
