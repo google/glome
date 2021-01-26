@@ -50,6 +50,11 @@ for counter in $(seq 0 "$iterations"); do
         errors=$((errors + 1))
         echo "FAIL: side=${side} peer=${peer} msg=${msg} counter=${counter}"
       fi
+      # Only test an invalid message when the tag length is long enough to make
+      # the collision chance negligible. See login.h for a calculation.
+      if [ "$len" -lt 16 ]; then
+        continue
+      fi
       if printf %s "wrong-$msg" | "$binary" verify -k "${t}/${peer}" -p "${t}/${side}.pub" -c "$counter" -t "${shorttag}"; then
         errors=$((errors + 1))
         echo "FAIL: incorrectly verified! side=${side} peer=${peer} msg=${msg} counter=${counter}"
