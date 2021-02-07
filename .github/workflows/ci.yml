@@ -45,6 +45,9 @@ jobs:
         # Dereference the library and check that it points to a valid file.
         test -f build/out/usr/local/lib/libglome.so || \
         test -f build/out/usr/local/lib/x86_64-linux-gnu/libglome.so
+        test -f build/out/usr/local/lib/security/pam_glome.so || \
+        test -f build/out/usr/local/lib/x86_64-linux-gnu/security/pam_glome.so
+
 
   pr_code_format:
     runs-on: ubuntu-18.04
