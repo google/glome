@@ -43,10 +43,7 @@ pkg.generate(login_lib,
   description : 'glome-login, an authentication system built upon GLOME')
 
 glome_login = executable(
-    'glome-login',
-    [
-        'main.c',
-    ],
+    'glome-login', 'main.c',
     link_with : login_lib,
     include_directories : glome_incdir,
     install : true,
@@ -54,8 +51,8 @@ glome_login = executable(
 
 cc = meson.get_compiler('c')
 libpam = cc.find_library('pam')
-pam_glome = shared_library('pam_glome',
-    'pam.c',
+pam_glome = shared_library(
+    'pam_glome', 'pam.c',
     dependencies : [libpam, openssl_dep],
     link_with : [glome_lib, login_lib],
     include_directories : glome_incdir,
@@ -78,3 +75,18 @@ crypto_test = executable(
     include_directories : glome_incdir)
 test('crypto test', crypto_test)
 
+libpamtest = dependency('libpamtest', required : false)
+if libpamtest.found()
+  pam_test = executable(
+      'pam_test', 'pam_test.c',
+      dependencies : [libpamtest])
+  custom_target('pam_service',
+      build_by_default : true,
+      output : [ 'pam_service' ],
+      command : [ 'mkdir', '@OUTPUT@' ])
+  test('pam test', pam_test,
+      env: [ 'LD_PRELOAD=libpam_wrapper.so',
+             'PAM_WRAPPER=1',
+             'PAM_WRAPPER_SERVICE_DIR=' + join_paths(meson.build_root(), 'login', 'pam_service'),
+             'PAM_GLOME=' + join_paths(meson.build_root(), 'login', 'pam_glome.so') ])
+endif
