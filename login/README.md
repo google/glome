@@ -33,6 +33,17 @@ assume lockdown is in effect as long as it cannot positively confirm
 the expected contents of the lockdown file or the lockdown file does
 not exist.
 
+## Rebooting
+
+Reboot mode allows you to reboot the machine by only entering a predefined
+username. Machine reboot is initiated immediately by sending SIGINT to the init
+(PID 1) process. GLOME login protocol is not used for this username, so reboot
+mode should only be enabled on consoles with restricted access such as serial
+console.
+
+Reboot mode is disabled by default and can be enabled by passing `-r` with a
+desired username.
+
 ## Installation
 
 The installation is dependent on what system you are running.
