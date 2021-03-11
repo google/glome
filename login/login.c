@@ -32,7 +32,6 @@
 
 #include "base64.h"
 #include "crypto.h"
-#include "lockdown.h"
 #include "ui.h"
 
 #define PROMPT "> "
@@ -207,7 +206,6 @@ int login_run(login_config_t* config, const char** error_tag) {
     openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
   }
 
-  // Reboot the machine if requested before checking lockdown mode.
   if (config->options & REBOOT) {
     if (config->options & SYSLOG) {
       syslog(LOG_INFO, "requested reboot");
@@ -222,20 +220,6 @@ int login_run(login_config_t* config, const char** error_tag) {
     // Anyone with serial console access is likely authorized to powercycle the
     // machine, so we don't have to handle the case when init is uncooperative.
     return EXITCODE_REBOOT;
-  }
-
-  if ((config->options & SKIP_LOCKDOWN) == 0) {
-    int lockdown = check_lockdown(config->lockdown_path);
-    switch (lockdown) {
-      case LOCKDOWN_DISABLED:
-        break;
-      case LOCKDOWN_ENABLED:
-        syslog(LOG_INFO, "Serial console login attempted but is disabled");
-        return failure(EXITCODE_LOCKDOWN, error_tag, "lockdown-enabled");
-      default:
-        return failure(EXITCODE_LOCKDOWN_ERROR, error_tag,
-                       "unknown-lockdown-state");
-    }
   }
 
   if (is_zeroed(config->service_key, sizeof config->service_key)) {

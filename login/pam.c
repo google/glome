@@ -24,7 +24,6 @@
 
 #include "base64.h"
 #include "config.h"
-#include "lockdown.h"
 #include "login.h"
 #include "ui.h"
 

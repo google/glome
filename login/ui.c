@@ -60,9 +60,6 @@ static const char flags_help[] =
 
     "\n -d N      sleep N seconds before the auth code check (default: %d)"
 
-    "\n -i PATH   if set, the PATH must exist and contain '0\\n' (0x30 0x0a)"
-    "\n           for the login to be permitted "
-
     "\n -k KEY    use hex-encoded KEY as the service key (defaults to key "
     "from configuration file)"
 
@@ -83,7 +80,6 @@ static const char flags_help[] =
     "\n -I        print all the secrets (INSECURE!)"
     "\n -K KEY    use KEY as the hex-encoded ephemeral secret key (INSECURE!)"
     "\n -M NAME   use NAME as the host-id"
-    "\n -P        allow access if running in lockdown mode (INSECURE!)"
     "\n";
 
 int parse_args(login_config_t* config, int argc, char* argv[]) {
@@ -91,7 +87,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
 
   // Setting defaults.
   config->login_path = DEFAULT_LOGIN_PATH;
-  config->lockdown_path = NULL;
   config->url_prefix = NULL;
   config->auth_delay_sec = DEFAULT_AUTH_DELAY;
   config->input_timeout_sec = DEFAULT_INPUT_TIMEOUT;
@@ -100,7 +95,7 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
   int errors = 0;
 
   int c;
-  while ((c = getopt(argc, argv, "hc:d:i:k:l:r:st:u:vIK:M:P")) != -1) {
+  while ((c = getopt(argc, argv, "hc:d:k:l:r:st:u:vIK:M:")) != -1) {
     char* endptr;
     long l;
     switch (c) {
@@ -119,9 +114,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
           errorf("ERROR: invalid value for -d: '%s'\n", optarg);
         }
         config->auth_delay_sec = (unsigned int)l;
-        break;
-      case 'i':
-        config->lockdown_path = optarg;
         break;
       case 'k':
         if (decode_hex(config->service_key, sizeof config->service_key,
@@ -168,9 +160,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
         break;
       case 'M':
         config->host_id = optarg;
-        break;
-      case 'P':
-        config->options |= SKIP_LOCKDOWN;
         break;
       case '?':
       case 'h':

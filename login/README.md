@@ -9,41 +9,6 @@ replacement of login(1).
  1. Create a configuration file, see [example.cfg](example.cfg).
  1. Try it out by running `glome-login -c glome.cfg -- root`
 
-## Lockdown
-
-Lockdown mode allows you to restrict logins on machines.
-It is similar to nologin(5), except that it applies to all users
-that are trying to lock in.
-
-Example usage of lockdown is that you can allow logins
-only on broken machines, e.g. by having some sort of health checker
-output the expected token in the lockdown file. Another example
-is that you may want to only allow access until the machine has
-been handed off to production, at which point you can flip the
-contents of the lockdown file.
-
-If lockdown is enabled by passing `-i` and the referenced lockdown file exists,
-a login will only be initiated if the lockdown file contains exactly the correct
-byte sequence expected for a disabled lockdown.
-
-By default the expected file contents is `0\n`.
-The expected lockdown file contents in case of lockdown is `1\n` and
-any other values will throw an error. glome-login will
-assume lockdown is in effect as long as it cannot positively confirm
-the expected contents of the lockdown file or the lockdown file does
-not exist.
-
-## Rebooting
-
-Reboot mode allows you to reboot the machine by only entering a predefined
-username. Machine reboot is initiated immediately by sending SIGINT to the init
-(PID 1) process. GLOME login protocol is not used for this username, so reboot
-mode should only be enabled on consoles with restricted access such as serial
-console.
-
-Reboot mode is disabled by default and can be enabled by passing `-r` with a
-desired username.
-
 ## Installation
 
 The installation is dependent on what system you are running.
