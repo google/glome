@@ -67,8 +67,6 @@ static const char flags_help[] =
 
     "\n -u URL    use given URL prefix"
 
-    "\n -r USER   reboot the machine when USER is entered as username"
-
     "\n -s        suppress syslog logging (default: false)"
 
     "\n -t N      abort if the authcode has not been provided within N seconds"
@@ -95,7 +93,7 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
   int errors = 0;
 
   int c;
-  while ((c = getopt(argc, argv, "hc:d:k:l:r:st:u:vIK:M:")) != -1) {
+  while ((c = getopt(argc, argv, "hc:d:k:l:st:u:vIK:M:")) != -1) {
     char* endptr;
     long l;
     switch (c) {
@@ -123,9 +121,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
         break;
       case 'l':
         config->login_path = optarg;
-        break;
-      case 'r':
-        config->reboot_user = optarg;
         break;
       case 's':
         config->options &= ~SYSLOG;
@@ -193,11 +188,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
 int postprocess_config(login_config_t* config) {
   if (strlen(config->username) > USERNAME_MAX) {
     return -1;
-  }
-
-  if (config->reboot_user != NULL && config->reboot_user[0] != '\0' &&
-      strcmp(config->username, config->reboot_user) == 0) {
-    config->options |= REBOOT;
   }
   return 0;
 }

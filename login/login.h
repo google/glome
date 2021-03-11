@@ -21,7 +21,7 @@
 
 // All exit codes from login_run/main
 #define EXITCODE_USAGE 1
-#define EXITCODE_REBOOT 2
+// obsolete: EXITCODE_REBOOT 2
 // obsolete: EXITCODE_LOCKDOWN 3
 #define EXITCODE_IO_ERROR 4
 #define EXITCODE_INVALID_AUTHCODE 5

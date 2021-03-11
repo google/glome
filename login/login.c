@@ -206,22 +206,6 @@ int login_run(login_config_t* config, const char** error_tag) {
     openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
   }
 
-  if (config->options & REBOOT) {
-    if (config->options & SYSLOG) {
-      syslog(LOG_INFO, "requested reboot");
-    }
-    puts("rebooting machine...");
-    fflush(NULL);
-    // reboot the system by sending SIGINT to init (per init(8) manpage)
-    if (kill(1, SIGINT) != 0) {
-      perror("ERROR while sending SIGINT to init");
-      return failure(EXITCODE_PANIC, error_tag, "sigint-to-init");
-    }
-    // Anyone with serial console access is likely authorized to powercycle the
-    // machine, so we don't have to handle the case when init is uncooperative.
-    return EXITCODE_REBOOT;
-  }
-
   if (is_zeroed(config->service_key, sizeof config->service_key)) {
     return failure(EXITCODE_PANIC, error_tag, "no-service-key");
   }
