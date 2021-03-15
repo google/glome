@@ -230,6 +230,7 @@ int login_run(login_config_t* config, const char** error_tag) {
       case LOCKDOWN_DISABLED:
         break;
       case LOCKDOWN_ENABLED:
+        syslog(LOG_INFO, "Serial console login attempted but is disabled");
         return failure(EXITCODE_LOCKDOWN, error_tag, "lockdown-enabled");
       default:
         return failure(EXITCODE_LOCKDOWN_ERROR, error_tag,
