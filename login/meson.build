@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-confuse_dep = dependency('libconfuse')
-
 install_data(
   'example.cfg',
   rename : 'config',
@@ -34,7 +32,7 @@ login_lib = static_library(
         'ui.c',
         'ui.h',
     ],
-    dependencies : [openssl_dep, glib_dep, confuse_dep],
+    dependencies : [openssl_dep, glib_dep],
     link_with : glome_lib,
     include_directories : glome_incdir,
     install : false)
