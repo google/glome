@@ -50,7 +50,8 @@ int parse_config_file(login_config_t* config) {
   service_key_version =
       g_key_file_get_uint64(cfg, "service", "key-version", NULL);
   if (service_key_version > 255) {
-    errorf("ERROR: Key version %llu too large, must fit into 8-bit int\n",
+    errorf("ERROR: Key version %" G_GUINT64_FORMAT " too large, must fit into ",
+           "8-bit int\n",
            service_key_version);
     return -3;
   }
