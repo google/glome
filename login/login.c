@@ -41,10 +41,10 @@
 #define DMI_UUID_SIZE 36
 
 static int get_hostname(char* buf, size_t buflen) {
-  if (gethostname(buf, buflen - 1) != 0) {
+  if (gethostname(buf, buflen) != 0) {
     return -1;
   }
-  buf[buflen] = '\0';
+  buf[buflen - 1] = '\0';
 
   // Regular hostname is likely fully qualified, so stop here and return it.
   if (strchr(buf, '.') != NULL) {
