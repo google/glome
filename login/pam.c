@@ -149,15 +149,41 @@ static int glome_authenticate(pam_handle_t *pamh, login_config_t *config,
   free(action);
   action = NULL;
 
-  char *input = NULL;
-  if (pam_prompt(pamh, PAM_PROMPT_ECHO_ON, &input,
-                 "%s%s\nEnter GLOME code obtained from the above link: ",
-                 config->url_prefix, url)) {
-    return failure(EXITCODE_PANIC, error_tag, "pam-prompt");
+  struct pam_conv *conv;
+  if (pam_get_item(pamh, PAM_CONV, (const void **)&conv) != PAM_SUCCESS) {
+    return failure(EXITCODE_PANIC, error_tag, "pam-get-conv");
   }
 
+  const char *template = "GLOME link: %s%s";
+  size_t message_len =
+      strlen(template) + strlen(config->url_prefix) + strlen(url) - 4 + 1;
+  char *message = malloc(message_len);
+  if (message == NULL) {
+    return failure(EXITCODE_PANIC, error_tag, "malloc-message");
+  }
+  int written =
+      snprintf(message, message_len, template, config->url_prefix, url);
+  if (written < 0 || written >= message_len) {
+    return failure(EXITCODE_PANIC, error_tag, "broken-template");
+  }
   free(url);
   url = NULL;
+
+  struct pam_message msg[1] = {
+      {.msg = message, .msg_style = PAM_TEXT_INFO},
+  };
+  const struct pam_message *pmsg[1] = {&msg[0]};
+  struct pam_response *resp = NULL;
+  if (conv->conv(1, pmsg, &resp, conv->appdata_ptr) != PAM_SUCCESS) {
+    free(message);
+    return failure(EXITCODE_PANIC, error_tag, "pam-conv");
+  }
+  free(message);
+
+  const char *input = NULL;
+  if (pam_get_authtok(pamh, PAM_AUTHTOK, &input, NULL) != PAM_SUCCESS) {
+    return failure(EXITCODE_PANIC, error_tag, "pam-get-authtok");
+  }
 
   int bytes_read = strlen(input);
   if (config->options & INSECURE) {
@@ -168,7 +194,6 @@ static int glome_authenticate(pam_handle_t *pamh, login_config_t *config,
   char authcode_encoded[ENCODED_BUFSIZE(sizeof authcode)] = {0};
   if (base64url_encode(authcode, sizeof authcode, (uint8_t *)authcode_encoded,
                        sizeof authcode_encoded) == 0) {
-    free(input);
     return failure(EXITCODE_PANIC, error_tag, "authcode-encode");
   }
   if (config->options & INSECURE) {
@@ -176,20 +201,16 @@ static int glome_authenticate(pam_handle_t *pamh, login_config_t *config,
   }
 
   if (bytes_read < MIN_ENCODED_AUTHCODE_LEN) {
-    free(input);
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
   if (bytes_read > strlen(authcode_encoded)) {
-    free(input);
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
 
   if (CRYPTO_memcmp(input, authcode_encoded, bytes_read) != 0) {
-    free(input);
     return failure(EXITCODE_INVALID_AUTHCODE, error_tag, "authcode-invalid");
   }
 
-  free(input);
   return 0;
 }
 
