@@ -2,7 +2,7 @@ on:
   push:
     branches: ['master']
   pull_request:
-    paths: ['**.sh']
+    paths: ['**.sh', '.github/workflows/**']
     
 jobs:
   shellcheck:

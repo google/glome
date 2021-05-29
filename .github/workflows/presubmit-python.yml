@@ -2,7 +2,7 @@ on:
   push:
     branches: ['master']
   pull_request:
-    paths: ['python/**']
+    paths: ['python/**', '.github/workflows/**']
 
 defaults:
   run:

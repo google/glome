@@ -2,7 +2,7 @@ on:
   push:
     branches: ['master']
   pull_request:
-    paths: ['go/**']
+    paths: ['go/**', '.github/workflows/**']
 
 defaults:
   run:
