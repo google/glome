@@ -108,9 +108,7 @@ static int glome_authenticate(pam_handle_t *pamh, login_config_t *config,
 
   char *host_id = NULL;
   if (config->host_id != NULL) {
-    size_t s = strlen(config->host_id) + 1;
-    host_id = calloc(s, 1);
-    strncpy(host_id, config->host_id, s);
+    host_id = strdup(config->host_id);
   } else {
     host_id = calloc(HOST_NAME_MAX + 1, 1);
     if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
