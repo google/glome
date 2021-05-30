@@ -3,7 +3,7 @@ on:
   push:
     branches: ['master']
   pull_request:
-    paths: ['go/**', '.github/workflows/**']
+    paths: ['go/**', '.github/workflows/presubmit-go.yml']
 
 defaults:
   run:

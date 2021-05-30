@@ -3,7 +3,7 @@ on:
   push:
     branches: ['master']
   pull_request:
-    paths: ['**.sh', '.github/workflows/**']
+    paths: ['**.sh', '.github/workflows/presubmit-shell.yml']
     
 jobs:
   shellcheck:

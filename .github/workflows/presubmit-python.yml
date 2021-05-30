@@ -3,7 +3,7 @@ on:
   push:
     branches: ['master']
   pull_request:
-    paths: ['python/**', '.github/workflows/**']
+    paths: ['python/**', '.github/workflows/presubmit-python.yml']
 
 defaults:
   run:

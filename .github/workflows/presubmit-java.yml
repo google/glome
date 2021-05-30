@@ -3,7 +3,7 @@ on:
   push:
     branches: ['master']
   pull_request:
-    paths: ['java/**', '.github/workflows/**']
+    paths: ['java/**', '.github/workflows/presubmit-java.yml']
 
 jobs:
   build:
