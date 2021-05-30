@@ -1,3 +1,4 @@
+name: shell-presubmit
 on:
   push:
     branches: ['master']

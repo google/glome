@@ -1,3 +1,4 @@
+name: c-presubmit
 on:
   push:
     branches: ['master']

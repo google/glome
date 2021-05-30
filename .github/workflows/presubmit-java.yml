@@ -1,3 +1,4 @@
+name: java-presubmit
 on:
   push:
     branches: ['master']

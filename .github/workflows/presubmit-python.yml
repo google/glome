@@ -1,3 +1,4 @@
+name: python-presubmit
 on:
   push:
     branches: ['master']
