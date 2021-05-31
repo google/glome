@@ -126,6 +126,11 @@ static int glome_authenticate(pam_handle_t *pamh, login_config_t *config,
     return EXITCODE_PANIC;
   }
 
+  if (config->options & VERBOSE) {
+    pam_syslog(pamh, LOG_DEBUG, "host ID: %s", host_id);
+    pam_syslog(pamh, LOG_DEBUG, "action: %s", action);
+  }
+
   uint8_t authcode[GLOME_MAX_TAG_LENGTH];
   if (get_authcode(host_id, action, config->service_key, config->secret_key,
                    authcode)) {
