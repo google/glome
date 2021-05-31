@@ -28,7 +28,7 @@ const char *authtoks[] = {
 };
 
 struct pamtest_conv_data conv_data = {
-    .in_echo_on = authtoks,
+    .in_echo_off = authtoks,
 };
 
 struct pam_testcase tests[] = {
