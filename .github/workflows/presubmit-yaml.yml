@@ -6,9 +6,9 @@ on:
     paths: ['**.yml', '**.yaml']
 
 jobs:
-  shellcheck:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: lint
+      - name: yamllint
         run: yamllint -d relaxed .
