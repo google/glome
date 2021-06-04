@@ -62,7 +62,7 @@ static int get_hostname(char* buf, size_t buflen) {
     return -1;
   }
   strncpy(buf, res->ai_canonname, buflen - 1);
-  buf[buflen] = '\0';
+  buf[buflen - 1] = '\0';
   return 0;
 }
 
@@ -249,9 +249,7 @@ int login_run(login_config_t* config, const char** error_tag) {
 
   char* host_id = NULL;
   if (config->host_id != NULL) {
-    size_t s = strlen(config->host_id) + 1;
-    host_id = calloc(s, 1);
-    strncpy(host_id, config->host_id, s);
+    host_id = strdup(config->host_id);
   } else {
     host_id = calloc(HOST_NAME_MAX + 1, 1);
     if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
