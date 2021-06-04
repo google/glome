@@ -1,0 +1,14 @@
+name: yaml-presubmit
+on:
+  push:
+    branches: ['master']
+  pull_request:
+    paths: ['**.yml', '**.yaml']
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: yamllint
+        run: yamllint -d relaxed .

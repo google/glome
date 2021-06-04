@@ -1,0 +1,52 @@
+name: c-presubmit
+on:
+  push:
+    branches: ['master']
+  pull_request:
+    branches: ['master']
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: clang-format
+      run: |
+        find . -name '*.c' -or -name '*.h' -print0 | \
+          xargs -0 --verbose -- clang-format --Werror --dry-run --style=google
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        container:
+        - 'debian:latest'
+        - 'alpine:latest'
+    container:
+      image: ${{ matrix.container }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: install Debian dependencies
+      if: ${{ matrix.container == 'debian:latest' }}
+      run: ./kokoro/rodete/fetch_dependencies.sh
+    - name: install Alpine dependencies
+      if: ${{ matrix.container == 'alpine:latest' }}
+      run: ./kokoro/alpine/fetch_dependencies.sh
+    - name: setup build directory
+      run: meson build
+    - name: build
+      run: ninja -C build
+    - name: test
+      run: meson test --print-errorlogs -C build
+    - name: install
+      run: |
+        DESTDIR=out meson install -C build
+        find build/out/
+        test -x build/out/usr/local/bin/glome
+        test -x build/out/usr/local/sbin/glome-login
+        test -f build/out/usr/local/etc/glome/config
+        test -f build/out/usr/local/include/glome.h
+        # Dereference the library and check that it points to a valid file.
+        test -f build/out/usr/local/lib/libglome.so || \
+        test -f build/out/usr/local/lib/x86_64-linux-gnu/libglome.so
+        test -f build/out/usr/local/lib/security/pam_glome.so || \
+        test -f build/out/usr/local/lib/x86_64-linux-gnu/security/pam_glome.so
