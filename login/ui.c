@@ -60,17 +60,12 @@ static const char flags_help[] =
 
     "\n -d N      sleep N seconds before the auth code check (default: %d)"
 
-    "\n -i PATH   if set, the PATH must exist and contain '0\\n' (0x30 0x0a)"
-    "\n           for the login to be permitted "
-
     "\n -k KEY    use hex-encoded KEY as the service key (defaults to key "
     "from configuration file)"
 
     "\n -l PATH   use PATH instead of " DEFAULT_LOGIN_PATH
 
     "\n -u URL    use given URL prefix"
-
-    "\n -r USER   reboot the machine when USER is entered as username"
 
     "\n -s        suppress syslog logging (default: false)"
 
@@ -83,7 +78,6 @@ static const char flags_help[] =
     "\n -I        print all the secrets (INSECURE!)"
     "\n -K KEY    use KEY as the hex-encoded ephemeral secret key (INSECURE!)"
     "\n -M NAME   use NAME as the host-id"
-    "\n -P        allow access if running in lockdown mode (INSECURE!)"
     "\n";
 
 int parse_args(login_config_t* config, int argc, char* argv[]) {
@@ -91,7 +85,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
 
   // Setting defaults.
   config->login_path = DEFAULT_LOGIN_PATH;
-  config->lockdown_path = NULL;
   config->url_prefix = NULL;
   config->auth_delay_sec = DEFAULT_AUTH_DELAY;
   config->input_timeout_sec = DEFAULT_INPUT_TIMEOUT;
@@ -100,7 +93,7 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
   int errors = 0;
 
   int c;
-  while ((c = getopt(argc, argv, "hc:d:i:k:l:r:st:u:vIK:M:P")) != -1) {
+  while ((c = getopt(argc, argv, "hc:d:k:l:st:u:vIK:M:")) != -1) {
     char* endptr;
     long l;
     switch (c) {
@@ -120,9 +113,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
         }
         config->auth_delay_sec = (unsigned int)l;
         break;
-      case 'i':
-        config->lockdown_path = optarg;
-        break;
       case 'k':
         if (decode_hex(config->service_key, sizeof config->service_key,
                        optarg) != 0) {
@@ -131,9 +121,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
         break;
       case 'l':
         config->login_path = optarg;
-        break;
-      case 'r':
-        config->reboot_user = optarg;
         break;
       case 's':
         config->options &= ~SYSLOG;
@@ -169,9 +156,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
       case 'M':
         config->host_id = optarg;
         break;
-      case 'P':
-        config->options |= SKIP_LOCKDOWN;
-        break;
       case '?':
       case 'h':
         usage(argv[0]);
@@ -204,11 +188,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
 int postprocess_config(login_config_t* config) {
   if (strlen(config->username) > USERNAME_MAX) {
     return -1;
-  }
-
-  if (config->reboot_user != NULL && config->reboot_user[0] != '\0' &&
-      strcmp(config->username, config->reboot_user) == 0) {
-    config->options |= REBOOT;
   }
   return 0;
 }

@@ -37,8 +37,8 @@
 #define DEFAULT_USERNAME "root"
 
 // Options
-#define SKIP_LOCKDOWN (1 << 1)
-#define REBOOT (1 << 2)
+// obsolete: SKIP_LOCKDOWN (1 << 1)
+// obsolete: REBOOT (1 << 2)
 #define VERBOSE (1 << 3)
 #define INSECURE (1 << 4)
 #define SYSLOG (1 << 5)
@@ -55,12 +55,6 @@ typedef struct login_config {
 
   // Login binary for fallback authentication.
   const char* login_path;
-
-  // Lockdown file to block login if set.
-  const char* lockdown_path;
-
-  // Username triggering a reboot.
-  const char* reboot_user;
 
   // URL prefix to use for HTTP service.
   const char* url_prefix;
