@@ -241,12 +241,6 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return rc;
   }
 
-  r = postprocess_config(&config);
-  if (r < 0) {
-    pam_syslog(pamh, LOG_ERR, "failed to postprocess config (%d)", r);
-    return rc;
-  }
-
   r = glome_authenticate(pamh, &config, &error_tag, argc, argv);
   if (!r) {
     rc = PAM_SUCCESS;
