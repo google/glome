@@ -90,14 +90,4 @@ int parse_args(login_config_t* config, int argc, char* argv[]);
 // in the input.
 int postprocess_config(login_config_t* config);
 
-// read_stdin reads printable characters from stdin into buf. It returns:
-// -1, if it encounters an error while reading
-// -2, if it encounters EOF
-// (buflen-1) if it read buflen-1 characters
-// <(buflen-1), if a newline was read before the buffer was full
-// If the return value is >=0, the buf is NULL-terminated.
-int read_stdin(char* buf, size_t buflen);
-
-void print_hex(const uint8_t* buf, size_t len);
-
 #endif  // UI_H_
