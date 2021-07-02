@@ -48,7 +48,7 @@
 // authenticate code unless fallback authentication has been requested.
 //
 // On error, the error_tag is set to an error token which should NOT be freed.
-int login_run(login_config_t* config, const char** error_tag);
+int login_run(glome_login_config_t* config, const char** error_tag);
 
 // Constructs the action requesting shell access as a given user.
 //

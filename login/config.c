@@ -18,7 +18,7 @@
 
 #include "ui.h"
 
-int parse_config_file(login_config_t* config) {
+int glome_login_parse_config_file(glome_login_config_t* config) {
   g_autofree gchar* service_key = NULL;
   guint64 service_key_version = 0;
   g_autofree gchar* url_prefix = NULL;

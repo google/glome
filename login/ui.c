@@ -80,8 +80,8 @@ static const char flags_help[] =
     "\n -M NAME   use NAME as the host-id"
     "\n";
 
-int parse_args(login_config_t* config, int argc, char* argv[]) {
-  memset(config, 0, sizeof(login_config_t));
+int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
+  memset(config, 0, sizeof(glome_login_config_t));
 
   // Setting defaults.
   config->login_path = DEFAULT_LOGIN_PATH;
@@ -185,7 +185,7 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
   return 0;
 }
 
-int postprocess_config(login_config_t* config) {
+int postprocess_config(glome_login_config_t* config) {
   if (strlen(config->username) > USERNAME_MAX) {
     return -1;
   }

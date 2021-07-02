@@ -227,7 +227,7 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
   return 0;
 }
 
-int login_run(login_config_t* config, const char** error_tag) {
+int login_run(glome_login_config_t* config, const char** error_tag) {
   assert(config != NULL);
   if (config->options & VERBOSE) {
     errorf(
