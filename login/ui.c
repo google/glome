@@ -185,13 +185,6 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
   return 0;
 }
 
-int postprocess_config(login_config_t* config) {
-  if (strlen(config->username) > USERNAME_MAX) {
-    return -1;
-  }
-  return 0;
-}
-
 int read_stdin(char* buf, size_t buflen) {
   int i = 0;
 
