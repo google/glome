@@ -48,12 +48,6 @@ int main(int argc, char* argv[]) {
     return EXITCODE_PANIC;
   }
 
-  r = postprocess_config(&config);
-  if (r < 0) {
-    handle_error("postprocess-config");
-    return EXITCODE_PANIC;
-  }
-
   const char* error_tag = NULL;
   int rc = login_run(&config, &error_tag);
   if (rc) {

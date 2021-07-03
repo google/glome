@@ -23,8 +23,6 @@
 
 #define errorf(...) fprintf(stderr, __VA_ARGS__)
 
-#define USERNAME_MAX 32
-
 #if !defined(SYSCONFDIR)
 #define SYSCONFDIR "/etc"
 #endif
@@ -50,9 +48,5 @@ int decode_hex(uint8_t* dst, size_t dst_len, const char* in);
 // parse_args parses command-line arguments into a config struct. It will
 // forcefully initialize the whole content of the struct to zero.
 int parse_args(glome_login_config_t* config, int argc, char* argv[]);
-
-// postprocess_config updates the configuration based on implied configuration
-// in the input.
-int postprocess_config(glome_login_config_t* config);
 
 #endif  // UI_H_

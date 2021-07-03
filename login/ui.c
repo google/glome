@@ -185,10 +185,3 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
   return 0;
 }
 
-int postprocess_config(glome_login_config_t* config) {
-  if (strlen(config->username) > USERNAME_MAX) {
-    return -1;
-  }
-  return 0;
-}
-
