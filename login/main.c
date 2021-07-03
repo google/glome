@@ -31,7 +31,7 @@ static void handle_error(const char* error_tag) {
 }
 
 int main(int argc, char* argv[]) {
-  login_config_t config = {0};
+  glome_login_config_t config = {0};
 
   int r = parse_args(&config, argc, argv);
   if (r > 0) {
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     return EXITCODE_PANIC;
   }
 
-  r = parse_config_file(&config);
+  r = glome_login_parse_config_file(&config);
   if (r < 0) {
     handle_error("parse-config");
     return EXITCODE_PANIC;

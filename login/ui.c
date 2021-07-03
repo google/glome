@@ -80,8 +80,8 @@ static const char flags_help[] =
     "\n -M NAME   use NAME as the host-id"
     "\n";
 
-int parse_args(login_config_t* config, int argc, char* argv[]) {
-  memset(config, 0, sizeof(login_config_t));
+int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
+  memset(config, 0, sizeof(glome_login_config_t));
 
   // Setting defaults.
   config->login_path = DEFAULT_LOGIN_PATH;
@@ -185,32 +185,3 @@ int parse_args(login_config_t* config, int argc, char* argv[]) {
   return 0;
 }
 
-int read_stdin(char* buf, size_t buflen) {
-  int i = 0;
-
-  while (i < buflen - 1) {
-    int n = read(STDIN_FILENO, buf + i, 1);
-    if (n < 0) {  // error while reading from stdin
-      perror("ERROR when reading from stdin");
-      return -1;
-    }
-    if (n == 0) {  // EOF
-      return -2;
-    }
-    if (buf[i] == '\n' || buf[i] == '\r') {  // newline
-      break;
-    } else if (buf[i] >= 0x20 && buf[i] <= 0x7e) {
-      // Advance the buffer pointer only if we got a printable character.
-      i++;
-    }
-  }
-  buf[i] = '\0';
-  return i;  // number of characters in the buffer without the NUL byte
-}
-
-void print_hex(const uint8_t* buf, size_t len) {
-  for (size_t i = 0; i < len; i++) {
-    errorf("%02x", buf[i]);
-  }
-  errorf("\n");
-}

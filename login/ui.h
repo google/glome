@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 
+#include "config.h"
 #include "crypto.h"
 
 #define errorf(...) fprintf(stderr, __VA_ARGS__)
@@ -41,57 +42,11 @@
 #define INSECURE (1 << 4)
 #define SYSLOG (1 << 5)
 
-typedef struct login_config {
-  // Bitfield of options as described above.
-  uint8_t options;
-
-  // Username to log in as.
-  const char* username;
-
-  // Configuration file to parse.
-  const char* config_path;
-
-  // Login binary for fallback authentication.
-  const char* login_path;
-
-  // URL prefix to use for HTTP service.
-  const char* url_prefix;
-
-  // Delay to wait before confirming if the authentication code is valid
-  // or not, to stop brute forcing; in seconds.
-  unsigned int auth_delay_sec;
-
-  // How long to wait for authentication code input in seconds.
-  unsigned int input_timeout_sec;
-
-  // Service key of the remote peer.
-  uint8_t service_key[PUBLIC_KEY_LENGTH];
-
-  // ID of the service key of the remote peer. (Optional)
-  uint8_t service_key_id;
-
-  // Local ephemeral secret key.
-  uint8_t secret_key[PRIVATE_KEY_LENGTH];
-
-  // Explicitly set host-id to use in the login request.
-  const char* host_id;
-} login_config_t;
-
 // decode_hex converts a hex-encoded string into the equivalent bytes.
 int decode_hex(uint8_t* dst, size_t dst_len, const char* in);
 
 // parse_args parses command-line arguments into a config struct. It will
 // forcefully initialize the whole content of the struct to zero.
-int parse_args(login_config_t* config, int argc, char* argv[]);
-
-// read_stdin reads printable characters from stdin into buf. It returns:
-// -1, if it encounters an error while reading
-// -2, if it encounters EOF
-// (buflen-1) if it read buflen-1 characters
-// <(buflen-1), if a newline was read before the buffer was full
-// If the return value is >=0, the buf is NULL-terminated.
-int read_stdin(char* buf, size_t buflen);
-
-void print_hex(const uint8_t* buf, size_t len);
+int parse_args(glome_login_config_t* config, int argc, char* argv[]);
 
 #endif  // UI_H_

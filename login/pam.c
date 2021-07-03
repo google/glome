@@ -30,8 +30,8 @@
 #define MODULE_NAME "pam_glome"
 
 static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
-                          login_config_t *config) {
-  memset(config, 0, sizeof(login_config_t));
+                          glome_login_config_t *config) {
+  memset(config, 0, sizeof(glome_login_config_t));
   int errors = 0;
 
   for (int i = 0; i < argc; ++i) {
@@ -82,7 +82,7 @@ static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
   return errors > 0 ? -1 : 0;
 }
 
-static int get_username(pam_handle_t *pamh, login_config_t *config,
+static int get_username(pam_handle_t *pamh, glome_login_config_t *config,
                         const char **error_tag) {
   const char *username;
   if (pam_get_user(pamh, &username, NULL) != PAM_SUCCESS || !username ||
@@ -93,7 +93,7 @@ static int get_username(pam_handle_t *pamh, login_config_t *config,
   return 0;
 }
 
-static int glome_authenticate(pam_handle_t *pamh, login_config_t *config,
+static int glome_authenticate(pam_handle_t *pamh, glome_login_config_t *config,
                               const char **error_tag, int argc,
                               const char **argv) {
   if (is_zeroed(config->service_key, sizeof config->service_key)) {
@@ -219,7 +219,7 @@ static int glome_authenticate(pam_handle_t *pamh, login_config_t *config,
 int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv) {
   const char *error_tag = NULL;
-  login_config_t config = {0};
+  glome_login_config_t config = {0};
   int rc = PAM_AUTH_ERR;
 
   int r = parse_pam_args(pamh, argc, argv, &config);
@@ -228,7 +228,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return rc;
   }
 
-  r = parse_config_file(&config);
+  r = glome_login_parse_config_file(&config);
   if (r < 0) {
     pam_syslog(pamh, LOG_ERR, "failed to read config file: %s (%d)",
                config.config_path, r);
