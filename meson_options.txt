@@ -13,3 +13,5 @@
 # limitations under the License.
 
 option('tests', type: 'feature', description: 'Build tests')
+option('pam-glome', type: 'boolean', description: 'Build glome PAM module')
+option('glome-cli', type: 'boolean', description: 'Build glome CLI tool')
