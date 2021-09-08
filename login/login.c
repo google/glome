@@ -15,7 +15,6 @@
 #include "login.h"
 
 #include <assert.h>
-#include <glib.h>
 #include <glome.h>
 #include <netdb.h>
 #include <openssl/crypto.h>
@@ -160,6 +159,23 @@ int shell_action(const char* user, char** action, size_t* action_len,
   return 0;
 }
 
+char *escape_host(const char *host) {
+  size_t host_len = strlen(host);
+  char *ret = malloc(host_len * 3 + 1), *ret_end = ret;
+  // Only /, ?, and # would be problematic given our URL encoding
+  for (size_t i = 0; i < host_len; ++i) {
+    if (host[i] == '/' || host[i] == '?' || host[i] == '#') {
+      sprintf(ret_end, "%%%02X", host[i]);
+      ret_end += 3;
+    } else {
+      ret_end[0] = host[i];
+      ret_end += 1;
+    }
+  }
+  ret_end[0] = '\0';
+  return ret;
+}
+
 int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                 int service_key_id, const uint8_t public_key[PUBLIC_KEY_LENGTH],
                 const char* host_id, const char* action,
@@ -178,12 +194,6 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
   uint8_t handshake[PUBLIC_KEY_LENGTH + 1 + GLOME_MAX_TAG_LENGTH] = {0};
   size_t handshake_len = PUBLIC_KEY_LENGTH + 1 + prefix_tag_len;
 
-  // From the reserved characters (! * ' ( ) ; : @ & = + $ , / ? # [ ])
-  // it is only /, ?, and # that would be problematic at this particular place
-  // in the URL.
-  char* host_id_escaped = g_uri_escape_string(host_id, "!*'();:@&=+$,[]",
-                                              /*allow_utf8=*/true);
-
   if (service_key_id == 0) {
     // If no key ID was specified, send the first key byte as the ID.
     handshake[0] = service_key[0] & 0x7f;
@@ -201,6 +211,8 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                         sizeof handshake_encoded)) {
     return failure(EXITCODE_PANIC, error_tag, "handshake-encode");
   }
+
+  char* host_id_escaped = escape_host(host_id);
 
   int len = strlen("/v1/") + strlen(handshake_encoded) + 1 +
             strlen(host_id_escaped) + 1 + strlen(action) + 2;

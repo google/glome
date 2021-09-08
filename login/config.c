@@ -13,31 +13,34 @@
 // limitations under the License.
 
 #include <alloca.h>
-#include <glib.h>
+#include <iniparser/iniparser.h>
 #include <string.h>
 
 #include "ui.h"
 
+static void dict_free(dictionary **dict)
+{
+  iniparser_freedict(*dict);
+}
+
 int glome_login_parse_config_file(glome_login_config_t* config) {
-  g_autofree gchar* service_key = NULL;
-  guint64 service_key_version = 0;
-  g_autofree gchar* url_prefix = NULL;
-  g_autoptr(GKeyFile) cfg = g_key_file_new();
-  g_autoptr(GError) error = NULL;
+  dictionary *dict __attribute__((__cleanup__(dict_free))) = NULL;
 
   bool required = config->config_path != NULL;
   if (!required) {
     config->config_path = DEFAULT_CONFIG_FILE;
   }
 
-  gboolean loaded = g_key_file_load_from_file(cfg, config->config_path,
-                                              G_KEY_FILE_NONE, &error);
-  if (required && !loaded) {
-    errorf("ERROR: config file could not be read: %s\n", error->message);
-    return -1;
+  dict = iniparser_load(config->config_path);
+  if (dict == NULL) {
+    if (required) {
+      errorf("ERROR: config file could not be read\n");
+      return -1;
+    }
+    return 0;
   }
 
-  service_key = g_key_file_get_value(cfg, "service", "key", NULL);
+  const char *service_key = iniparser_getstring(dict, "service:key", NULL);
   if (service_key != NULL &&
       is_zeroed(config->service_key, sizeof config->service_key)) {
     if (decode_hex(config->service_key, sizeof config->service_key,
@@ -47,11 +50,10 @@ int glome_login_parse_config_file(glome_login_config_t* config) {
     }
   }
 
-  service_key_version =
-      g_key_file_get_uint64(cfg, "service", "key-version", NULL);
-  if (service_key_version > 255) {
-    errorf("ERROR: Key version %" G_GUINT64_FORMAT
-           " too large, must fit into 8-bit int\n",
+  int service_key_version =
+      iniparser_getint(dict, "service:key-version", -1);
+  if (service_key_version & ~0xff) {
+    errorf("ERROR: Key version %d too large, must fit into 8-bit uint\n",
            service_key_version);
     return -3;
   }
@@ -59,7 +61,7 @@ int glome_login_parse_config_file(glome_login_config_t* config) {
     config->service_key_id = service_key_version;
   }
 
-  url_prefix = g_key_file_get_value(cfg, "service", "url-prefix", NULL);
+  const char *url_prefix = iniparser_getstring(dict, "service:url-prefix", NULL);
   if (url_prefix != NULL && config->url_prefix == NULL) {
     config->url_prefix = strdup(url_prefix);
   }
