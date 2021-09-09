@@ -17,6 +17,14 @@ install_data(
   rename : 'config',
   install_dir : join_paths(get_option('sysconfdir'), 'glome'))
 
+iniparser_inc = []
+if meson.get_compiler('c').has_header('iniparser/iniparser.h')
+    iniparser_inc = include_directories('iniparser-compat')
+endif
+iniparser_dep = declare_dependency(
+    include_directories: iniparser_inc,
+    dependencies: meson.get_compiler('c').find_library('iniparser'))
+
 login_lib = static_library(
     'glome-login',
     [
@@ -30,7 +38,7 @@ login_lib = static_library(
         'ui.c',
         'ui.h',
     ],
-    dependencies : [openssl_dep, glib_dep],
+    dependencies : [openssl_dep, iniparser_dep],
     link_with : glome_lib,
     include_directories : glome_incdir,
     install : false)

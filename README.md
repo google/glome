@@ -34,7 +34,8 @@ Building the GLOME library requires
  - Compiler conforming to C99 (e.g. gcc, clang)
  - Meson >=0.49.2
  - OpenSSL headers >=1.1.1
- - glib-2.0 (for glome-login as well as tests)
+ - iniparser (for glome-login)
+ - glib-2.0 (for tests)
  - libpam (for PAM module)
 
 ### Instructions
