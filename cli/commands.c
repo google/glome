@@ -27,6 +27,8 @@
 #include <unistd.h>
 
 #include "glome.h"
+#include "login/base64.h"
+#include "login/crypto.h"
 
 #define GLOME_CLI_MAX_MESSAGE_LENGTH 4095
 
@@ -226,4 +228,204 @@ int verify(int argc, char **argv) {
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
+}
+
+static bool parse_login_path(char *path, char **handshake, char **host,
+                             char **action) {
+  size_t path_len = strlen(path);
+  if (path_len < 4 || path[0] != '/' || path[1] != 'v' || path[2] != '1' ||
+      path[3] != '/') {
+    fprintf(stderr, "unexpected url path prefix: %s\n", path);
+    return false;
+  }
+  if (path[path_len - 1] != '/') {
+    fprintf(stderr, "unexpected url path suffix: %s\n", path);
+    return false;
+  }
+
+  char *start = path + 4;
+  char *slash = index(start, '/');
+  if (slash == NULL || slash - start == 0) {
+    fprintf(stderr, "could not parse handshake from %s\n", start);
+    return false;
+  }
+  *handshake = strndup(start, slash - start);
+  if (*handshake == NULL) {
+    fprintf(stderr, "failed to duplicate handshake\n");
+    return false;
+  }
+
+  start = slash + 1;
+  slash = index(start, '/');
+  if (slash == NULL || slash - start == 0) {
+    free(*handshake);
+    *handshake = NULL;
+    fprintf(stderr, "could not parse host from %s\n", start);
+    return false;
+  }
+  *host = strndup(start, slash - start);
+  if (*host == NULL) {
+    free(*handshake);
+    *handshake = NULL;
+    fprintf(stderr, "failed to duplicate host\n");
+    return false;
+  }
+
+  // Everything left (not including the trailing slash) is an action. It may
+  // include slashes and it can also be empty.
+  start = slash + 1;
+  *action = strndup(start, path + path_len - 1 - start);
+  if (*action == NULL) {
+    free(*host);
+    *host = NULL;
+    free(*handshake);
+    *handshake = NULL;
+    fprintf(stderr, "failed to duplicate action\n");
+    return false;
+  }
+
+  return true;
+}
+
+static int unhex(char c) {
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  } else if (c >= 'a' && c <= 'f') {
+    return c - 'a' + 10;
+  } else if (c >= 'A' && c <= 'F') {
+    return c - 'A' + 10;
+  } else {
+    return -1;
+  }
+}
+
+static char *uri_unescape(char *e) {
+  size_t len = strlen(e);
+  char *u = malloc(len + 1);
+  if (u == NULL) {
+    return NULL;
+  }
+
+  size_t i, j;
+  for (i = 0, j = 0; i < len; j++) {
+    if (e[i] != '%') {
+      u[j] = e[i];
+      i += 1;
+      continue;
+    }
+    if (i + 2 >= len) {
+      goto fail;
+    }
+    int n = unhex(e[i + 1]);
+    if (n < 0) {
+      goto fail;
+    }
+    u[j] = (char)(n << 4);
+    n = unhex(e[i + 2]);
+    if (n < 0) {
+      goto fail;
+    }
+    u[j] |= (char)n;
+    i += 3;
+  }
+  u[j] = '\0';
+  return u;
+
+fail:
+  free(u);
+  return NULL;
+}
+
+int login(int argc, char **argv) {
+  char *handshake = NULL;
+  char *handshake_b64 = NULL;
+  char *host = NULL;
+  char *host_esc = NULL;
+  char *action = NULL;
+  int ret = EXIT_FAILURE;
+
+  if (!parse_args(argc, argv)) {
+    return EXIT_FAILURE;
+  }
+  char *cmd = argv[optind++];
+  if (optind >= argc) {
+    fprintf(stderr, "missing url path argument for subcommand %s\n", cmd);
+    return EXIT_FAILURE;
+  }
+
+  if (!key_file) {
+    fprintf(stderr, "not enough arguments for subcommand %s\n", cmd);
+    return EXIT_FAILURE;
+  }
+  uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
+  if (!read_file(key_file, private_key, sizeof private_key)) {
+    return EXIT_FAILURE;
+  }
+
+  char *path = argv[optind];
+  if (!parse_login_path(path, &handshake_b64, &host_esc, &action)) {
+    return EXIT_FAILURE;
+  }
+
+  host = uri_unescape(host_esc);
+  if (host == NULL) {
+    fprintf(stderr, "failed to parse hostname in path %s\n", path);
+    goto out;
+  }
+
+  size_t handshake_b64_len = strlen(handshake_b64);
+  handshake = malloc(DECODED_BUFSIZE(handshake_b64_len));
+  int handshake_len = base64url_decode((uint8_t *)handshake_b64,
+                                       handshake_b64_len, (uint8_t *)handshake,
+                                       DECODED_BUFSIZE(handshake_b64_len));
+  if (handshake_len == 0) {
+    fprintf(stderr, "failed to decode handshake in path %s\n", path);
+    goto out;
+  }
+  if (handshake_len < 1 + GLOME_MAX_PUBLIC_KEY_LENGTH ||
+      handshake_len > 1 + GLOME_MAX_PUBLIC_KEY_LENGTH + GLOME_MAX_TAG_LENGTH) {
+    fprintf(stderr, "handshake size is invalid in path %s\n", path);
+    goto out;
+  }
+  if ((handshake[0] & 0x80) != 0) {
+    fprintf(stderr,
+            "only \"service-key-indicator\" prefix type is supported\n");
+    goto out;
+  }
+  uint8_t peer_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
+  memcpy(peer_key, handshake + 1, GLOME_MAX_PUBLIC_KEY_LENGTH);
+
+  uint8_t tag[GLOME_MAX_TAG_LENGTH] = {0};
+  if (get_authcode(host, action, peer_key, private_key, tag)) {
+    fprintf(stderr, "MAC authcode generation failed\n");
+    goto out;
+  }
+  if (CRYPTO_memcmp(handshake + 1 + GLOME_MAX_PUBLIC_KEY_LENGTH, tag,
+                    handshake_len - 1 - GLOME_MAX_PUBLIC_KEY_LENGTH) != 0) {
+    fprintf(stderr,
+            "The URL includes a message tag prefix which does not match the "
+            "message\n");
+    goto out;
+  }
+
+  if (get_msg_tag(host, action, peer_key, private_key, tag)) {
+    fprintf(stderr, "GLOME tag generation failed\n");
+    goto out;
+  }
+  char tag_encoded[ENCODED_BUFSIZE(sizeof tag)] = {0};
+  if (base64url_encode(tag, sizeof tag, (uint8_t *)tag_encoded,
+                       sizeof tag_encoded) == 0) {
+    fprintf(stderr, "GLOME tag encode failed\n");
+    goto out;
+  }
+  puts(tag_encoded);
+  ret = EXIT_SUCCESS;
+
+out:
+  free(handshake);
+  free(host);
+  free(handshake_b64);
+  free(host_esc);
+  free(action);
+  return ret;
 }

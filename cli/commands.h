@@ -28,4 +28,7 @@ int tag(int argc, char **argv);
 // Returns 0 iff the tag could be verified.
 int verify(int argc, char **argv);
 
+// Generates a tag for a glome-login URL path and writes it to stdout.
+int login(int argc, char **argv);
+
 #endif  // GLOME_CLI_COMMANDS_H

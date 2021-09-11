@@ -38,10 +38,13 @@ static const char *kUsage =
     "[--counter COUNTER] <MESSAGE-FILE\n\n"
     "  To verify a tag:\n"
     "    %s verify --key PRIVATE-KEY-FILE --peer PEER-KEY-FILE --tag TAG "
-    "[--counter COUNTER] <MESSAGE-FILE\n";
+    "[--counter COUNTER] <MESSAGE-FILE\n\n"
+    "  To generate a tag for a glome-login URL path:\n"
+    "    %s login --key PRIVATE-KEY-FILE /v1/AYUg8AmJMKdUdIt93LQ-91oNvzoN"
+    "Jjga9OukqY6qm05q0PU=/my-server.local/shell/root/\n";
 
 static int print_help(int argc, char **argv) {
-  fprintf(stderr, kUsage, argv[0], argv[0], argv[0], argv[0]);
+  fprintf(stderr, kUsage, argv[0], argv[0], argv[0], argv[0], argv[0]);
   return EXIT_SUCCESS;
 }
 
@@ -56,7 +59,7 @@ struct cmd {
 // NULL name is executed when the subcommand given by the user is not found.
 static const struct cmd cmds[] = {
     {"genkey", &genkey}, {"pubkey", &pubkey}, {"tag", &tag},
-    {"verify", &verify}, {NULL, &print_help},
+    {"verify", &verify}, {"login", &login},   {NULL, &print_help},
 };
 
 int main(int argc, char **argv) {

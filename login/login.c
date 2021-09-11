@@ -160,7 +160,7 @@ int shell_action(const char* user, char** action, size_t* action_len,
   return 0;
 }
 
-char *escape_host(const char *host) {
+char* escape_host(const char* host) {
   size_t host_len = strlen(host);
   char *ret = malloc(host_len * 3 + 1), *ret_end = ret;
   if (ret == NULL) {

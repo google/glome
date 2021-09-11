@@ -184,4 +184,3 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
   config->username = argv[optind];
   return 0;
 }
-

@@ -34,8 +34,8 @@ glome_test = executable('glome_test', 'glome_test.c', dependencies : glib_dep,
   link_with : glome_lib, include_directories : glome_incdir)
 test('glome', glome_test)
 
+subdir('login')
+
 if get_option('glome-cli')
     subdir('cli')
 endif
-
-subdir('login')
