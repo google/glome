@@ -129,7 +129,7 @@ class Glome:
         if not Glome.MIN_TAG_LEN <= min_peer_tag_len <= Glome.MAX_TAG_LEN:
             raise ValueError(
                 f'min_peer_tag_len (={min_peer_tag_len}) is not within '
-                f'({Glome.MIN_TAG_LEN}; {Glome.MAX_TAG_LEN}]')
+                f'[{Glome.MIN_TAG_LEN}; {Glome.MAX_TAG_LEN}]')
 
         try:
             shared_secret = my_private_key.exchange(peer_key)
