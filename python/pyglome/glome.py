@@ -82,9 +82,8 @@ def _public_key_encode(public_key: x25519.X25519PublicKey):
 
 
 def _tag(msg: bytes, counter: int, key: bytes) -> bytes:
-    if counter < 0 or counter > 255:
-        raise ValueError(
-            'Counters for tags must be in range 0-255, not {}'.format(counter))
+    if not 0 <= counter <= 255:
+        raise ValueError(f'tag counter (={counter}) must be within [0; 255]')
 
     message = bytes([counter]) + msg  # msg: N_x|M_n
     digester = hmac.new(key=key, msg=message, digestmod=hashlib.sha256)
@@ -127,9 +126,10 @@ class Glome:
         else:
             my_public_key = my_private_key.public_key()
 
-        if not Glome.MIN_TAG_LEN < min_peer_tag_len <= Glome.MAX_TAG_LEN:
-            raise ValueError('min_peer_tag_len must be in range {}-{}'.format(
-                Glome.MIN_TAG_LEN, Glome.MAX_TAG_LEN))
+        if not Glome.MIN_TAG_LEN <= min_peer_tag_len <= Glome.MAX_TAG_LEN:
+            raise ValueError(
+                f'min_peer_tag_len (={min_peer_tag_len}) is not within '
+                f'({Glome.MIN_TAG_LEN}; {Glome.MAX_TAG_LEN}]')
 
         try:
             shared_secret = my_private_key.exchange(peer_key)
@@ -263,8 +263,7 @@ class AutoGlome:
         """
         if skippable_range < 0:
             raise ValueError(
-                'Skippable_range must be non-negative, not {}'.format(
-                    skippable_range))
+                f'skippable_range (={skippable_range}) must be non-negative')
 
         self.glome = Glome(peer_key,
                            my_private_key,
