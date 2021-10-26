@@ -20,8 +20,11 @@
 // Base64 needs 4 bytes for every 3 bytes of input (+ padding + NULL byte)
 // NOTE: Caller is responsible for protecting against integer overflow.
 #define ENCODED_BUFSIZE(n) ((((n) + 2) / 3) * 4 + 1)
+#define DECODED_BUFSIZE(n) ((((n)*3) / 4))
 
 size_t base64url_encode(const uint8_t* src, size_t src_len, uint8_t* dst,
+                        size_t dst_len);
+size_t base64url_decode(const uint8_t* src, size_t src_len, uint8_t* dst,
                         size_t dst_len);
 
 #endif  // BASE64_H_

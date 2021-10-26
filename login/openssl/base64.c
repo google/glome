@@ -15,6 +15,7 @@
 #include "base64.h"
 
 #include <openssl/evp.h>
+#include <string.h>
 
 #define CHAR_62_CLASSIC '+'
 #define CHAR_62_URLSAFE '-'
@@ -33,7 +34,7 @@ size_t base64url_encode(const uint8_t* src, size_t src_len, uint8_t* dst,
     return 0;
   }
   len = EVP_EncodeBlock(dst, src, src_len);
-  // Replacing 62th and 63th character with '-' and '_' per RFC4648 section 5
+  // Replacing 62nd and 63rd character with '-' and '_' per RFC4648 section 5
   for (size_t i = 0; i < len; i++) {
     switch (dst[i]) {
       case CHAR_62_CLASSIC:
@@ -45,4 +46,54 @@ size_t base64url_encode(const uint8_t* src, size_t src_len, uint8_t* dst,
     }
   }
   return len;
+}
+
+size_t base64url_decode(const uint8_t* urlsafe_src, size_t src_len,
+                        uint8_t* dst, size_t dst_len) {
+  if (dst_len < DECODED_BUFSIZE(src_len)) {
+    return 0;
+  }
+
+  // Restore 62nd and 63rd character from '-' and '_' per RFC4648 section 5
+  uint8_t* src = (uint8_t*)malloc(src_len);
+  if (src == NULL) {
+    return 0;
+  }
+  memcpy(src, urlsafe_src, src_len);
+  for (size_t i = 0; i < src_len; i++) {
+    switch (src[i]) {
+      case CHAR_62_URLSAFE:
+        src[i] = CHAR_62_CLASSIC;
+        break;
+      case CHAR_63_URLSAFE:
+        src[i] = CHAR_63_CLASSIC;
+        break;
+    }
+  }
+
+  EVP_ENCODE_CTX* ctx = EVP_ENCODE_CTX_new();
+  if (ctx == NULL) {
+    free(src);
+    return 0;
+  }
+  EVP_DecodeInit(ctx);
+
+  int ret, len, total = 0;
+  ret = EVP_DecodeUpdate(ctx, dst, &len, src, src_len);
+  if (ret < 0) {
+    goto out;
+  }
+  total = len;
+
+  ret = EVP_DecodeFinal(ctx, dst, &len);
+  if (ret < 0) {
+    total = 0;
+    goto out;
+  }
+  total += len;
+
+out:
+  free(src);
+  EVP_ENCODE_CTX_free(ctx);
+  return total;
 }

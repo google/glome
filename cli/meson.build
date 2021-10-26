@@ -22,7 +22,7 @@ glome_cli = executable(
     'commands.c',
   ],
   dependencies: openssl_dep,
-  link_with : glome_lib,
+  link_with : [glome_lib, login_lib],
   include_directories : glome_incdir,
   install : true)
 
