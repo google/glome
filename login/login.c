@@ -153,7 +153,7 @@ int shell_action(const char* user, char** action, size_t* action_len,
     free(buf);
     return failure(EXITCODE_PANIC, error_tag, "message-sprintf-error");
   }
-  if ((size_t) ret >= buf_len) {
+  if ((size_t)ret >= buf_len) {
     free(buf);
     return failure(EXITCODE_PANIC, error_tag, "message-sprintf-trunc");
   }
@@ -364,7 +364,7 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
            MIN_ENCODED_AUTHCODE_LEN, bytes_read);
     return EXITCODE_INVALID_INPUT_SIZE;
   }
-  if ((size_t) bytes_read > strlen(authcode_encoded)) {
+  if ((size_t)bytes_read > strlen(authcode_encoded)) {
     if (config->options & SYSLOG) {
       syslog(LOG_INFO, "authcode too long: %d bytes (%s)", bytes_read,
              config->username);

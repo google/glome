@@ -170,7 +170,7 @@ static int glome_authenticate(pam_handle_t *pamh, glome_login_config_t *config,
   }
   int written =
       snprintf(message, message_len, template, config->url_prefix, url);
-  if (written < 0 || (size_t) written >= message_len) {
+  if (written < 0 || (size_t)written >= message_len) {
     return failure(EXITCODE_PANIC, error_tag, "broken-template");
   }
   free(url);
@@ -210,7 +210,7 @@ static int glome_authenticate(pam_handle_t *pamh, glome_login_config_t *config,
   if (bytes_read < MIN_ENCODED_AUTHCODE_LEN) {
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
-  if ((size_t) bytes_read > strlen(authcode_encoded)) {
+  if ((size_t)bytes_read > strlen(authcode_encoded)) {
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
 
