@@ -52,7 +52,7 @@ static int login_tag(bool verify, const char* host_id, const char* action,
     free(message);
     return -1;
   }
-  if (ret >= message_len) {
+  if ((size_t) ret >= message_len) {
     free(message);
     return -1;
   }
