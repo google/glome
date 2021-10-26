@@ -32,6 +32,8 @@
 
 #define GLOME_CLI_MAX_MESSAGE_LENGTH 4095
 
+#define UNUSED(var) (void)(var)
+
 // Arguments
 static const char *key_file = NULL;
 static const char *peer_file = NULL;
@@ -128,6 +130,9 @@ static void print_hex(FILE *stream, const char *prefix, uint8_t *buf,
 }
 
 int genkey(int argc, char **argv) {
+  UNUSED(argc);
+  UNUSED(argv);
+
   uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
 
   if (glome_generate_key(private_key, NULL)) {
@@ -143,6 +148,9 @@ int genkey(int argc, char **argv) {
 }
 
 int pubkey(int argc, char **argv) {
+  UNUSED(argc);
+  UNUSED(argv);
+
   uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
 
@@ -244,7 +252,7 @@ static bool parse_login_path(char *path, char **handshake, char **host,
   }
 
   char *start = path + 4;
-  char *slash = index(start, '/');
+  char *slash = strchr(start, '/');
   if (slash == NULL || slash - start == 0) {
     fprintf(stderr, "could not parse handshake from %s\n", start);
     return false;
@@ -256,7 +264,7 @@ static bool parse_login_path(char *path, char **handshake, char **host,
   }
 
   start = slash + 1;
-  slash = index(start, '/');
+  slash = strchr(start, '/');
   if (slash == NULL || slash - start == 0) {
     free(*handshake);
     *handshake = NULL;

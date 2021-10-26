@@ -39,6 +39,8 @@
 #define DMI_UUID_PATH "/sys/class/dmi/id/product_uuid"
 #define DMI_UUID_SIZE 36
 
+#define UNUSED(var) (void)(var)
+
 static int get_hostname(char* buf, size_t buflen) {
   if (gethostname(buf, buflen) != 0) {
     return -1;
@@ -71,7 +73,7 @@ static int get_hostname(char* buf, size_t buflen) {
 // (buflen-1) if it read buflen-1 characters
 // <(buflen-1), if a newline was read before the buffer was full
 // If the return value is >=0, the buf is NULL-terminated.
-static int read_stdin(char* buf, size_t buflen) {
+static int read_stdin(char* buf, int buflen) {
   int i = 0;
 
   while (i < buflen - 1) {
@@ -133,7 +135,8 @@ int get_machine_id(char* buf, size_t buflen, const char** error_tag) {
   return -1;
 }
 
-void timeout_handler(int unused_signal) {
+void timeout_handler(int sig) {
+  UNUSED(sig);
   errorf("Timed out while waiting for user input.\n");
   exit(EXITCODE_TIMEOUT);
 }
@@ -150,7 +153,7 @@ int shell_action(const char* user, char** action, size_t* action_len,
     free(buf);
     return failure(EXITCODE_PANIC, error_tag, "message-sprintf-error");
   }
-  if (ret >= buf_len) {
+  if ((size_t)ret >= buf_len) {
     free(buf);
     return failure(EXITCODE_PANIC, error_tag, "message-sprintf-trunc");
   }
@@ -361,7 +364,7 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
            MIN_ENCODED_AUTHCODE_LEN, bytes_read);
     return EXITCODE_INVALID_INPUT_SIZE;
   }
-  if (bytes_read > strlen(authcode_encoded)) {
+  if ((size_t)bytes_read > strlen(authcode_encoded)) {
     if (config->options & SYSLOG) {
       syslog(LOG_INFO, "authcode too long: %d bytes (%s)", bytes_read,
              config->username);

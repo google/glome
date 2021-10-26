@@ -28,6 +28,8 @@
 
 #define GLOME_CLI_MAX_MESSAGE_LENGTH 4095
 
+#define UNUSED(var) (void)(var)
+
 static const char *kUsage =
     "Usage: \n"
     "  To generate a new keypair\n"
@@ -44,6 +46,8 @@ static const char *kUsage =
     "Jjga9OukqY6qm05q0PU=/my-server.local/shell/root/\n";
 
 static int print_help(int argc, char **argv) {
+  UNUSED(argc);
+  UNUSED(argv);
   fprintf(stderr, kUsage, argv[0], argv[0], argv[0], argv[0], argv[0]);
   return EXIT_SUCCESS;
 }
