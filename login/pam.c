@@ -29,6 +29,8 @@
 
 #define MODULE_NAME "pam_glome"
 
+#define UNUSED(var) (void)(var)
+
 static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
                           glome_login_config_t *config) {
   memset(config, 0, sizeof(glome_login_config_t));
@@ -96,6 +98,9 @@ static int get_username(pam_handle_t *pamh, glome_login_config_t *config,
 static int glome_authenticate(pam_handle_t *pamh, glome_login_config_t *config,
                               const char **error_tag, int argc,
                               const char **argv) {
+  UNUSED(argc);
+  UNUSED(argv);
+
   if (is_zeroed(config->service_key, sizeof config->service_key)) {
     return failure(EXITCODE_PANIC, error_tag, "no-service-key");
   }
@@ -165,7 +170,7 @@ static int glome_authenticate(pam_handle_t *pamh, glome_login_config_t *config,
   }
   int written =
       snprintf(message, message_len, template, config->url_prefix, url);
-  if (written < 0 || written >= message_len) {
+  if (written < 0 || (size_t) written >= message_len) {
     return failure(EXITCODE_PANIC, error_tag, "broken-template");
   }
   free(url);
@@ -205,7 +210,7 @@ static int glome_authenticate(pam_handle_t *pamh, glome_login_config_t *config,
   if (bytes_read < MIN_ENCODED_AUTHCODE_LEN) {
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
-  if (bytes_read > strlen(authcode_encoded)) {
+  if ((size_t) bytes_read > strlen(authcode_encoded)) {
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
 
@@ -218,6 +223,8 @@ static int glome_authenticate(pam_handle_t *pamh, glome_login_config_t *config,
 
 int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv) {
+  UNUSED(flags);
+
   const char *error_tag = NULL;
   glome_login_config_t config = {0};
   int rc = PAM_AUTH_ERR;
@@ -257,5 +264,9 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
 int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv) {
   /* This module does not generate any user credentials, so just skip. */
+  UNUSED(pamh);
+  UNUSED(flags);
+  UNUSED(argc);
+  UNUSED(argv);
   return PAM_SUCCESS;
 }
