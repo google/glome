@@ -25,7 +25,6 @@ login_lib = static_library(
         'config.h',
         'crypto.c',
         'crypto.h',
-        'login.c',
         'openssl/base64.c',
         'ui.c',
         'ui.h',
@@ -39,7 +38,7 @@ pkg.generate(login_lib,
   description : 'glome-login, an authentication system built upon GLOME')
 
 glome_login = executable(
-    'glome-login', 'main.c',
+    'glome-login', ['main.c', 'login.c'],
     link_with : login_lib,
     include_directories : glome_incdir,
     install : true,
@@ -47,7 +46,7 @@ glome_login = executable(
 
 # TODO: Make tests compilation based on get_option('tests')
 login_test = executable(
-    'login_test', 'login_test.c',
+    'login_test', ['login_test.c', 'login.c'],
     dependencies : [openssl_dep, glib_dep],
     link_with : [glome_lib, login_lib],
     include_directories : glome_incdir)
@@ -64,7 +63,8 @@ if get_option('pam-glome')
     cc = meson.get_compiler('c')
     libpam = cc.find_library('pam')
     pam_glome = shared_library(
-        'pam_glome', 'pam.c',
+        'pam_glome', ['pam.c', 'login.c'],
+        c_args : '-DPAM_GLOME',
         dependencies : [libpam, openssl_dep],
         link_with : [glome_lib, login_lib],
         include_directories : glome_incdir,

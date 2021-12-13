@@ -12,14 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// For vsyslog
+#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
+
 #include "login.h"
 
 #include <assert.h>
+#include <errno.h>
 #include <glome.h>
 #include <limits.h>
 #include <netdb.h>
 #include <openssl/crypto.h>
 #include <signal.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -65,42 +71,6 @@ static int get_hostname(char* buf, size_t buflen) {
   strncpy(buf, res->ai_canonname, buflen - 1);
   buf[buflen - 1] = '\0';
   return 0;
-}
-
-// read_stdin reads printable characters from stdin into buf. It returns:
-// -1, if it encounters an error while reading
-// -2, if it encounters EOF
-// (buflen-1) if it read buflen-1 characters
-// <(buflen-1), if a newline was read before the buffer was full
-// If the return value is >=0, the buf is NULL-terminated.
-static int read_stdin(char* buf, int buflen) {
-  int i = 0;
-
-  while (i < buflen - 1) {
-    int n = read(STDIN_FILENO, buf + i, 1);
-    if (n < 0) {  // error while reading from stdin
-      perror("ERROR when reading from stdin");
-      return -1;
-    }
-    if (n == 0) {  // EOF
-      return -2;
-    }
-    if (buf[i] == '\n' || buf[i] == '\r') {  // newline
-      break;
-    } else if (buf[i] >= 0x20 && buf[i] <= 0x7e) {
-      // Advance the buffer pointer only if we got a printable character.
-      i++;
-    }
-  }
-  buf[i] = '\0';
-  return i;  // number of characters in the buffer without the NUL byte
-}
-
-static void print_hex(const uint8_t* buf, size_t len) {
-  for (size_t i = 0; i < len; i++) {
-    errorf("%02x", buf[i]);
-  }
-  errorf("\n");
 }
 
 int failure(int code, const char** error_tag, const char* message) {
@@ -249,21 +219,103 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
   return 0;
 }
 
-int login_run(glome_login_config_t* config, const char** error_tag) {
-  assert(config != NULL);
-  if (config->options & VERBOSE) {
-    errorf(
-        "debug: options: 0x%x\n"
-        "debug: username: %s\n"
-        "debug: login: %s\n"
-        "debug: auth delay: %d seconds\n",
-        config->options, config->username, config->login_path,
-        config->auth_delay_sec);
-  }
+#ifndef PAM_GLOME
+void login_error(glome_login_config_t* config, pam_handle_t* pamh,
+                 const char* format, ...) {
+  UNUSED(config);
+  UNUSED(pamh);
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fflush(NULL);
+}
+
+void login_syslog(glome_login_config_t* config, pam_handle_t* pamh,
+                  int priority, const char* format, ...) {
+  UNUSED(pamh);
   if (config->options & SYSLOG) {
-    openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
+    va_list args;
+    va_start(args, format);
+    vsyslog(priority, format, args);
+    va_end(args);
+  }
+}
+
+// read_stdin reads printable characters from stdin into buf. It returns:
+// -1, if it encounters an error while reading
+// -2, if it encounters EOF
+// (buflen-1) if it read buflen-1 characters
+// <(buflen-1), if a newline was read before the buffer was full
+// If the return value is >=0, the buf is NULL-terminated.
+static int read_stdin(char* buf, int buflen) {
+  int i = 0;
+
+  while (i < buflen - 1) {
+    int n = read(STDIN_FILENO, buf + i, 1);
+    if (n < 0) {  // error while reading from stdin
+      perror("ERROR when reading from stdin");
+      return -1;
+    }
+    if (n == 0) {  // EOF
+      return -2;
+    }
+    if (buf[i] == '\n' || buf[i] == '\r') {  // newline
+      break;
+    } else if (buf[i] >= 0x20 && buf[i] <= 0x7e) {
+      // Advance the buffer pointer only if we got a printable character.
+      i++;
+    }
+  }
+  buf[i] = '\0';
+  return i;  // number of characters in the buffer without the NUL byte
+}
+
+static void print_hex(const uint8_t* buf, size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    errorf("%02x", buf[i]);
+  }
+  errorf("\n");
+}
+
+int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
+                 const char** error_tag, const char* message, char* input,
+                 size_t input_size) {
+  UNUSED(pamh);
+  UNUSED(error_tag);
+
+  puts(message);
+  fputs(PROMPT, stdout);
+  fflush(NULL);
+
+  if (config->input_timeout_sec) {
+    struct sigaction action = {.sa_handler = &timeout_handler};
+    if (sigaction(SIGALRM, &action, NULL) < 0) {
+      perror("error while setting up the handler");
+      // Continue nonetheless as the handler is not critical.
+    }
+    // Set an alarm to prevent waiting for the code indefinitely.
+    alarm(config->input_timeout_sec);
   }
 
+  int bytes_read = read_stdin(input, input_size);
+
+  // Cancel any pending alarms.
+  alarm(0);
+
+  if (bytes_read < 0) {
+    return EXITCODE_IO_ERROR;
+  }
+  if (config->options & VERBOSE) {
+    errorf("debug: stdin: ");
+    print_hex((uint8_t*)input, bytes_read);
+  }
+  return 0;
+}
+#endif
+
+int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
+                       const char* prompt_format, const char** error_tag) {
   if (is_zeroed(config->service_key, sizeof config->service_key)) {
     return failure(EXITCODE_PANIC, error_tag, "no-service-key");
   }
@@ -291,6 +343,11 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
     return EXITCODE_PANIC;
   }
 
+  if (config->options & VERBOSE) {
+    login_syslog(config, pamh, LOG_DEBUG, "host ID: %s, action: %s", host_id,
+                 action);
+  }
+
   uint8_t authcode[GLOME_MAX_TAG_LENGTH];
   if (get_authcode(host_id, action, config->service_key, config->secret_key,
                    authcode)) {
@@ -314,24 +371,33 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
   free(action);
   action = NULL;
 
-  printf("Obtain the one-time authorization code from:\n%s%s\n",
-         config->url_prefix, url);
-
+  const char* prefix = "";
+  if (config->url_prefix != NULL) {
+    prefix = config->url_prefix;
+  }
+  size_t message_len =
+      strlen(prompt_format) + strlen(prefix) - 2 + strlen(url) - 2 + 1;
+  char* message = malloc(message_len);
+  if (message == NULL) {
+    return failure(EXITCODE_PANIC, error_tag, "malloc-message");
+  }
+  int written = snprintf(message, message_len, prompt_format, prefix, url);
+  if (written < 0 || (size_t)written >= message_len) {
+    return failure(EXITCODE_PANIC, error_tag, "broken-template");
+  }
   free(url);
   url = NULL;
 
-  // Display prompt.
-  fputs(PROMPT, stdout);
-  fflush(NULL);
+  char input[ENCODED_BUFSIZE(GLOME_MAX_TAG_LENGTH)];
+  int rc = login_prompt(config, pamh, error_tag, message, input, sizeof(input));
+  free(message);
+  if (rc != 0) {
+    return rc;
+  }
 
-  if (config->input_timeout_sec) {
-    struct sigaction action = {.sa_handler = &timeout_handler};
-    if (sigaction(SIGALRM, &action, NULL) < 0) {
-      perror("error while setting up the handler");
-      // Continue nonetheless as the handler is not critical.
-    }
-    // Set an alarm to prevent waiting for the code indefinitely.
-    alarm(config->input_timeout_sec);
+  int bytes_read = strlen(input);
+  if (config->options & INSECURE) {
+    login_syslog(config, pamh, LOG_DEBUG, "user input: %s", input);
   }
 
   // Calculate the correct authcode.
@@ -340,56 +406,69 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
                        sizeof authcode_encoded) == 0) {
     return failure(EXITCODE_PANIC, error_tag, "authcode-encode");
   }
-
-  char input[ENCODED_BUFSIZE(GLOME_MAX_TAG_LENGTH)];
-  int bytes_read = read_stdin(input, sizeof input);
-
-  // Cancel any pending alarms.
-  alarm(0);
-
-  if (bytes_read < 0) {
-    return EXITCODE_IO_ERROR;
-  }
-  if (config->options & VERBOSE) {
-    errorf("debug: stdin: ");
-    print_hex((uint8_t*)input, bytes_read);
+  if (config->options & INSECURE) {
+    login_syslog(config, pamh, LOG_DEBUG, "expect input: %s", authcode_encoded);
   }
 
   if (bytes_read < MIN_ENCODED_AUTHCODE_LEN) {
-    if (config->options & SYSLOG) {
-      syslog(LOG_INFO, "authcode too short: %d bytes (%s)", bytes_read,
-             config->username);
-    }
-    printf("Input too short: expected at least %d characters, got %d.\n",
-           MIN_ENCODED_AUTHCODE_LEN, bytes_read);
-    return EXITCODE_INVALID_INPUT_SIZE;
+    login_syslog(config, pamh, LOG_INFO, "authcode too short: %d bytes (%s)",
+                 bytes_read, config->username);
+    login_error(config, pamh,
+                "Input too short: expected at least %d characters, got %d.\n",
+                MIN_ENCODED_AUTHCODE_LEN, bytes_read);
+    return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
   if ((size_t)bytes_read > strlen(authcode_encoded)) {
-    if (config->options & SYSLOG) {
-      syslog(LOG_INFO, "authcode too long: %d bytes (%s)", bytes_read,
-             config->username);
-    }
-    printf("Input too long: expected at most %zu characters, got %d.\n",
-           strlen(authcode_encoded), bytes_read);
-    return EXITCODE_INVALID_INPUT_SIZE;
+    login_syslog(config, pamh, LOG_INFO, "authcode too long: %d bytes (%s)",
+                 bytes_read, config->username);
+    login_error(config, pamh,
+                "Input too long: expected at most %zu characters, got %d.\n",
+                strlen(authcode_encoded), bytes_read);
+    return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
 
   // Since we use (relatively) short auth codes, sleep before confirming the
   // result to prevent bruteforcing.
-  struct timespec delay;
-  delay.tv_sec = (time_t)config->auth_delay_sec;
-  delay.tv_nsec = 0;
-  if (nanosleep(&delay, NULL) != 0) {
-    perror("interrupted sleep()");
-    return EXITCODE_INTERRUPTED;
+  if (config->auth_delay_sec) {
+    struct timespec delay;
+    delay.tv_sec = (time_t)config->auth_delay_sec;
+    delay.tv_nsec = 0;
+    if (nanosleep(&delay, NULL) != 0) {
+      login_error(config, pamh, "interrupted sleep: %s", strerror(errno));
+      return failure(EXITCODE_INTERRUPTED, error_tag, "sleep-interrupted");
+    }
   }
 
   if (CRYPTO_memcmp(input, authcode_encoded, bytes_read) != 0) {
-    if (config->options & SYSLOG) {
-      syslog(LOG_WARNING, "authcode rejected (%s)", config->username);
-    }
-    puts("Invalid authorization code.");
-    return EXITCODE_INVALID_AUTHCODE;
+    login_syslog(config, pamh, LOG_WARNING, "authcode rejected (%s)",
+                 config->username);
+    login_error(config, pamh, "Invalid authorization code.\n");
+    return failure(EXITCODE_INVALID_AUTHCODE, error_tag, "authcode-invalid");
+  }
+
+  return 0;
+}
+
+int login_run(glome_login_config_t* config, const char** error_tag) {
+  assert(config != NULL);
+  if (config->options & VERBOSE) {
+    errorf(
+        "debug: options: 0x%x\n"
+        "debug: username: %s\n"
+        "debug: login: %s\n"
+        "debug: auth delay: %d seconds\n",
+        config->options, config->username, config->login_path,
+        config->auth_delay_sec);
+  }
+  if (config->options & SYSLOG) {
+    openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
+  }
+
+  int r = login_authenticate(
+      config, NULL, "Obtain the one-time authorization code from:\n%s%s",
+      error_tag);
+  if (r != 0) {
+    return r;
   }
 
   if (config->options & SYSLOG) {

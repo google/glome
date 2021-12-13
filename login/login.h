@@ -79,4 +79,22 @@ int failure(int code, const char** error_tag, const char* message);
 // On error, the error_tag is set to an error token which should NOT be freed.
 int get_machine_id(char* buf, size_t buflen, const char** error_tag);
 
+// Helper operations used by the GLOME login authentication.
+struct pam_handle;
+typedef struct pam_handle pam_handle_t;
+void login_error(glome_login_config_t* config, pam_handle_t* pamh,
+                 const char* format, ...);
+void login_syslog(glome_login_config_t* config, pam_handle_t* pamh,
+                  int priority, const char* format, ...);
+int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
+                 const char** error_tag, const char* message, char* input,
+                 size_t input_size);
+
+// Execute GLOME login authentication for login and PAM binaries.
+//
+// prompt_format string is expected to have exactly two %s specifiers (for URL
+// prefix and the URL itself).
+int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
+                       const char* prompt_format, const char** error_tag);
+
 #endif  // LOGIN_H_
