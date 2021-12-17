@@ -9,6 +9,16 @@ replacement of login(1).
  1. Create a configuration file, see [example.cfg](example.cfg).
  1. Try it out by running `glome-login -c glome.cfg -- root`
 
+## Configuration
+
+In order to reduce external dependencies, a custom parser is used
+to read the configuration file. The parser supports a simplified
+version of the INI syntax with the following limitations:
+
+* Quoting and escaping is not supported.
+* Comments are allowed only at the start of the line and can
+  begin with either `#` or `;`.
+
 ## Installation
 
 The installation is dependent on what system you are running.

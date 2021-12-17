@@ -30,7 +30,7 @@ login_lib = static_library(
         'ui.c',
         'ui.h',
     ],
-    dependencies : [openssl_dep, glib_dep],
+    dependencies : [openssl_dep],
     link_with : glome_lib,
     include_directories : glome_incdir,
     install : false)
