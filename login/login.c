@@ -53,7 +53,7 @@ static int get_hostname(char* buf, size_t buflen) {
   }
 
   // Retry using getaddrinfo to get an FQDN.
-  struct addrinfo* res;
+  struct addrinfo* res = NULL;
   struct addrinfo hints;
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_socktype = SOCK_DGRAM;
@@ -64,6 +64,7 @@ static int get_hostname(char* buf, size_t buflen) {
   }
   strncpy(buf, res->ai_canonname, buflen - 1);
   buf[buflen - 1] = '\0';
+  freeaddrinfo(res);
   return 0;
 }
 
