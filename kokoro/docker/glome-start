@@ -1,0 +1,23 @@
+#!/bin/sh
+
+GLOME=/usr/local/bin/glome
+GLOME_LOGIN=/usr/local/sbin/glome-login
+CONFIG=/usr/local/etc/glome/config
+PRIVATE=/usr/local/etc/glome/private.key
+PUBLIC=/usr/local/etc/glome/public.key
+
+umask 077
+$GLOME genkey | tee $PRIVATE | $GLOME pubkey > $PUBLIC
+
+PUBLIC_HEX=$(xxd -c 32 -ps $PUBLIC)
+sed -i "s/^#key = .*/key = $PUBLIC_HEX/" $CONFIG
+sed -i "1 i\auth sufficient /usr/local/lib/x86_64-linux-gnu/security/pam_glome.so" /etc/pam.d/sshd
+cat <<EOF > /etc/ssh/sshd_config.d/glome.conf
+ChallengeResponseAuthentication yes
+PermitRootLogin yes
+EOF
+
+mkdir /run/sshd
+/usr/sbin/sshd
+
+socat tcp-l:23,reuseaddr,fork exec:"/sbin/agetty -l $GLOME_LOGIN -",pty,setsid,setpgid,stderr,ctty

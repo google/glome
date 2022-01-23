@@ -92,3 +92,44 @@ PAM module supports the following options:
 ## Troubleshooting
 
 PAM module uses error tags to communicate errors in the syslog messages.
+
+# Docker
+
+Dockerfile included in the repository creates a Docker image that can be used
+to test `glome-login` and the PAM module.
+
+## Instalation
+
+Docker image for GLOME needs to be built first using the following command:
+
+```
+$ docker build -t glome -f kokoro/docker/Dockerfile .
+```
+
+## Usage
+
+Container is than started in the background with two TCP ports published to the
+host:
+
+```
+$ container=$(docker run -d -p 2022:22 -p 2023:23 glome)
+```
+
+Once the container is running it is possible to login using `netcat` or
+`socat`, for example:
+
+```
+$ socat tcp-connect:localhost:2023 file:`tty`,raw,echo=0
+```
+
+Regular SSH client can be used for testing the PAM module:
+
+```
+$ ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2022 root@localhost
+```
+
+Authorization code required for GLOME Login can be obtained by running:
+
+```
+$ docker exec $container /usr/local/bin/glome login --key /usr/local/etc/glome/private.key https://glome.example.com/v1/...
+```
