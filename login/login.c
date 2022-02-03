@@ -316,7 +316,7 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
   action = NULL;
 
   printf("Obtain the one-time authorization code from:\n%s%s\n",
-         config->url_prefix, url);
+         config->url_prefix ? config->url_prefix : "", url);
 
   free(url);
   url = NULL;
