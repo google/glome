@@ -370,7 +370,7 @@ int login(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  char *path = argv[optind];
+  char *path = strstr(argv[optind], "/v1/");
   if (!parse_login_path(path, &handshake_b64, &host_esc, &action)) {
     return EXIT_FAILURE;
   }
