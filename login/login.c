@@ -384,6 +384,7 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   }
   int written = snprintf(message, message_len, prompt_format, prefix, url);
   if (written < 0 || (size_t)written >= message_len) {
+    free(message);
     return failure(EXITCODE_PANIC, error_tag, "broken-template");
   }
   free(url);
