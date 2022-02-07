@@ -243,33 +243,44 @@ void login_syslog(glome_login_config_t* config, pam_handle_t* pamh,
   }
 }
 
-// read_stdin reads printable characters from stdin into buf. It returns:
+// read_stdin reads characters from stdin into buf. It returns:
 // -1, if it encounters an error while reading
-// -2, if it encounters EOF
+// -2, if it encounters invalid characters in the input
 // (buflen-1) if it read buflen-1 characters
 // <(buflen-1), if a newline was read before the buffer was full
 // If the return value is >=0, the buf is NULL-terminated.
+// Additionally, stdin is always advanced up to a newline (or EOF)
+// to prevent excess input from being read by a future shell process.
 static int read_stdin(char* buf, int buflen) {
-  int i = 0;
+  // Return error if we got no characters.
+  if (fgets(buf, buflen, stdin) == NULL) {
+    perror("ERROR when reading from stdin");
+    return -1;
+  }
 
-  while (i < buflen - 1) {
-    int n = read(STDIN_FILENO, buf + i, 1);
-    if (n < 0) {  // error while reading from stdin
-      perror("ERROR when reading from stdin");
-      return -1;
-    }
-    if (n == 0) {  // EOF
+  bool newline = false;
+  int len = strlen(buf);
+  if (buf[len - 1] == '\n') {
+    newline = true;
+    buf[len - 1] = '\0';
+    len--;
+  }
+
+  // Return error if we got a non-printable character.
+  for (int i = 0; i < len; i++) {
+    if (buf[i] < 0x20 || buf[i] > 0x7e) {
+      errorf("ERROR invalid characters read from stdin\n");
       return -2;
     }
-    if (buf[i] == '\n' || buf[i] == '\r') {  // newline
-      break;
-    } else if (buf[i] >= 0x20 && buf[i] <= 0x7e) {
-      // Advance the buffer pointer only if we got a printable character.
-      i++;
+  }
+
+  // Read stdin until a newline to avoid passing junk to shell.
+  if (!newline) {
+    for (int c = 0; c != EOF && c != '\n'; c = fgetc(stdin)) {
     }
   }
-  buf[i] = '\0';
-  return i;  // number of characters in the buffer without the NUL byte
+
+  return len;  // Number of characters in the buffer without the NULL byte.
 }
 
 static void print_hex(const uint8_t* buf, size_t len) {
