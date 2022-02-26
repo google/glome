@@ -26,7 +26,9 @@ glome_cli = executable(
   include_directories : glome_incdir,
   install : true)
 
-cli_test = find_program('test.sh')
-test('cli', cli_test,
-  args : glome_cli,
-  timeout : 120)
+if get_option('tests')
+    cli_test = find_program('test.sh')
+    test('cli', cli_test,
+      args : glome_cli,
+      timeout : 120)
+endif

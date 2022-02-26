@@ -30,11 +30,12 @@ pkg.generate(glome_lib,
   description : 'GLOME, the Generic Low Overhead Message Exchange')
 install_headers('glome.h')
 
-# TODO: Make tests compilation based on get_option('tests')
-glib_dep = dependency('glib-2.0')
-glome_test = executable('glome_test', 'glome_test.c', dependencies : glib_dep,
-  link_with : glome_lib, include_directories : glome_incdir)
-test('glome', glome_test)
+if get_option('tests')
+    glib_dep = dependency('glib-2.0')
+    glome_test = executable('glome_test', 'glome_test.c', dependencies : glib_dep,
+      link_with : glome_lib, include_directories : glome_incdir)
+    test('glome', glome_test)
+endif
 
 subdir('login')
 
