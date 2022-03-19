@@ -44,20 +44,21 @@ glome_login = executable(
     install : true,
     install_dir : get_option('sbindir'))
 
-# TODO: Make tests compilation based on get_option('tests')
-login_test = executable(
-    'login_test', ['login_test.c', 'login.c'],
-    dependencies : [openssl_dep, glib_dep],
-    link_with : [glome_lib, login_lib],
-    include_directories : glome_incdir)
-test('login test', login_test)
+if get_option('tests')
+    login_test = executable(
+        'login_test', ['login_test.c', 'login.c'],
+        dependencies : [openssl_dep, glib_dep],
+        link_with : [glome_lib, login_lib],
+        include_directories : glome_incdir)
+    test('login test', login_test)
 
-crypto_test = executable(
-    'crypto_test', 'crypto_test.c',
-    dependencies : [openssl_dep, glib_dep],
-    link_with : [glome_lib, login_lib],
-    include_directories : glome_incdir)
-test('crypto test', crypto_test)
+    crypto_test = executable(
+        'crypto_test', 'crypto_test.c',
+        dependencies : [openssl_dep, glib_dep],
+        link_with : [glome_lib, login_lib],
+        include_directories : glome_incdir)
+    test('crypto test', crypto_test)
+endif
 
 if get_option('pam-glome')
     cc = meson.get_compiler('c')
@@ -72,19 +73,21 @@ if get_option('pam-glome')
         install : true,
         install_dir : join_paths(get_option('libdir'), 'security'))
 
-    libpamtest = dependency('libpamtest', required : false)
-    if libpamtest.found()
-        pam_test = executable(
-            'pam_test', 'pam_test.c',
-            dependencies : [libpamtest])
-        custom_target('pam_service',
-            build_by_default : true, output : [ 'pam_service' ],
-            command : [ 'mkdir', '@OUTPUT@' ])
-        test('pam test', pam_test,
-            env: [ 'LD_PRELOAD=libpam_wrapper.so', 'PAM_WRAPPER=1',
-                'PAM_WRAPPER_SERVICE_DIR=' +
-                join_paths(meson.build_root(), 'login', 'pam_service'),
-                'PAM_GLOME=' +
-                join_paths(meson.build_root(), 'login', 'pam_glome.so') ])
+    if get_option('tests')
+        libpamtest = dependency('libpamtest', required : false)
+        if libpamtest.found()
+            pam_test = executable(
+                'pam_test', 'pam_test.c',
+                dependencies : [libpamtest])
+            custom_target('pam_service',
+                build_by_default : true, output : [ 'pam_service' ],
+                command : [ 'mkdir', '@OUTPUT@' ])
+            test('pam test', pam_test,
+                env: [ 'LD_PRELOAD=libpam_wrapper.so', 'PAM_WRAPPER=1',
+                    'PAM_WRAPPER_SERVICE_DIR=' +
+                    join_paths(meson.build_root(), 'login', 'pam_service'),
+                    'PAM_GLOME=' +
+                    join_paths(meson.build_root(), 'login', 'pam_glome.so') ])
+        endif
     endif
 endif
