@@ -85,7 +85,11 @@ int test_service() {
           pam_glome);
   fclose(f);
 
+#if defined(OLDSTYLE_RUN_PAMTEST)
   perr = run_pamtest(service, username, &conv_data, tests);
+#else
+  perr = run_pamtest(service, username, &conv_data, tests, NULL);
+#endif
   if (perr != PAMTEST_ERR_OK) {
     puts(pamtest_strerror(perr));
     return 1;
@@ -163,7 +167,12 @@ int test_config() {
   fclose(f);
   free(config_file);
 
+#if defined(OLDSTYLE_RUN_PAMTEST)
   perr = run_pamtest(service, username, &conv_data, tests);
+#else
+  perr = run_pamtest(service, username, &conv_data, tests, NULL);
+#endif
+
   if (perr != PAMTEST_ERR_OK) {
     puts(pamtest_strerror(perr));
     return 1;
