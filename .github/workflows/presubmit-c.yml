@@ -19,14 +19,15 @@ jobs:
     strategy:
       matrix:
         container:
-        - 'debian:latest'
+        - 'debian:stable'
+        - 'debian:testing'
         - 'alpine:latest'
     container:
       image: ${{ matrix.container }}
     steps:
     - uses: actions/checkout@v2
     - name: install Debian dependencies
-      if: ${{ matrix.container == 'debian:latest' }}
+      if: ${{ startsWith(matrix.container, 'debian:') }}
       run: ./kokoro/rodete/fetch_dependencies.sh
     - name: install Alpine dependencies
       if: ${{ matrix.container == 'alpine:latest' }}
