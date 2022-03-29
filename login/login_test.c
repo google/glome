@@ -133,12 +133,40 @@ static void test_vector_2() {
   }
 }
 
+static void test_parse_public_key() {
+  const char* encoded =
+      "glome-x25519-sha256 QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=";
+  uint8_t decoded[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
+  uint8_t expected[GLOME_MAX_PUBLIC_KEY_LENGTH] =
+      "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+  g_assert_true(
+      glome_login_parse_public_key(encoded, decoded, sizeof(decoded)));
+  g_assert_cmpmem(decoded, sizeof(decoded), expected, sizeof(expected));
+
+  g_assert_false(
+      glome_login_parse_public_key(encoded, decoded, sizeof(decoded) - 1));
+  g_assert_false(glome_login_parse_public_key(
+      "glome-group1-md5 QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=", decoded,
+      sizeof(decoded)));
+  g_assert_false(glome_login_parse_public_key(
+      "glome-x25519-sha256 QUFBQUFBQUFB", decoded, sizeof(decoded)));
+
+  memset(decoded, 0, sizeof(decoded));
+  const char* extra_chars =
+      "glome-x25519-sha256 \t QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE= "
+      "root@localhost";
+  g_assert_true(
+      glome_login_parse_public_key(extra_chars, decoded, sizeof(decoded)));
+  g_assert_cmpmem(decoded, sizeof(decoded), expected, sizeof(expected));
+}
+
 int main(int argc, char** argv) {
   g_test_init(&argc, &argv, NULL);
 
   g_test_add_func("/test-shell-action", test_shell_action);
   g_test_add_func("/test-vector-1", test_vector_1);
   g_test_add_func("/test-vector-2", test_vector_2);
+  g_test_add_func("/test-parse-public-key", test_parse_public_key);
 
   return g_test_run();
 }

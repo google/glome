@@ -53,6 +53,14 @@ typedef struct glome_login_config {
   const char* host_id;
 } glome_login_config_t;
 
+#define GLOME_LOGIN_PUBLIC_KEY_ID "glome-x25519-sha256"
+
+// glome_login_parse_public_key extracts the public key bytes from an encoded
+// public key.
+// Returns true on success.
+bool glome_login_parse_public_key(const char* encoded_key, uint8_t* public_key,
+                                  size_t public_key_size);
+
 // glome_login_parse_config_file parses the configuration file and fills the
 // given config struct with the data. The default config file is used in case
 // no explicit config file has been provided, however in this case failed
