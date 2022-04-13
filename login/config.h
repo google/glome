@@ -53,10 +53,24 @@ typedef struct glome_login_config {
   const char* host_id;
 } glome_login_config_t;
 
+// Error message returned by the config functions. If no error ocurred
+// return value will be set to STATUS_OK.
+typedef char* status_t;
+// Allocate and format an error message.
+status_t status_createf(const char* format, ...);
+// Free an error message after it is not needed anymore.
+void status_free(status_t status);
+// If no error occurred the value of returned error message will be STATUS_OK.
+#define STATUS_OK NULL
+
 // glome_login_parse_config_file parses the configuration file and fills the
 // given config struct with the data. The default config file is used in case
 // no explicit config file has been provided, however in this case failed
 // attempts to read the default config file will be ignored.
-int glome_login_parse_config_file(glome_login_config_t* config);
+status_t glome_login_parse_config_file(glome_login_config_t* config);
+
+status_t glome_login_assign_config_option(glome_login_config_t* config,
+                                          const char* section, const char* key,
+                                          const char* val);
 
 #endif  // GLOME_LOGIN_CONFIG_H_
