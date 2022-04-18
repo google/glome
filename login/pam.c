@@ -168,7 +168,8 @@ int login_prompt(glome_login_config_t *config, pam_handle_t *pamh,
   // OpenSSH provides fake password when login is not allowed,
   // for example due to PermitRootLogin set to 'no'
   // https://github.com/openssh/openssh-portable/commit/283b97
-  const char fake_password[] = "\b\n\r\177INCORRECT"; // auth-pam.c from OpenSSH
+  const char fake_password[] =
+      "\b\n\r\177INCORRECT";  // auth-pam.c from OpenSSH
   bool is_fake = true;
 
   // Constant-time comparison in case token contains user's password
