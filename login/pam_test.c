@@ -21,14 +21,12 @@
 #include <libpamtest.h>
 
 const char *authtoks[] = {
-    "lyHuaHuCck",           /* Correct code */
-    "lyHuaHuCc",            /* Too short */
-    "INVALIDCODE",          /* Wrong code */
+    "lyHuaHuCck",  /* Correct code */
+    "lyHuaHuCc",   /* Too short */
+    "INVALIDCODE", /* Wrong code */
     /* fake passwords that might be provided by openssh-portable/auth-pam.c */
-    "\b\n\r\177",
-    "\b\n\r\177INCORRECT",
-    "\b\n\r\177INCORRECT\b\n\r\177",
-    NULL                    /* Terminator */
+    "\b\n\r\177", "\b\n\r\177INCORRECT", "\b\n\r\177INCORRECT\b\n\r\177",
+    NULL /* Terminator */
 };
 
 struct pamtest_conv_data conv_data = {
