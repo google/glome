@@ -177,8 +177,7 @@ int login_prompt(glome_login_config_t *config, pam_handle_t *pamh,
     is_fake &= (token[i] == fake_password[i % (sizeof(fake_password) - 1)]);
   }
   if (is_fake) {
-    pam_syslog(pamh, LOG_ERR, "login disallowed by OpenSSH (PermitRootLogin?)");
-    return EXITCODE_PANIC;
+    return failure(EXITCODE_PANIC, error_tag, "pam-authtok-openssh-no-login");
   }
 
   strncpy(input, token, input_size);
