@@ -24,7 +24,9 @@ const char *authtoks[] = {
     "lyHuaHuCck",  /* Correct code */
     "lyHuaHuCc",   /* Too short */
     "INVALIDCODE", /* Wrong code */
-    NULL           /* Terminator */
+    /* fake passwords that might be provided by openssh-portable/auth-pam.c */
+    "\b\n\r\177", "\b\n\r\177INCORRECT", "\b\n\r\177INCORRECT\b\n\r\177",
+    NULL /* Terminator */
 };
 
 struct pamtest_conv_data conv_data = {
@@ -33,6 +35,9 @@ struct pamtest_conv_data conv_data = {
 
 struct pam_testcase tests[] = {
     pam_test(PAMTEST_AUTHENTICATE, PAM_SUCCESS),
+    pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
+    pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
+    pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
     pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
     pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
 };

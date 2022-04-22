@@ -164,6 +164,22 @@ int login_prompt(glome_login_config_t *config, pam_handle_t *pamh,
   if (strlen(token) >= input_size) {
     return failure(EXITCODE_PANIC, error_tag, "pam-authtok-size");
   }
+
+  // OpenSSH provides fake password when login is not allowed,
+  // for example due to PermitRootLogin set to 'no'
+  // https://github.com/openssh/openssh-portable/commit/283b97
+  const char fake_password[] =
+      "\b\n\r\177INCORRECT";  // auth-pam.c from OpenSSH
+  bool is_fake = true;
+
+  // Constant-time comparison in case token contains user's password
+  for (size_t i = 0; i < strlen(token); i++) {
+    is_fake &= (token[i] == fake_password[i % (sizeof(fake_password) - 1)]);
+  }
+  if (is_fake) {
+    return failure(EXITCODE_PANIC, error_tag, "pam-authtok-openssh-no-login");
+  }
+
   strncpy(input, token, input_size);
   return 0;
 }
