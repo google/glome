@@ -33,52 +33,54 @@
 
 #define UNUSED(var) (void)(var)
 
+static const char *arg_value(const char *arg, const char *key) {
+  int key_len = strlen(key);
+  if (strncmp(arg, key, key_len) == 0 && arg[key_len] == '=') {
+    return arg + key_len + 1;
+  }
+  return NULL;
+}
+
 static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
                           glome_login_config_t *config) {
   memset(config, 0, sizeof(glome_login_config_t));
   int errors = 0;
+  status_t status;
+  const char *val;
 
   for (int i = 0; i < argc; ++i) {
-    if (!strncmp(argv[i], "config_path=", 12)) {
-      config->config_path = argv[i] + 12;
-    } else if (!strncmp(argv[i], "service_key=", 12)) {
-      if (decode_hex(config->service_key, sizeof config->service_key,
-                     argv[i] + 12) != 0) {
-        pam_syslog(pamh, LOG_ERR, "invalid value for %s", argv[i]);
-        errors++;
-      }
-    } else if (!strncmp(argv[i], "service_key_version=", 20)) {
-      char *endptr;
-      long l;
-      errno = 0;
-      l = strtol(argv[i] + 20, &endptr, 0);
-      if (errno) {
-        pam_syslog(pamh, LOG_ERR, "invalid value for %s", argv[i]);
-        errors++;
-        continue;
-      }
-      if (*endptr != '\0' || l <= 0 || l > UINT8_MAX) {
-        pam_syslog(pamh, LOG_ERR, "invalid value for %s", argv[i]);
-        errors++;
-        continue;
-      }
-      config->service_key_id = (uint8_t)l;
-    } else if (!strncmp(argv[i], "url_prefix=", 11)) {
-      config->url_prefix = argv[i] + 11;
+    if ((val = arg_value(argv[i], "config_path"))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "config-path", val);
+    } else if ((val = arg_value(argv[i], "service_key"))) {
+      status = glome_login_assign_config_option(config, "service", "key", val);
+    } else if ((val = arg_value(argv[i], "service_key_version"))) {
+      status = glome_login_assign_config_option(config, "service",
+                                                "key-version", val);
+    } else if ((val = arg_value(argv[i], "url_prefix"))) {
+      status = glome_login_assign_config_option(config, "service", "url-prefix",
+                                                val);
     } else if (!strcmp(argv[i], "debug")) {
-      config->options |= VERBOSE;
+      status = glome_login_assign_config_option(config, "default", "verbose",
+                                                "true");
     } else if (!strcmp(argv[i], "insecure_debug")) {
-      config->options |= INSECURE;
-    } else if (!strncmp(argv[i], "insecure_host_id=", 17)) {
-      config->host_id = argv[i] + 17;
-    } else if (!strncmp(argv[i], "insecure_secret_key=", 20)) {
-      if (decode_hex(config->secret_key, sizeof config->secret_key,
-                     argv[i] + 20) != 0) {
-        pam_syslog(pamh, LOG_ERR, "invalid value for %s", argv[i]);
-        errors++;
-      }
+      status = glome_login_assign_config_option(config, "default",
+                                                "print-secrets", "true");
+    } else if ((val = arg_value(argv[i], "insecure_host_id"))) {
+      status =
+          glome_login_assign_config_option(config, "default", "host-id", val);
+    } else if ((val = arg_value(argv[i], "insecure_secret_key"))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "ephemeral-key", val);
     } else {
       pam_syslog(pamh, LOG_ERR, "invalid option %s", argv[i]);
+      errors++;
+      continue;
+    }
+
+    if (status != STATUS_OK) {
+      pam_syslog(pamh, LOG_ERR, status);
+      status_free(status);
       errors++;
     }
   }
@@ -198,10 +200,10 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return rc;
   }
 
-  r = glome_login_parse_config_file(&config);
-  if (r < 0) {
-    pam_syslog(pamh, LOG_ERR, "failed to read config file: %s (%d)",
-               config.config_path, r);
+  status_t status = glome_login_parse_config_file(&config);
+  if (status != STATUS_OK) {
+    pam_syslog(pamh, LOG_ERR, "failed to read config file %s: %s",
+               config.config_path, status);
     return rc;
   }
 

@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <getopt.h>
 #include <limits.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +27,31 @@ static void usage(const char* argv0) {
   const char* sep = strrchr(argv0, '/');
   const char* name = (sep == NULL) ? argv0 : sep + 1;
   errorf("Usage: %s [OPTIONS] [--] USERNAME\n", name);
+}
+
+#define STATUS_SIZE 256
+static char* status_malloc_failed = "ERROR: failed to allocate status buffer";
+
+status_t status_createf(const char* format, ...) {
+  char* message = malloc(STATUS_SIZE);
+  if (message == NULL) {
+    return status_malloc_failed;
+  }
+  va_list argptr;
+  va_start(argptr, format);
+  int ret = vsnprintf(message, STATUS_SIZE, format, argptr);
+  va_end(argptr);
+  if (ret < 0 || ret >= STATUS_SIZE) {
+    snprintf(message, STATUS_SIZE, "ERROR: status message too big: %d", ret);
+  }
+  return message;
+}
+
+void status_free(status_t status) {
+  if (status == status_malloc_failed) {
+    return;
+  }
+  free(status);
 }
 
 int decode_hex(uint8_t* dst, size_t dst_len, const char* in) {
@@ -52,33 +78,54 @@ int decode_hex(uint8_t* dst, size_t dst_len, const char* in) {
 
 static const char flags_help[] =
     "Available flags:"
-    "\n -h        this help"
+    "\n -h, --help                 this help"
 
-    "\n -c        configuration file to parse "
+    "\n -c, --config-path=PATH     configuration file to parse "
     "(default: " DEFAULT_CONFIG_FILE
     ")"
 
-    "\n -d N      sleep N seconds before the auth code check (default: %d)"
+    "\n -d, --auth-delay=N         sleep N seconds before the auth code check "
+    "(default: %d)"
 
-    "\n -k KEY    use hex-encoded KEY as the service key (defaults to key "
+    "\n -k, --key=KEY              use hex-encoded KEY as the service key "
+    "(defaul: key "
     "from configuration file)"
 
-    "\n -l PATH   use PATH instead of " DEFAULT_LOGIN_PATH
+    "\n -l, --login-path=PATH      use PATH instead of " DEFAULT_LOGIN_PATH
 
-    "\n -u URL    use given URL prefix"
+    "\n -u, --url-prefix=URL       use given URL prefix"
 
-    "\n -s        suppress syslog logging (default: false)"
+    "\n -s, --disable-syslog       suppress syslog logging (default: false)"
 
-    "\n -t N      abort if the authcode has not been provided within N seconds"
-    "             no timeout if the flag is 0 (default: %d)"
+    "\n -t, --timeout=N            abort if the authcode has not been provided "
+    "within N seconds"
+    "\n                            no timeout if the flag is 0 (default: %d)"
 
-    "\n -v        print debug information"
+    "\n -v, --verbose              print debug information"
 
     "\nUnsafe flags:"
-    "\n -I        print all the secrets (INSECURE!)"
-    "\n -K KEY    use KEY as the hex-encoded ephemeral secret key (INSECURE!)"
-    "\n -M NAME   use NAME as the host-id"
+    "\n -I, --print-secrets        print all the secrets (INSECURE!)"
+    "\n -K, --ephemeral-key=KEY    use KEY as the hex-encoded ephemeral secret "
+    "key (INSECURE!)"
+    "\n -M, --host-id=NAME         use NAME as the host-id"
     "\n";
+
+static const char* short_options = "hc:d:k:l:st:u:vIK:M:";
+static const struct option long_options[] = {
+    {"help", no_argument, 0, 'h'},
+    {"config-path", required_argument, 0, 'c'},
+    {"auth-delay", required_argument, 0, 'd'},
+    {"key", required_argument, 0, 'k'},
+    {"login-path", required_argument, 0, 'l'},
+    {"disable-syslog", no_argument, 0, 's'},
+    {"timeout", required_argument, 0, 't'},
+    {"url-prefix", required_argument, 0, 'u'},
+    {"verbose", no_argument, 0, 'v'},
+    {"print-secrets", no_argument, 0, 'I'},
+    {"ephemeral-key", required_argument, 0, 'K'},
+    {"host-id", required_argument, 0, 'M'},
+    {0, 0, 0, 0},
+};
 
 int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
   memset(config, 0, sizeof(glome_login_config_t));
@@ -90,71 +137,55 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
   config->input_timeout_sec = DEFAULT_INPUT_TIMEOUT;
   config->options = SYSLOG;
 
-  int errors = 0;
-
   int c;
-  while ((c = getopt(argc, argv, "hc:d:k:l:st:u:vIK:M:")) != -1) {
-    char* endptr;
-    long l;
+  int errors = 0;
+  status_t status;
+  while ((c = getopt_long(argc, argv, short_options, long_options, NULL)) !=
+         -1) {
     switch (c) {
       case 'c':
-        config->config_path = optarg;
+        status = glome_login_assign_config_option(config, "default",
+                                                  "config-path", optarg);
         break;
       case 'd':
-        errno = 0;
-        l = strtol(optarg, &endptr, 0);
-        if (errno) {
-          perror("ERROR: invalid value for -d");
-          errors++;
-          continue;
-        }
-        if (*endptr != '\0' || l < 0 || l > UINT_MAX) {
-          errorf("ERROR: invalid value for -d: '%s'\n", optarg);
-        }
-        config->auth_delay_sec = (unsigned int)l;
+        status = glome_login_assign_config_option(config, "default",
+                                                  "auth-delay", optarg);
         break;
       case 'k':
-        if (decode_hex(config->service_key, sizeof config->service_key,
-                       optarg) != 0) {
-          errors++;
-        }
+        status =
+            glome_login_assign_config_option(config, "service", "key", optarg);
         break;
       case 'l':
-        config->login_path = optarg;
+        status = glome_login_assign_config_option(config, "service",
+                                                  "login-path", optarg);
         break;
       case 's':
-        config->options &= ~SYSLOG;
+        status = glome_login_assign_config_option(config, "default",
+                                                  "disable-syslog", optarg);
         break;
       case 't':
-        errno = 0;
-        l = strtol(optarg, &endptr, 0);
-        if (errno) {
-          perror("ERROR: invalid value for -t");
-          errors++;
-          continue;
-        }
-        if (*endptr != '\0' || l < 0 || l > UINT_MAX) {
-          errorf("ERROR: invalid value for -t: '%s'\n", optarg);
-        }
-        config->input_timeout_sec = (unsigned int)l;
+        status = glome_login_assign_config_option(config, "default", "timeout",
+                                                  optarg);
         break;
       case 'u':
-        config->url_prefix = optarg;
+        status = glome_login_assign_config_option(config, "default",
+                                                  "url-prefix", optarg);
         break;
       case 'v':
-        config->options |= VERBOSE;
+        status = glome_login_assign_config_option(config, "default", "verbose",
+                                                  optarg);
         break;
       case 'I':
-        config->options |= INSECURE;
+        status = glome_login_assign_config_option(config, "default",
+                                                  "print-secrets", optarg);
         break;
       case 'K':
-        if (decode_hex(config->secret_key, sizeof config->secret_key, optarg) !=
-            0) {
-          errors++;
-        }
+        status = glome_login_assign_config_option(config, "default",
+                                                  "ephemeral-key", optarg);
         break;
       case 'M':
-        config->host_id = optarg;
+        status = glome_login_assign_config_option(config, "default", "host-id",
+                                                  optarg);
         break;
       case '?':
       case 'h':
@@ -163,6 +194,11 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
         return 2;
       default:
         return -1;  // PANIC
+    }
+    if (status != STATUS_OK) {
+      errorf("%s\n", status);
+      status_free(status);
+      errors++;
     }
   }
 
