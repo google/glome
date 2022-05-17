@@ -33,10 +33,20 @@
 
 #define UNUSED(var) (void)(var)
 
-static const char *arg_value(const char *arg, const char *key) {
-  int key_len = strlen(key);
-  if (strncmp(arg, key, key_len) == 0 && arg[key_len] == '=') {
+static const char *arg_value(const char *arg, const char *key,
+                             const char *default_value) {
+  int i, key_len = strlen(key);
+  for (i = 0; i < key_len; i++) {
+    // Compare key with arg char by char while also allowing _ in place of -
+    if (!(key[i] == arg[i] || (key[i] == '-' && arg[i] == '_'))) {
+      return NULL;
+    }
+  }
+  if (arg[key_len] == '=') {
     return arg + key_len + 1;
+  }
+  if (arg[key_len] == '\0') {
+    return default_value;
   }
   return NULL;
 }
@@ -49,27 +59,27 @@ static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
   const char *val;
 
   for (int i = 0; i < argc; ++i) {
-    if ((val = arg_value(argv[i], "config_path"))) {
+    if ((val = arg_value(argv[i], "config-path", NULL))) {
       status = glome_login_assign_config_option(config, "default",
                                                 "config-path", val);
-    } else if ((val = arg_value(argv[i], "service_key"))) {
+    } else if ((val = arg_value(argv[i], "key", NULL))) {
       status = glome_login_assign_config_option(config, "service", "key", val);
-    } else if ((val = arg_value(argv[i], "service_key_version"))) {
+    } else if ((val = arg_value(argv[i], "key-version", NULL))) {
       status = glome_login_assign_config_option(config, "service",
                                                 "key-version", val);
-    } else if ((val = arg_value(argv[i], "url_prefix"))) {
+    } else if ((val = arg_value(argv[i], "url-prefix", NULL))) {
       status = glome_login_assign_config_option(config, "service", "url-prefix",
                                                 val);
-    } else if (!strcmp(argv[i], "debug")) {
-      status = glome_login_assign_config_option(config, "default", "verbose",
-                                                "true");
-    } else if (!strcmp(argv[i], "insecure_debug")) {
+    } else if ((val = arg_value(argv[i], "debug", "true"))) {
+      status =
+          glome_login_assign_config_option(config, "default", "verbose", val);
+    } else if ((val = arg_value(argv[i], "print-secrets", "true"))) {
       status = glome_login_assign_config_option(config, "default",
-                                                "print-secrets", "true");
-    } else if ((val = arg_value(argv[i], "insecure_host_id"))) {
+                                                "print-secrets", val);
+    } else if ((val = arg_value(argv[i], "host-id", NULL))) {
       status =
           glome_login_assign_config_option(config, "default", "host-id", val);
-    } else if ((val = arg_value(argv[i], "insecure_secret_key"))) {
+    } else if ((val = arg_value(argv[i], "ephemeral-key", NULL))) {
       status = glome_login_assign_config_option(config, "default",
                                                 "ephemeral-key", val);
     } else {
