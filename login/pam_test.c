@@ -80,7 +80,7 @@ int test_service() {
   free(service_file);
 
   fprintf(f,
-          "auth required %s prompt=[Go to https://test.service/]"
+          "auth required %s prompt=https://test.service/ "
           "key="
           "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f "
           "key_version=1 "
