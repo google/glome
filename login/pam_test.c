@@ -144,7 +144,7 @@ int test_config() {
           "key = "
           "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f\n"
           "key-version = 1\n"
-          "prompt = Go to https://test.service/\n");
+          "prompt = https://test.service/\n");
   fclose(f);
 
   len = strlen(runtime_dir) + 1 + strlen(service) + 1;
