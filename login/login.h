@@ -91,10 +91,7 @@ int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
                  size_t input_size);
 
 // Execute GLOME login authentication for login and PAM binaries.
-//
-// prompt_format string is expected to have exactly two %s specifiers (for URL
-// prefix and the URL itself).
 int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
-                       const char* prompt_format, const char** error_tag);
+                       const char** error_tag);
 
 #endif  // LOGIN_H_

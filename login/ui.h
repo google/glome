@@ -34,6 +34,7 @@
 #define DEFAULT_AUTH_DELAY 1
 #define DEFAULT_INPUT_TIMEOUT 180
 #define DEFAULT_USERNAME "root"
+#define DEFAULT_PROMPT "GLOME: "
 
 // Options
 // obsolete: SKIP_LOCKDOWN (1 << 1)

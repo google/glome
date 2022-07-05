@@ -67,9 +67,9 @@ static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
     } else if ((val = arg_value(argv[i], "key-version", NULL))) {
       status = glome_login_assign_config_option(config, "service",
                                                 "key-version", val);
-    } else if ((val = arg_value(argv[i], "url-prefix", NULL))) {
-      status = glome_login_assign_config_option(config, "service", "url-prefix",
-                                                val);
+    } else if ((val = arg_value(argv[i], "prompt", NULL))) {
+      status =
+          glome_login_assign_config_option(config, "service", "prompt", val);
     } else if ((val = arg_value(argv[i], "debug", "true"))) {
       status =
           glome_login_assign_config_option(config, "default", "verbose", val);
@@ -224,7 +224,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return rc;
   }
 
-  r = login_authenticate(&config, pamh, "GLOME link: %s%s", &error_tag);
+  r = login_authenticate(&config, pamh, &error_tag);
   if (!r) {
     rc = PAM_SUCCESS;
     if (config.options & VERBOSE) {

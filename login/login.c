@@ -195,14 +195,14 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
     return failure(EXITCODE_PANIC, error_tag, "host-id-malloc-error");
   }
 
-  int len = strlen("/v1/") + strlen(handshake_encoded) + 1 +
+  int len = strlen("v1/") + strlen(handshake_encoded) + 1 +
             strlen(host_id_escaped) + 1 + strlen(action) + 2;
   char* buf = malloc(len);
   if (buf == NULL) {
     free(host_id_escaped);
     return failure(EXITCODE_PANIC, error_tag, "url-malloc-error");
   }
-  int ret = snprintf(buf, len, "/v1/%s/%s/%s/", handshake_encoded,
+  int ret = snprintf(buf, len, "v1/%s/%s/%s/", handshake_encoded,
                      host_id_escaped, action);
   free(host_id_escaped);
   host_id_escaped = NULL;
@@ -327,7 +327,7 @@ int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
 #endif
 
 int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
-                       const char* prompt_format, const char** error_tag) {
+                       const char** error_tag) {
   if (is_zeroed(config->service_key, sizeof config->service_key)) {
     return failure(EXITCODE_PANIC, error_tag, "no-service-key");
   }
@@ -383,17 +383,13 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   free(action);
   action = NULL;
 
-  const char* prefix = "";
-  if (config->url_prefix != NULL) {
-    prefix = config->url_prefix;
-  }
-  size_t message_len =
-      strlen(prompt_format) + strlen(prefix) - 2 + strlen(url) - 2 + 1;
+  const char* prompt = config->prompt;
+  size_t message_len = strlen(prompt) + strlen(url) + 1;
   char* message = malloc(message_len);
   if (message == NULL) {
     return failure(EXITCODE_PANIC, error_tag, "malloc-message");
   }
-  int written = snprintf(message, message_len, prompt_format, prefix, url);
+  int written = snprintf(message, message_len, "%s%s", prompt, url);
   if (written < 0 || (size_t)written >= message_len) {
     free(message);
     return failure(EXITCODE_PANIC, error_tag, "broken-template");
@@ -469,17 +465,16 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
         "debug: options: 0x%x\n"
         "debug: username: %s\n"
         "debug: login: %s\n"
-        "debug: auth delay: %d seconds\n",
+        "debug: auth delay: %d seconds\n"
+        "debug: prompt: %s\n",
         config->options, config->username, config->login_path,
-        config->auth_delay_sec);
+        config->auth_delay_sec, config->prompt);
   }
   if (config->options & SYSLOG) {
     openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
   }
 
-  int r = login_authenticate(
-      config, NULL, "Obtain the one-time authorization code from:\n%s%s",
-      error_tag);
+  int r = login_authenticate(config, NULL, error_tag);
   if (r != 0) {
     return r;
   }

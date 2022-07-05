@@ -81,7 +81,7 @@ PAM module supports the following options:
   from configuration file)
 * `key_version=N` - use `N` for the service key version (defaults to key
   version from configuration file)
-* `url_prefix=URL` - use given URL prefix (defaults to prefix from configuration
+* `prompt=PROMPT` - challenge prompt (defaults to prompt from configuration
   file)
 * `debug` - enable verbose logging
 * `print_secrets` - enable logging of secrets (INSECURE!)

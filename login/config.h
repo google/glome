@@ -30,8 +30,8 @@ typedef struct glome_login_config {
   // Login binary for fallback authentication.
   const char* login_path;
 
-  // URL prefix to use for HTTP service.
-  const char* url_prefix;
+  // Challenge prompt.
+  const char* prompt;
 
   // Delay to wait before confirming if the authentication code is valid
   // or not, to stop brute forcing; in seconds.

@@ -78,7 +78,7 @@ static void test_vector_1() {
     }
 
     g_assert_cmpstr(
-        "/v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/"
+        "v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/"
         "my-server.local/shell/root/",
         ==, url);
     g_assert_null(error_tag);
@@ -126,7 +126,7 @@ static void test_vector_2() {
     }
 
     g_assert_cmpstr(
-        "/v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/"
+        "v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/"
         "serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/",
         ==, url);
     g_assert_null(error_tag);
