@@ -20,6 +20,7 @@ pkg = import('pkgconfig')
 sysconfdir = join_paths(get_option('prefix'), get_option('sysconfdir'))
 add_project_arguments('-DSYSCONFDIR="' + sysconfdir + '"', language : 'c')
 add_project_arguments('-D_POSIX_C_SOURCE=200809L', language : 'c')
+add_project_arguments('-DOPENSSL_API_COMPAT=10100', language : 'c')
 
 openssl_dep = dependency('openssl', version : '>=1.1')
 
