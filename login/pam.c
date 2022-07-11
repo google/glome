@@ -89,7 +89,8 @@ static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
     }
 
     if (status != STATUS_OK) {
-      pam_syslog(pamh, LOG_ERR, status);
+      pam_syslog(pamh, LOG_ERR, "failed to set config option '%s': %s", argv[i],
+                 status);
       status_free(status);
       errors++;
     }

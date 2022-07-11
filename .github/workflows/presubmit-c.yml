@@ -33,7 +33,7 @@ jobs:
       if: ${{ matrix.container == 'alpine:latest' }}
       run: ./kokoro/alpine/fetch_dependencies.sh
     - name: setup build directory
-      run: meson build
+      run: meson --werror build
     - name: build
       run: ninja -C build
     - name: test
