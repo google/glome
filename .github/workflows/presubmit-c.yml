@@ -22,8 +22,8 @@ jobs:
         - 'debian:stable'
         - 'debian:testing'
         - 'alpine:latest'
-    container:
-      image: ${{ matrix.container }}
+        - null
+    container: ${{ matrix.container }}
     steps:
     - uses: actions/checkout@v2
     - name: install Debian dependencies
@@ -32,13 +32,24 @@ jobs:
     - name: install Alpine dependencies
       if: ${{ matrix.container == 'alpine:latest' }}
       run: ./kokoro/alpine/fetch_dependencies.sh
+    - uses: cachix/install-nix-action@v17
+      if: ${{ matrix.container == null }}
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - name: install Nix dependencies
+      if: ${{ matrix.container == null }}
+      run: nix-shell --run 'meson --werror build && ninja -C build && meson test --print-errorlogs -C build'
     - name: setup build directory
+      if: ${{ matrix.container != null }}
       run: meson --werror build
     - name: build
+      if: ${{ matrix.container != null }}
       run: ninja -C build
     - name: test
+      if: ${{ matrix.container != null }}
       run: meson test --print-errorlogs -C build
     - name: install
+      if: ${{ matrix.container != null }}
       run: |
         DESTDIR=out meson install -C build
         find build/out/
