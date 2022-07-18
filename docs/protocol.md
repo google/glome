@@ -78,10 +78,7 @@ Alice knows Bob's public key.
 The protocol consists of an ephemeral-static Diffie-Hellman key exchange, and
 uses the established shared secret to calculate MAC over combined payloads.
 
-Alice wants to send a payload
-![M_a](https://render.githubusercontent.com/render/math?math=M_a) to Bob. Alice
-knows Bob's public key
-![K_b](https://render.githubusercontent.com/render/math?math=K_b).
+Alice wants to send a payload $M_a$ to Bob. Alice knows Bob's public key $K_b$.
 
 ### Handshake
 
@@ -94,75 +91,35 @@ For full reference, see
 
 #### Alice
 
-1.  Alice generates an ephemeral private key
-    ![K_a'](https://render.githubusercontent.com/render/math?math=K_a^%27).
-1.  Alice computes the corresponding public key
-    ![K_a](https://render.githubusercontent.com/render/math?math=K_a) from
-    ![K_a'](https://render.githubusercontent.com/render/math?math=K_a^%27).
-1.  Alice uses
-    ![K_a'](https://render.githubusercontent.com/render/math?math=K_a^%27) and
-    Bob's public key
-    ![K_b](https://render.githubusercontent.com/render/math?math=K_b) to derive
-    the shared secret
-    ![K_s](https://render.githubusercontent.com/render/math?math=K_s).
-1.  Alice uses
-    ![K_a](https://render.githubusercontent.com/render/math?math=K_a),
-    ![K_b](https://render.githubusercontent.com/render/math?math=K_b) and
-    ![K_s](https://render.githubusercontent.com/render/math?math=K_s) to
-    construct MAC keys:
-    1.  For messages from Alice to Bob
-        ![K_{ab}](https://render.githubusercontent.com/render/math?math=K_%7Bab%7D):
-        ![K_s || K_b || K_a](https://render.githubusercontent.com/render/math?math=K_s+||+K_b+||+K_a).
-    1.  For messages from Bob to Alice
-        ![K_{ba}](https://render.githubusercontent.com/render/math?math=K_%7Bba%7D):
-        ![K_s || K_a || K_b](https://render.githubusercontent.com/render/math?math=K_s+||+K_a+||+K_b).
-1.  At this point Alice can forget
-    ![K_a'](https://render.githubusercontent.com/render/math?math=K_a^%27) and
-    ![K_s](https://render.githubusercontent.com/render/math?math=K_s) so they
-    cannot be accidentally reused.
-1.  Alice sends
-    ![K_a](https://render.githubusercontent.com/render/math?math=K_a) and
-    indicates which
-    ![K_b](https://render.githubusercontent.com/render/math?math=K_b) was used
-    to Bob.
+1.  Alice generates an ephemeral private key $K_a'$.
+1.  Alice computes the corresponding public key $K_a$ from $K_a'$.
+1.  Alice uses $K_a'$ and Bob's public key $K_b$ to derive the shared secret
+    $K_s$.
+1.  Alice uses $K_a$, $K_b$ and $K_s$ to construct MAC keys:
+    1.  For messages from Alice to Bob: $K_{ab} = K_s ⧺ K_b ⧺ K_a$
+    1.  For messages from Bob to Alice: $K_{ba} = K_s ⧺ K_a ⧺ K_b$
+1.  At this point Alice can forget $K_a'$ and $K_s$ so they cannot be
+    accidentally reused.
+1.  Alice sends $K_a$ and indicates which $K_b$ was used to Bob.
 
 #### Bob
 
-1.  Bob receives
-    ![K_a](https://render.githubusercontent.com/render/math?math=K_a) and an
-    indication of which
-    ![K_b](https://render.githubusercontent.com/render/math?math=K_b) to be
-    used.
-1.  Bob uses the corresponding private key
-    ![K_b'](https://render.githubusercontent.com/render/math?math=K_b^%27) and
-    ![K_a](https://render.githubusercontent.com/render/math?math=K_a) to derive
-    the shared secret
-    ![K_s](https://render.githubusercontent.com/render/math?math=K_s).
-1.  Bob computes the MAC keys
-    ![K_{ab}](https://render.githubusercontent.com/render/math?math=K_%7Bab%7D)
-    and
-    ![K_{ba}](https://render.githubusercontent.com/render/math?math=K_%7Bba%7D)
-    in the same way as Alice did.
+1.  Bob receives $K_a$ and an indication of which $K_b$ to be used.
+1.  Bob uses the corresponding private key $K_b'$ and $K_a$ to derive the
+    shared secret $K_s$.
+1.  Bob computes the MAC keys $K_{ab}$ and $K_{ba}$ in the same way as Alice
+    did.
 
 ### Exchanging messages
 
 To prevent replay attacks, Alice and Bob need to maintain a pair of counters:
-![N_{ab}](https://render.githubusercontent.com/render/math?math=N_%7Bab%7D) and
-![N_{ba}](https://render.githubusercontent.com/render/math?math=N_%7Bba%7D).
-Each zero-indexed counter represents the number of messages sent in a given
-direction.
+$N_{ab}$ and $N_{ba}$. Each zero-indexed counter represents the number of
+messages sent in a given direction.
 
-Once the handshake is complete, Alice and Bob can send messages
-![M_n](https://render.githubusercontent.com/render/math?math=M_n) to each other
-by computing a tag
-![T](https://render.githubusercontent.com/render/math?math=T) over
-![N_x || M_n](https://render.githubusercontent.com/render/math?math=N_x+||+M_n)
-using key ![K_x](https://render.githubusercontent.com/render/math?math=K_x) and
-incrementing ![N_x](https://render.githubusercontent.com/render/math?math=N_x).
-![x](https://render.githubusercontent.com/render/math?math=x) is either
-![ab](https://render.githubusercontent.com/render/math?math=ab) or
-![ba](https://render.githubusercontent.com/render/math?math=ba), depending on
-the direction of the message.
+Once the handshake is complete, Alice and Bob can send messages $M_n$ to each
+other by computing a tag $T$ over $N_x ⧺ M_n$ using key $K_x$ and
+incrementing $N_x$. $x$ is either $ab$ or $ba$, depending on the direction of
+the message.
 
 Upon receiving a message, the other party verifies its authenticity by repeating
 the tag calculation and comparing the result (in constant-time) with the
@@ -172,13 +129,8 @@ received tag.
 
 There is currently only one variant of the protocol defined. This variant uses:
 
-*   Curve25519 keys
-    (![K_a](https://render.githubusercontent.com/render/math?math=K_a),
-    ![K_a'](https://render.githubusercontent.com/render/math?math=K_a^%27),
-    ![K_b](https://render.githubusercontent.com/render/math?math=K_b),
-    ![K_b'](https://render.githubusercontent.com/render/math?math=K_b^%27)).
-*   X25519 to derive the shared secret
-    ![K_s](https://render.githubusercontent.com/render/math?math=K_s).
+*   Curve25519 keys ($K_a$, $K_a'$, $K_b$, $K_b'$).
+*   X25519 to derive the shared secret $K_s$.
 *   HMAC-SHA256 to calculate the message tag.
 *   Unsigned 8-bit counters (0..255).
 
@@ -196,10 +148,8 @@ the usage of the protocol.
     security-relevant since it does not authenticate the message as Alice uses
     ephemeral keys. It might be useful to detect accidental errors and for Bob
     to disambiguate between his multiple key pairs (more on that below).
-*   The indication of Bob's public key
-    (![K_b](https://render.githubusercontent.com/render/math?math=K_b)) can be
-    done in different ways, each leading to varying degrees of communication
-    overhead:
+*   The indication of Bob's public key ($K_b$) can be done in different ways, 
+    each leading to varying degrees of communication overhead:
     1.  Specifying a truncated version of Bob's public key.
         *   The truncation can cause ambiguity if it matches multiple of Bob's
             keys.
@@ -228,49 +178,39 @@ of the GLOME protocol. Octet strings (keys and tags) are represented in
 hexadecimal encoding, message counters in their decimal represenation and
 messages in ASCII encoding.
 
-[Ka]: https://render.githubusercontent.com/render/math?math=K_a
-[Ka']: https://render.githubusercontent.com/render/math?math=K_a^%27
-[Kb]: https://render.githubusercontent.com/render/math?math=K_b
-[Kb']: https://render.githubusercontent.com/render/math?math=K_b^%27
-[Ks]: https://render.githubusercontent.com/render/math?math=K_s
-[Nab]: https://render.githubusercontent.com/render/math?math=N_%7Bab%7D
-[Nba]: https://render.githubusercontent.com/render/math?math=N_%7Bba%7D
-[Mn]: https://render.githubusercontent.com/render/math?math=M_n
-[T]: https://render.githubusercontent.com/render/math?math=T
-
 #### Vector 1
 
 Message from Alice to Bob.
 
-| Variable       | Value                                                              |
-|---------------:|:-------------------------------------------------------------------|
-| ![K_a'][Ka']   | `77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a` |
-| ![K_b'][Kb']   | `5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb` |
-| ![N_{ab}][Nab] | `0`                                                                |
-| ![M_n][Mn]     | `The quick brown fox`                                              |
-|                |                                                                    |
-| ![K_a][Ka]     | `8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a` |
-| ![K_b][Kb]     | `de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f` |
-| ![K_s][Ks]     | `4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742` |
-|                |                                                                    |
-| ![T][T]        | `9c44389f462d35d0672faf73a5e118f8b9f5c340bbe8d340e2b947c205ea4fa3` |
+| Variable | Value                                                              |
+|---------:|:-------------------------------------------------------------------|
+| $K_a'$   | `77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a` |
+| $K_b'$   | `5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb` |
+| $N_{ab}$ | `0`                                                                |
+| $M_n$    | `The quick brown fox`                                              |
+|          |                                                                    |
+| $K_a$    | `8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a` |
+| $K_b$    | `de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f` |
+| $K_s$    | `4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742` |
+|          |                                                                    |
+| $T$      | `9c44389f462d35d0672faf73a5e118f8b9f5c340bbe8d340e2b947c205ea4fa3` |
 
 #### Vector 2
 
 Message from Bob to Alice.
 
-| Variable       | Value                                                              |
-|---------------:|:-------------------------------------------------------------------|
-| ![K_a'][Ka']   | `fee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1dead` |
-| ![K_b'][Kb']   | `b105f00db105f00db105f00db105f00db105f00db105f00db105f00db105f00d` |
-| ![N_{ba}][Nba] | `100`                                                              |
-| ![M_n][Mn]     | `The quick brown fox`                                              |
-|                |                                                                    |
-| ![K_a][Ka]     | `872f435bb8b89d0e3ad62aa2e511074ee195e1c39ef6a88001418be656e3c376` |
-| ![K_b][Kb]     | `d1b6941bba120bcd131f335da15778d9c68dadd398ae61cf8e7d94484ee65647` |
-| ![K_s][Ks]     | `4b1ee05fcd2ae53ebe4c9ec94915cb057109389a2aa415f26986bddebf379d67` |
-|                |                                                                    |
-| ![T][T]        | `06476f1f314b06c7f96e5dc62b2308268cbdb6140aefeeb55940731863032277` |
+| Variable | Value                                                              |
+|---------:|:-------------------------------------------------------------------|
+| $K_a'$   | `fee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1dead` |
+| $K_b'$   | `b105f00db105f00db105f00db105f00db105f00db105f00db105f00db105f00d` |
+| $N_{ba}$ | `100`                                                              |
+| $M_n$    | `The quick brown fox`                                              |
+|          |                                                                    |
+| $K_a$    | `872f435bb8b89d0e3ad62aa2e511074ee195e1c39ef6a88001418be656e3c376` |
+| $K_b$    | `d1b6941bba120bcd131f335da15778d9c68dadd398ae61cf8e7d94484ee65647` |
+| $K_s$    | `4b1ee05fcd2ae53ebe4c9ec94915cb057109389a2aa415f26986bddebf379d67` |
+|          |                                                                    |
+| $T$      | `06476f1f314b06c7f96e5dc62b2308268cbdb6140aefeeb55940731863032277` |
 
 ### Reference implementation
 
