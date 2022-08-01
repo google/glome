@@ -92,7 +92,7 @@ static const char flags_help[] =
 
     "\n -l, --login-path=PATH      use PATH instead of " DEFAULT_LOGIN_PATH
 
-    "\n -u, --prompt=PROMPT        print PROMPT before the challenge is "
+    "\n -p, --prompt=PROMPT        print PROMPT before the challenge is "
     "printed (default: '" DEFAULT_PROMPT
     "')"
 
