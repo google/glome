@@ -387,15 +387,20 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   size_t message_len = strlen(prompt) + strlen(url) + 1;
   char* message = malloc(message_len);
   if (message == NULL) {
+    free(url);
     return failure(EXITCODE_PANIC, error_tag, "malloc-message");
   }
-  int written = snprintf(message, message_len, "%s%s", prompt, url);
-  if (written < 0 || (size_t)written >= message_len) {
-    free(message);
-    return failure(EXITCODE_PANIC, error_tag, "broken-template");
+  message[0] = '\0';  // required by strncat()
+  if (prompt != NULL) {
+    strncat(message, prompt, message_len - 1);
   }
+  strncat(message, url, message_len - strlen(message) - 1);
   free(url);
   url = NULL;
+  if (message[message_len - 1] != '\0') {
+    free(message);
+    return failure(EXITCODE_PANIC, error_tag, "strncat-failure");
+  }
 
   char input[ENCODED_BUFSIZE(GLOME_MAX_TAG_LENGTH)];
   int rc = login_prompt(config, pamh, error_tag, message, input, sizeof(input));
@@ -465,10 +470,9 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
         "debug: options: 0x%x\n"
         "debug: username: %s\n"
         "debug: login: %s\n"
-        "debug: auth delay: %d seconds\n"
-        "debug: prompt: %s\n",
+        "debug: auth delay: %d seconds\n",
         config->options, config->username, config->login_path,
-        config->auth_delay_sec, config->prompt);
+        config->auth_delay_sec);
   }
   if (config->options & SYSLOG) {
     openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
