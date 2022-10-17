@@ -36,7 +36,7 @@ printf '\135\253\010\176\142\112\212\113\171\341\177\213\203\200\016\346\157'\
 '\073\261\051\046\030\266\375\034\057\213\047\377\210\340\353' >"$t/vector-1/b"
 printf "The quick brown fox" >"$t/vector-1/msg"
 printf "0" >"$t/vector-1/n"
-printf "9c44389f462d35d0672faf73a5e118f8b9f5c340bbe8d340e2b947c205ea4fa3" >"$t/vector-1/tag"
+printf "nEQ4n0YtNdBnL69zpeEY-Ln1w0C76NNA4rlHwgXqT6M=" >"$t/vector-1/tag"
 
 mkdir -p "$t/vector-2"
 printf '\261\005\360\015\261\005\360\015\261\005\360\015\261\005\360\015\261'\
@@ -45,7 +45,7 @@ printf '\376\341\336\255\376\341\336\255\376\341\336\255\376\341\336\255\376'\
 '\341\336\255\376\341\336\255\376\341\336\255\376\341\336\255' >"$t/vector-2/b"
 printf "The quick brown fox" >"$t/vector-2/msg"
 printf "100" >"$t/vector-2/n"
-printf "06476f1f314b06c7f96e5dc62b2308268cbdb6140aefeeb55940731863032277" >"$t/vector-2/tag"
+printf "BkdvHzFLBsf5bl3GKyMIJoy9thQK7-61WUBzGGMDInc=" >"$t/vector-2/tag"
 
 errors=0
 for n in 1 2; do
