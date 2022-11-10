@@ -42,8 +42,8 @@ int main(int argc, char* argv[]) {
     return EXITCODE_PANIC;
   }
 
-  r = glome_login_parse_config_file(&config);
-  if (r < 0) {
+  status_t status = glome_login_parse_config_file(&config);
+  if (status != STATUS_OK) {
     handle_error("parse-config");
     return EXITCODE_PANIC;
   }

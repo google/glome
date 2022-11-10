@@ -7,35 +7,23 @@ This is a CLI utility to facilitate GLOME operations from the command line.
 Generating two key pairs:
 
 ```shell
-$ glome Alice >Alice.pub
-$ glome Bob >Bob.pub
+$ glome genkey | tee Alice | glome pubkey >Alice.pub
+$ glome genkey | tee Bob   | glome pubkey >Bob.pub
 ```
 
 Alice calculates a tag and send it together with message and counter to Bob:
 
 ```shell
-$ tag=$(glome Alice Bob.pub "Hello world!" 0)
-peer-key:   0xbe106dba769f75f215f29b3b5e5e84c792a9d5562a26c9f7e19915c73bb45413
-public-key: 0xe2e97a41a60fd6a3c5de511862671f97e9f8e0d657044cac783e5119eeecae06
-message:   'Hello world!'
-counter:    0
-verify:     0
+$ tag=$(echo "Hello world!" | glome tag --key Alice --peer Bob.pub)
 
 $ echo "${tag?}"
-2b4dc85086e41a5c616301d904ac2dd942f2d71a56985a5be252b5bbca30bdfa
+_QuyLz_nkj5exUJscocS8LDnCMszvSmp9wpQuRshi30=
 ```
 
 Bob can verify that the tag matches:
 
 ```shell
-$ glome Bob Alice.pub "Hello world!" 0 "${tag?}"
-peer-key:   0xe2e97a41a60fd6a3c5de511862671f97e9f8e0d657044cac783e5119eeecae06
-public-key: 0xbe106dba769f75f215f29b3b5e5e84c792a9d5562a26c9f7e19915c73bb45413
-message:   'Hello world!'
-counter:    0
-verify:     1
-mac-tag:    0x2b4dc85086e41a5c616301d904ac2dd942f2d71a56985a5be252b5bbca30bdfa
-unverified: 0x2b4dc85086e41a5c616301d904ac2dd942f2d71a56985a5be252b5bbca30bdfa
+$ echo "Hello world!" | glome verify --key Bob --peer Alice.pub --tag "${tag?}"
 
 $ echo $?
 0
@@ -44,15 +32,15 @@ $ echo $?
 Both parties can agree to shorten the tag to reduce the protocol overhead:
 
 ```shell
-$ glome Bob Alice.pub "Hello world!" 0 "${tag:0:12}"
-peer-key:   0xe2e97a41a60fd6a3c5de511862671f97e9f8e0d657044cac783e5119eeecae06
-public-key: 0xbe106dba769f75f215f29b3b5e5e84c792a9d5562a26c9f7e19915c73bb45413
-message:   'Hello world!'
-counter:    0
-verify:     1
-mac-tag:    0x2b4dc85086e41a5c616301d904ac2dd942f2d71a56985a5be252b5bbca30bdfa
-unverified: 0x2b4dc85086e41a5c616301d90
+$ echo "Hello world!" | glome verify --key Bob --peer Alice.pub --tag "${tag:0:12}"
 
 $ echo $?
 0
+```
+
+CLI also supports ganerating tags for the GLOME Login requests:
+
+```shell
+$ glome login --key Bob https://glome.example.com/v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/
+MT_Zc-hucXRjTXTBEo53ehoeUsFn1oFyVadViXf-I4k=
 ```

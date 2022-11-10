@@ -77,16 +77,16 @@ PAM module supports the following options:
 
 * `config_path=PATH` - location of the configuration file to parse (defaults to
   `/etc/glome/config`)
-* `service_key=KEY` - use hex-encoded `KEY` as the service key (defaults to key
+* `key=KEY` - use hex-encoded `KEY` as the service key (defaults to key
   from configuration file)
-* `service_key_version=N` - use `N` for the service key version (defaults to key
+* `key_version=N` - use `N` for the service key version (defaults to key
   version from configuration file)
 * `url_prefix=URL` - use given URL prefix (defaults to prefix from configuration
   file)
 * `debug` - enable verbose logging
-* `insecure_debug` - enable logging of secrets (INSECURE!)
-* `insecure_host_id=NAME` - use `NAME` as the host-id
-* `insecure_secret_key=KEY` - use hex-encoded `KEY` instead of the ephemeral
+* `print_secrets` - enable logging of secrets (INSECURE!)
+* `host_id=NAME` - use `NAME` as the host-id
+* `ephemeral_key=KEY` - use hex-encoded `KEY` instead of the ephemeral
   secret key (INSECURE!)
 
 ## Troubleshooting

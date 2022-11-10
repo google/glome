@@ -38,18 +38,20 @@
 // Arguments
 static const char *key_file = NULL;
 static const char *peer_file = NULL;
-static const char *tag_hex = NULL;
+static const char *tag_b64 = NULL;
 static unsigned long counter = 0;
 
 static bool parse_args(int argc, char **argv) {
+  int c;
   struct option long_options[] = {{"key", required_argument, 0, 'k'},
                                   {"peer", required_argument, 0, 'p'},
                                   {"counter", required_argument, 0, 'c'},
                                   {"tag", required_argument, 0, 't'},
                                   {0, 0, 0, 0}};
 
-  int c;
-  while ((c = getopt_long(argc, argv, "c:k:p:t:", long_options, NULL)) != -1) {
+  // First argument is the command name so skip it.
+  while ((c = getopt_long(argc - 1, argv + 1, "c:k:p:t:", long_options,
+                          NULL)) != -1) {
     switch (c) {
       case 'c': {
         char *endptr;
@@ -67,7 +69,7 @@ static bool parse_args(int argc, char **argv) {
         peer_file = optarg;
         break;
       case 't':
-        tag_hex = optarg;
+        tag_b64 = optarg;
         break;
       case '?':
         return false;
@@ -77,26 +79,6 @@ static bool parse_args(int argc, char **argv) {
     }
   }
   return true;
-}
-
-static int decode_hex(uint8_t *dst, size_t dst_len, const char *in) {
-  size_t len = strlen(in);
-  if (len > 2 && in[0] == '0' && in[1] == 'x') {
-    len -= 2;
-    in += 2;
-  }
-  if (len > dst_len * 2 || len % 2 != 0) {
-    return -1;
-  }
-  size_t i;
-  for (i = 0; i < len / 2; i++) {
-    if (sscanf(in + (i * 2), "%02hhX", dst + i) != 1) {
-      fprintf(stderr, "ERROR while parsing byte %zu ('%c%c') as hex\n", i,
-              in[2 * i], in[2 * i + 1]);
-      return -3;
-    }
-  }
-  return i;
 }
 
 static bool read_file(const char *fname, uint8_t *buf, const size_t num_bytes) {
@@ -141,17 +123,6 @@ static bool read_public_key_file(const char *fname, uint8_t *buf,
     return false;
   }
   return true;
-}
-
-static void print_hex(FILE *stream, const char *prefix, uint8_t *buf,
-                      size_t len) {
-  if (prefix != NULL) {
-    fputs(prefix, stream);
-  }
-  for (size_t i = 0; i < len; i++) {
-    fprintf(stream, "%02x", buf[i]);
-  }
-  fputs("\n", stream);
 }
 
 int genkey(int argc, char **argv) {
@@ -241,33 +212,61 @@ int tag(int argc, char **argv) {
   if (res) {
     return res;
   }
-  print_hex(stdout, "", tag, sizeof tag);
+  char tag_encoded[ENCODED_BUFSIZE(sizeof tag)] = {0};
+  if (base64url_encode(tag, sizeof tag, (uint8_t *)tag_encoded,
+                       sizeof tag_encoded) == 0) {
+    fprintf(stderr, "GLOME tag encode failed\n");
+    return EXIT_FAILURE;
+  }
+  puts(tag_encoded);
   return EXIT_SUCCESS;
 }
 
 int verify(int argc, char **argv) {
   uint8_t tag[GLOME_MAX_TAG_LENGTH] = {0};
-  uint8_t expected_tag[GLOME_MAX_TAG_LENGTH] = {0};
-  size_t expected_tag_len = 0;
+  uint8_t *expected_tag = NULL;
+  int ret = EXIT_FAILURE;
   if (!parse_args(argc, argv)) {
-    return EXIT_FAILURE;
+    goto out;
   }
-  if (!key_file || !peer_file || !tag_hex) {
+  if (!key_file || !peer_file || !tag_b64) {
     fprintf(stderr, "not enough arguments for subcommand %s\n", argv[1]);
-    return EXIT_FAILURE;
+    goto out;
   }
   int res = tag_impl(tag, /*verify=*/true, key_file, peer_file);
   if (res) {
-    return res;
+    goto out;
+  }
+
+  // decode the tag
+  size_t tag_b64_len = strlen(tag_b64);
+  size_t tag_b64_decoded_len = DECODED_BUFSIZE(tag_b64_len);
+  expected_tag = malloc(tag_b64_decoded_len);
+  if (expected_tag == NULL) {
+    fprintf(stderr, "GLOME tag malloc %ld bytes failed\n", tag_b64_decoded_len);
+    goto out;
+  }
+  size_t expected_tag_len =
+      base64url_decode((uint8_t *)tag_b64, tag_b64_len, (uint8_t *)expected_tag,
+                       tag_b64_decoded_len);
+  if (expected_tag_len == 0) {
+    fprintf(stderr, "GLOME tag decode failed\n");
+    goto out;
+  }
+  if (expected_tag_len > sizeof tag) {
+    expected_tag_len = sizeof tag;
   }
 
   // compare the tag
-  expected_tag_len = decode_hex(expected_tag, sizeof expected_tag, tag_hex);
   if (CRYPTO_memcmp(expected_tag, tag, expected_tag_len) != 0) {
     fputs("MAC tag verification failed\n", stderr);
-    return EXIT_FAILURE;
+    goto out;
   }
-  return EXIT_SUCCESS;
+  ret = EXIT_SUCCESS;
+
+out:
+  free(expected_tag);
+  return ret;
 }
 
 static bool parse_login_path(char *path, char **handshake, char **host,
@@ -415,6 +414,11 @@ int login(int argc, char **argv) {
 
   size_t handshake_b64_len = strlen(handshake_b64);
   handshake = malloc(DECODED_BUFSIZE(handshake_b64_len));
+  if (handshake == NULL) {
+    fprintf(stderr, "failed to malloc %ld bytes for base64 decode\n",
+            DECODED_BUFSIZE(handshake_b64_len));
+    goto out;
+  }
   int handshake_len = base64url_decode((uint8_t *)handshake_b64,
                                        handshake_b64_len, (uint8_t *)handshake,
                                        DECODED_BUFSIZE(handshake_b64_len));

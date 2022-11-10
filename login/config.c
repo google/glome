@@ -15,8 +15,10 @@
 #include <alloca.h>
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "base64.h"
 #include "ui.h"
@@ -102,53 +104,6 @@ static void key_value(char *line, char **key, char **val) {
   *val = v;
 }
 
-static bool assign(glome_login_config_t *config, const char *section,
-                   const char *key, const char *val) {
-  if (section == NULL || strcmp(section, "service") != 0) {
-    return true;
-  }
-
-  if (strcmp(key, "key") == 0) {
-    if (is_zeroed(config->service_key, sizeof config->service_key)) {
-      if (decode_hex(config->service_key, sizeof config->service_key, val)) {
-        errorf("ERROR: Failed to hex decode service key\n");
-        return false;
-      }
-    }
-  } else if (strcmp(key, "public-key") == 0) {
-    if (!glome_login_parse_public_key(val, config->service_key,
-                                      sizeof(config->service_key))) {
-      errorf("ERROR: Failed to decode public-key\n");
-      return false;
-    }
-  } else if (strcmp(key, "key-version") == 0) {
-    char *end;
-    errno = 0;
-    long n = strtol(val, &end, 10);
-    if (errno != 0 || *end != '\0') {
-      errorf("ERROR: Failed to parse service key version\n");
-      return false;
-    }
-    if (n <= 0) {
-      errorf("ERROR: Key version should be a positive value\n");
-      return false;
-    }
-    if (n > 255) {
-      errorf("ERROR: Key version too large, must fit into 8-bit int\n");
-      return false;
-    }
-    if (n > 0 && config->service_key_id == 0) {
-      config->service_key_id = n;
-    }
-  } else if (strcmp(key, "url-prefix") == 0) {
-    if (config->url_prefix == NULL) {
-      config->url_prefix = strdup(val);
-    }
-  }
-
-  return true;
-}
-
 bool glome_login_parse_public_key(const char *encoded_key, uint8_t *public_key,
                                   size_t public_key_size) {
   if (public_key_size < GLOME_MAX_PUBLIC_KEY_LENGTH) {
@@ -188,7 +143,188 @@ bool glome_login_parse_public_key(const char *encoded_key, uint8_t *public_key,
   return true;
 }
 
-int glome_login_parse_config_file(glome_login_config_t *config) {
+static status_t assign_string_option(const char **option, const char *val) {
+  const char *copy = strdup(val);
+  if (copy == NULL) {
+    return status_createf("ERROR: failed to allocate memory for value: %s",
+                          val);
+  }
+
+  *option = copy;
+  return STATUS_OK;
+}
+
+static status_t assign_positive_int_option(unsigned int *option,
+                                           const char *val) {
+  char *endptr;
+  long l;
+
+  errno = 0;
+  l = strtol(val, &endptr, 0);
+  if (errno) {
+    return status_createf("ERROR: invalid numeric value: %s", val);
+  }
+  if (*endptr != '\0' || l < 0 || l > UINT_MAX) {
+    return status_createf("ERROR: invalid value for option: %s", val);
+  }
+  *option = (unsigned int)l;
+  return STATUS_OK;
+}
+
+static status_t set_bitfield_option(glome_login_config_t *config, uint8_t bit) {
+  config->options |= bit;
+  return STATUS_OK;
+}
+
+static status_t clear_bitfield_option(glome_login_config_t *config,
+                                      uint8_t bit) {
+  config->options &= ~bit;
+  return STATUS_OK;
+}
+
+static bool boolean_true(const char *val) {
+  if (strcasecmp(val, "true") == 0) {
+    return true;
+  } else if (strcasecmp(val, "yes") == 0) {
+    return true;
+  } else if (strcasecmp(val, "on") == 0) {
+    return true;
+  } else if (strcmp(val, "1") == 0) {
+    return true;
+  }
+  return false;
+}
+
+static bool boolean_false(const char *val) {
+  if (strcasecmp(val, "false") == 0) {
+    return true;
+  } else if (strcasecmp(val, "no") == 0) {
+    return true;
+  } else if (strcasecmp(val, "off") == 0) {
+    return true;
+  } else if (strcmp(val, "0") == 0) {
+    return true;
+  }
+  return false;
+}
+
+static status_t update_bitfield_option(glome_login_config_t *config,
+                                       uint8_t bit, bool invert,
+                                       const char *val) {
+  if (boolean_true(val)) {
+    if (invert) {
+      return clear_bitfield_option(config, bit);
+    } else {
+      return set_bitfield_option(config, bit);
+    }
+  } else if (boolean_false(val)) {
+    if (invert) {
+      return set_bitfield_option(config, bit);
+    } else {
+      return clear_bitfield_option(config, bit);
+    }
+  } else {
+    return status_createf("ERROR: unrecognized boolean value: %s", val);
+  }
+}
+
+static status_t assign_key_option(uint8_t *dest, size_t dest_len,
+                                  const char *val) {
+  if (is_zeroed(dest, dest_len)) {
+    if (decode_hex(dest, dest_len, val)) {
+      return status_createf("ERROR: failed to hex decode service key: %s", val);
+    }
+  }
+  return STATUS_OK;
+}
+
+static status_t assign_key_version_option(glome_login_config_t *config,
+                                          const char *val) {
+  char *end;
+  errno = 0;
+  long n = strtol(val, &end, 10);
+  if (errno != 0 || *end != '\0') {
+    return status_createf("ERROR: failed to parse service key version: %s",
+                          val);
+  }
+  if (n <= 0) {
+    return status_createf("ERROR: key version should be a positive value: %s",
+                          val);
+  }
+  if (n > 255) {
+    return status_createf(
+        "ERROR: key version too large, must fit into 8-bit int: %s", val);
+  }
+  if (n > 0 && config->service_key_id == 0) {
+    config->service_key_id = n;
+  }
+  return STATUS_OK;
+}
+
+static status_t assign_default_option(glome_login_config_t *config,
+                                      const char *key, const char *val) {
+  if (strcmp(key, "auth-delay") == 0) {
+    return assign_positive_int_option(&config->auth_delay_sec, val);
+  } else if (strcmp(key, "config-path") == 0) {
+    return assign_string_option(&config->config_path, val);
+  } else if (strcmp(key, "ephemeral-key") == 0) {
+    return assign_key_option(config->secret_key, sizeof config->secret_key,
+                             val);
+  } else if (strcmp(key, "host-id") == 0) {
+    return assign_string_option(&config->host_id, val);
+  } else if (strcmp(key, "login-path") == 0) {
+    return assign_string_option(&config->login_path, val);
+  } else if (strcmp(key, "disable-syslog") == 0) {
+    return update_bitfield_option(config, SYSLOG, true, val);
+  } else if (strcmp(key, "print-secrets") == 0) {
+    return update_bitfield_option(config, INSECURE, false, val);
+  } else if (strcmp(key, "timeout") == 0) {
+    return assign_positive_int_option(&config->input_timeout_sec, val);
+  } else if (strcmp(key, "verbose") == 0) {
+    return update_bitfield_option(config, VERBOSE, false, val);
+  } else if (strcmp(key, "public-key") == 0) {
+    if (!glome_login_parse_public_key(val, config->service_key,
+                                      sizeof(config->service_key))) {
+      return status_createf("ERROR: Failed to decode public-key\n");
+    }
+  }
+
+  return status_createf("ERROR: unrecognized default option: %s", key);
+}
+
+static status_t assign_service_option(glome_login_config_t *config,
+                                      const char *key, const char *val) {
+  if (strcmp(key, "key") == 0) {
+    return assign_key_option(config->service_key, sizeof config->service_key,
+                             val);
+  } else if (strcmp(key, "key-version") == 0) {
+    return assign_key_version_option(config, val);
+  } else if (strcmp(key, "url-prefix") == 0) {
+    if (config->url_prefix == NULL) {
+      return assign_string_option(&config->url_prefix, val);
+    }
+  }
+
+  return status_createf("ERROR: unrecognized service option: %s", key);
+}
+
+status_t glome_login_assign_config_option(glome_login_config_t *config,
+                                          const char *section, const char *key,
+                                          const char *val) {
+  if (section == NULL) {
+    return status_createf("ERROR: section name not set");
+  }
+
+  if (strcmp(section, "service") == 0) {
+    return assign_service_option(config, key, val);
+  } else if (strcmp(section, "default") == 0) {
+    return assign_default_option(config, key, val);
+  }
+
+  return status_createf("ERROR: section name not recognized: %s", section);
+}
+
+status_t glome_login_parse_config_file(glome_login_config_t *config) {
   bool required = config->config_path != NULL;
   if (!required) {
     config->config_path = DEFAULT_CONFIG_FILE;
@@ -199,16 +335,16 @@ int glome_login_parse_config_file(glome_login_config_t *config) {
     if (!required) {
       return 0;
     }
-    errorf("ERROR: config file could not be opened: %s\n", strerror(errno));
-    return -1;
+    return status_createf("ERROR: config file could not be opened: %s\n",
+                          strerror(errno));
   }
 
+  char *line = NULL;
   char *section = NULL;
   char *key, *val;
-  char *line = NULL;
   size_t len = 0;
   size_t lines = 0;
-  int rc = -2;
+  status_t status = STATUS_OK;
   while (getline(&line, &len, f) != -1) {
     lines++;
     if (is_empty(line) || is_comment(line)) {
@@ -216,35 +352,32 @@ int glome_login_parse_config_file(glome_login_config_t *config) {
     } else if (is_section(line)) {
       char *s = section_name(line);
       if (s == NULL) {
-        errorf(
+        status = status_createf(
             "ERROR: config file parsing failed in line %ld (bad section "
             "name)\n",
             lines);
-        goto out;
+        break;
       }
       free(section);
       section = strdup(s);
     } else {
       key_value(line, &key, &val);
       if (key == NULL || val == NULL) {
-        errorf(
+        status = status_createf(
             "ERROR: config file parsing failed in line %ld (bad key/value)\n",
             lines);
-        goto out;
+        break;
       }
-      if (!assign(config, section, key, val)) {
-        errorf(
-            "ERROR: config file parsing failed in line %ld (bad assignment)\n",
-            lines);
-        goto out;
+      status = glome_login_assign_config_option(
+          config, section ? section : "default", key, val);
+      if (status != STATUS_OK) {
+        break;
       }
     }
   }
-  rc = 0;
 
-out:
   free(line);
   free(section);
   fclose(f);
-  return rc;
+  return status;
 }

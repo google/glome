@@ -76,9 +76,15 @@ if get_option('pam-glome')
     if get_option('tests')
         libpamtest = dependency('libpamtest', required : false)
         if libpamtest.found()
+            oldstyle_run_pamtest = cc.compiles('''#include <stddef.h>
+            #include <libpamtest.h>
+            void test() { run_pamtest(NULL, NULL, NULL, NULL); }
+            ''',
+                dependencies : [libpamtest])
             pam_test = executable(
                 'pam_test', 'pam_test.c',
-                dependencies : [libpamtest])
+                dependencies : [libpamtest],
+                c_args : oldstyle_run_pamtest ? '-DOLDSTYLE_RUN_PAMTEST' : '')
             custom_target('pam_service',
                 build_by_default : true, output : [ 'pam_service' ],
                 command : [ 'mkdir', '@OUTPUT@' ])
