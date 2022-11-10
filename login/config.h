@@ -53,7 +53,7 @@ typedef struct glome_login_config {
   const char* host_id;
 } glome_login_config_t;
 
-#define GLOME_LOGIN_PUBLIC_KEY_ID "glome-x25519-sha256"
+#define GLOME_LOGIN_PUBLIC_KEY_ID "glome-v1"
 
 // glome_login_parse_public_key extracts the public key bytes from an encoded
 // public key.

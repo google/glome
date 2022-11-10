@@ -135,7 +135,7 @@ static void test_vector_2() {
 
 static void test_parse_public_key() {
   const char* encoded =
-      "glome-x25519-sha256 QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=";
+      "glome-v1 QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=";
   uint8_t decoded[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t expected[GLOME_MAX_PUBLIC_KEY_LENGTH] =
       "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
@@ -149,11 +149,11 @@ static void test_parse_public_key() {
       "glome-group1-md5 QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=", decoded,
       sizeof(decoded)));
   g_assert_false(glome_login_parse_public_key(
-      "glome-x25519-sha256 QUFBQUFBQUFB", decoded, sizeof(decoded)));
+      "glome-v1 QUFBQUFBQUFB", decoded, sizeof(decoded)));
 
   memset(decoded, 0, sizeof(decoded));
   const char* extra_chars =
-      "glome-x25519-sha256 \t QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE= "
+      "glome-v1 \t QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE= "
       "root@localhost";
   g_assert_true(
       glome_login_parse_public_key(extra_chars, decoded, sizeof(decoded)));
