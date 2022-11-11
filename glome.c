@@ -118,14 +118,26 @@ int glome_tag(bool verify, unsigned char counter,
   memcpy(hmac_key + X25519_SHARED_KEY_LEN + GLOME_MAX_PUBLIC_KEY_LENGTH,
          (verify ? peer_key : public_key), GLOME_MAX_PUBLIC_KEY_LENGTH);
 
-  HMAC_CTX *hmac_ctx = HMAC_CTX_new();
-  unsigned int tag_length = GLOME_MAX_TAG_LENGTH;
+  EVP_PKEY *evp_hmac_key = EVP_PKEY_new_raw_private_key(
+      EVP_PKEY_HMAC, NULL, hmac_key, sizeof hmac_key);
+  if (evp_hmac_key == NULL) {
+    return 1;
+  }
+
+  EVP_MD_CTX *hmac_ctx = EVP_MD_CTX_new();
+  if (hmac_ctx == NULL) {
+    EVP_PKEY_free(evp_hmac_key);
+    return 1;
+  }
+
+  size_t tag_length = GLOME_MAX_TAG_LENGTH;
   int success =
-      (HMAC_Init_ex(hmac_ctx, hmac_key, sizeof hmac_key, EVP_sha256(), NULL) &&
-       HMAC_Update(hmac_ctx, &counter, sizeof counter) &&
-       HMAC_Update(hmac_ctx, message, message_len) &&
-       HMAC_Final(hmac_ctx, tag, &tag_length) &&
+      (EVP_DigestSignInit(hmac_ctx, NULL, EVP_sha256(), NULL, evp_hmac_key) &&
+       EVP_DigestSignUpdate(hmac_ctx, &counter, sizeof counter) &&
+       EVP_DigestSignUpdate(hmac_ctx, message, message_len) &&
+       EVP_DigestSignFinal(hmac_ctx, tag, &tag_length) &&
        tag_length == GLOME_MAX_TAG_LENGTH);
-  HMAC_CTX_free(hmac_ctx);
+  EVP_MD_CTX_free(hmac_ctx);
+  EVP_PKEY_free(evp_hmac_key);
   return success ? 0 : 1;
 }
