@@ -20,6 +20,7 @@
 #include <string.h>
 #include <strings.h>
 
+#include "base64.h"
 #include "ui.h"
 
 static bool is_empty(const char *line) {
@@ -103,12 +104,52 @@ static void key_value(char *line, char **key, char **val) {
   *val = v;
 }
 
+bool glome_login_parse_public_key(const char *encoded_key, uint8_t *public_key,
+                                  size_t public_key_size) {
+  if (public_key_size < GLOME_MAX_PUBLIC_KEY_LENGTH) {
+    errorf("ERROR: provided buffer has size %zu, need at least %d\n",
+           public_key_size, GLOME_MAX_PUBLIC_KEY_LENGTH);
+    return false;
+  }
+  size_t prefix_length = strlen(GLOME_LOGIN_PUBLIC_KEY_ID);
+  if (strncmp(encoded_key, GLOME_LOGIN_PUBLIC_KEY_ID, prefix_length)) {
+    errorf("ERROR: unsupported public key encoding: %s\n", encoded_key);
+    return false;
+  }
+
+  // Advance to the start of the base64-encoded key.
+  encoded_key += prefix_length;
+  while (*encoded_key != '\0' && isblank(*encoded_key)) {
+    encoded_key++;
+  }
+  // Truncate the encoded string to allow for appended comments.
+  size_t encoded_length = 0;
+  while (isgraph(encoded_key[encoded_length])) {
+    encoded_length++;
+  }
+
+  // Unfortunately we need an extra byte because 32B don't pack cleanly in
+  // base64.
+  uint8_t buf[GLOME_MAX_PUBLIC_KEY_LENGTH + 1] = {0};
+  size_t b = base64url_decode((uint8_t *)encoded_key, encoded_length, buf,
+                              sizeof(buf));
+  if (b != GLOME_MAX_PUBLIC_KEY_LENGTH) {
+    errorf("ERROR: public key decoded to %zu bytes, expected %d\n", b,
+           GLOME_MAX_PUBLIC_KEY_LENGTH);
+    return false;
+  }
+
+  memcpy(public_key, buf, GLOME_MAX_PUBLIC_KEY_LENGTH);
+  return true;
+}
+
 static status_t assign_string_option(const char **option, const char *val) {
   const char *copy = strdup(val);
   if (copy == NULL) {
     return status_createf("ERROR: failed to allocate memory for value: %s",
                           val);
   }
+
   *option = copy;
   return STATUS_OK;
 }
@@ -241,6 +282,11 @@ static status_t assign_default_option(glome_login_config_t *config,
     return assign_positive_int_option(&config->input_timeout_sec, val);
   } else if (strcmp(key, "verbose") == 0) {
     return update_bitfield_option(config, VERBOSE, false, val);
+  } else if (strcmp(key, "public-key") == 0) {
+    if (!glome_login_parse_public_key(val, config->service_key,
+                                      sizeof(config->service_key))) {
+      return status_createf("ERROR: Failed to decode public-key\n");
+    }
   }
 
   return status_createf("ERROR: unrecognized default option: %s", key);

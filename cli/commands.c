@@ -28,6 +28,7 @@
 
 #include "glome.h"
 #include "login/base64.h"
+#include "login/config.h"
 #include "login/crypto.h"
 
 #define GLOME_CLI_MAX_MESSAGE_LENGTH 4095
@@ -100,6 +101,30 @@ static bool read_file(const char *fname, uint8_t *buf, const size_t num_bytes) {
   return true;
 }
 
+static bool read_public_key_file(const char *fname, uint8_t *buf,
+                                 size_t buf_len) {
+  FILE *f = fopen(fname, "r");
+  if (!f) {
+    fprintf(stderr, "could not open file %s: %s\n", fname, strerror(errno));
+    return false;
+  }
+  // Allocate enough buffer space to fit the public key and a reasonable amount
+  // of whitespace.
+  char encoded_public_key[128] = {0};
+  if (!fgets(encoded_public_key, sizeof(encoded_public_key), f)) {
+    perror("could not read from public key file");
+    fclose(f);
+    return false;
+  }
+  fclose(f);
+
+  if (!glome_login_parse_public_key(encoded_public_key, buf, buf_len)) {
+    fprintf(stderr, "failed to parse public key %s\n", encoded_public_key);
+    return false;
+  }
+  return true;
+}
+
 int genkey(int argc, char **argv) {
   UNUSED(argc);
   UNUSED(argv);
@@ -124,6 +149,7 @@ int pubkey(int argc, char **argv) {
 
   uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
+  char encoded_public_key[ENCODED_BUFSIZE(GLOME_MAX_PUBLIC_KEY_LENGTH)] = {0};
 
   if (fread(private_key, 1, sizeof private_key, stdin) != sizeof private_key) {
     perror("unable to read the private key from stdin");
@@ -133,7 +159,13 @@ int pubkey(int argc, char **argv) {
     fprintf(stderr, "unable to generate a new key\n");
     return EXIT_FAILURE;
   }
-  if (fwrite(public_key, 1, sizeof public_key, stdout) != sizeof public_key) {
+  if (!base64url_encode(public_key, sizeof public_key,
+                        (uint8_t *)encoded_public_key,
+                        sizeof encoded_public_key)) {
+    fputs("unable to encode public key\n", stderr);
+    return EXIT_FAILURE;
+  }
+  if (printf("%s %s\n", GLOME_LOGIN_PUBLIC_KEY_ID, encoded_public_key) < 0) {
     perror("unable to write the public key to stdout");
     return EXIT_FAILURE;
   }
@@ -150,12 +182,12 @@ int tag_impl(uint8_t tag[GLOME_MAX_TAG_LENGTH], bool verify,
   char message[GLOME_CLI_MAX_MESSAGE_LENGTH] = {0};
 
   if (!read_file(key_file, private_key, sizeof private_key) ||
-      !read_file(peer_file, peer_key, sizeof peer_key)) {
+      !read_public_key_file(peer_file, peer_key, sizeof(peer_key))) {
     return EXIT_FAILURE;
   };
   size_t msg_len = fread(message, 1, GLOME_CLI_MAX_MESSAGE_LENGTH, stdin);
   if (!feof(stdin)) {
-    fprintf(stderr, "message exceeds maximum supported size of %u",
+    fprintf(stderr, "message exceeds maximum supported size of %u\n",
             GLOME_CLI_MAX_MESSAGE_LENGTH);
     return EXIT_FAILURE;
   }
