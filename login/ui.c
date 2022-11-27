@@ -88,8 +88,7 @@ static const char flags_help[] =
     "(default: %d)"
 
     "\n -k, --key=KEY              use hex-encoded KEY as the service key "
-    "(defaul: key "
-    "from configuration file)"
+    "(default: key from configuration file)"
 
     "\n -l, --login-path=PATH      use PATH instead of " DEFAULT_LOGIN_PATH
 
