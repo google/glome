@@ -29,52 +29,69 @@
 
 #define MODULE_NAME "pam_glome"
 
+#define MAX_ERROR_MESSAGE_SIZE 4095
+
+#define UNUSED(var) (void)(var)
+
+static const char *arg_value(const char *arg, const char *key,
+                             const char *default_value) {
+  int i, key_len = strlen(key);
+  for (i = 0; i < key_len; i++) {
+    // Compare key with arg char by char while also allowing _ in place of -
+    if (!(key[i] == arg[i] || (key[i] == '-' && arg[i] == '_'))) {
+      return NULL;
+    }
+  }
+  if (arg[key_len] == '=') {
+    return arg + key_len + 1;
+  }
+  if (arg[key_len] == '\0') {
+    return default_value;
+  }
+  return NULL;
+}
+
 static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
                           glome_login_config_t *config) {
   memset(config, 0, sizeof(glome_login_config_t));
   int errors = 0;
+  status_t status;
+  const char *val;
 
   for (int i = 0; i < argc; ++i) {
-    if (!strncmp(argv[i], "config_path=", 12)) {
-      config->config_path = argv[i] + 12;
-    } else if (!strncmp(argv[i], "service_key=", 12)) {
-      if (decode_hex(config->service_key, sizeof config->service_key,
-                     argv[i] + 12) != 0) {
-        pam_syslog(pamh, LOG_ERR, "invalid value for %s", argv[i]);
-        errors++;
-      }
-    } else if (!strncmp(argv[i], "service_key_version=", 20)) {
-      char *endptr;
-      long l;
-      errno = 0;
-      l = strtol(argv[i] + 20, &endptr, 0);
-      if (errno) {
-        pam_syslog(pamh, LOG_ERR, "invalid value for %s", argv[i]);
-        errors++;
-        continue;
-      }
-      if (*endptr != '\0' || l <= 0 || l > UINT8_MAX) {
-        pam_syslog(pamh, LOG_ERR, "invalid value for %s", argv[i]);
-        errors++;
-        continue;
-      }
-      config->service_key_id = (uint8_t)l;
-    } else if (!strncmp(argv[i], "url_prefix=", 11)) {
-      config->url_prefix = argv[i] + 11;
-    } else if (!strcmp(argv[i], "debug")) {
-      config->options |= VERBOSE;
-    } else if (!strcmp(argv[i], "insecure_debug")) {
-      config->options |= INSECURE;
-    } else if (!strncmp(argv[i], "insecure_host_id=", 17)) {
-      config->host_id = argv[i] + 17;
-    } else if (!strncmp(argv[i], "insecure_secret_key=", 20)) {
-      if (decode_hex(config->secret_key, sizeof config->secret_key,
-                     argv[i] + 20) != 0) {
-        pam_syslog(pamh, LOG_ERR, "invalid value for %s", argv[i]);
-        errors++;
-      }
+    if ((val = arg_value(argv[i], "config-path", NULL))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "config-path", val);
+    } else if ((val = arg_value(argv[i], "key", NULL))) {
+      status = glome_login_assign_config_option(config, "service", "key", val);
+    } else if ((val = arg_value(argv[i], "key-version", NULL))) {
+      status = glome_login_assign_config_option(config, "service",
+                                                "key-version", val);
+    } else if ((val = arg_value(argv[i], "url-prefix", NULL))) {
+      status = glome_login_assign_config_option(config, "service", "url-prefix",
+                                                val);
+    } else if ((val = arg_value(argv[i], "debug", "true"))) {
+      status =
+          glome_login_assign_config_option(config, "default", "verbose", val);
+    } else if ((val = arg_value(argv[i], "print-secrets", "true"))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "print-secrets", val);
+    } else if ((val = arg_value(argv[i], "host-id", NULL))) {
+      status =
+          glome_login_assign_config_option(config, "default", "host-id", val);
+    } else if ((val = arg_value(argv[i], "ephemeral-key", NULL))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "ephemeral-key", val);
     } else {
       pam_syslog(pamh, LOG_ERR, "invalid option %s", argv[i]);
+      errors++;
+      continue;
+    }
+
+    if (status != STATUS_OK) {
+      pam_syslog(pamh, LOG_ERR, "failed to set config option '%s': %s", argv[i],
+                 status);
+      status_free(status);
       errors++;
     }
   }
@@ -93,131 +110,97 @@ static int get_username(pam_handle_t *pamh, glome_login_config_t *config,
   return 0;
 }
 
-static int glome_authenticate(pam_handle_t *pamh, glome_login_config_t *config,
-                              const char **error_tag, int argc,
-                              const char **argv) {
-  if (is_zeroed(config->service_key, sizeof config->service_key)) {
-    return failure(EXITCODE_PANIC, error_tag, "no-service-key");
+void login_error(glome_login_config_t *config, pam_handle_t *pamh,
+                 const char *format, ...) {
+  UNUSED(config);
+
+  char message[MAX_ERROR_MESSAGE_SIZE] = {0};
+  va_list argptr;
+  va_start(argptr, format);
+  int ret = vsnprintf(message, sizeof(message), format, argptr);
+  va_end(argptr);
+  if (ret < 0 || ret >= MAX_ERROR_MESSAGE_SIZE) {
+    return;
   }
 
-  uint8_t public_key[PUBLIC_KEY_LENGTH] = {0};
-  if (derive_or_generate_key(config->secret_key, public_key)) {
-    return failure(EXITCODE_PANIC, error_tag, "derive-or-generate-key");
-  }
-
-  char *host_id = NULL;
-  if (config->host_id != NULL) {
-    host_id = strdup(config->host_id);
-  } else {
-    host_id = calloc(HOST_NAME_MAX + 1, 1);
-    if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
-      return failure(EXITCODE_PANIC, error_tag, "get-machine-id");
-    }
-  }
-
-  char *action = NULL;
-  size_t action_len = 0;
-
-  if (shell_action(config->username, &action, &action_len, error_tag)) {
-    free(host_id);
-    return EXITCODE_PANIC;
-  }
-
-  if (config->options & VERBOSE) {
-    pam_syslog(pamh, LOG_DEBUG, "host ID: %s", host_id);
-    pam_syslog(pamh, LOG_DEBUG, "action: %s", action);
-  }
-
-  uint8_t authcode[GLOME_MAX_TAG_LENGTH];
-  if (get_authcode(host_id, action, config->service_key, config->secret_key,
-                   authcode)) {
-    free(host_id);
-    free(action);
-    return failure(EXITCODE_PANIC, error_tag, "get-authcode");
-  }
-
-  char *url = NULL;
-  int url_len = 0;
-  if (request_url(config->service_key, config->service_key_id, public_key,
-                  host_id, action, /*prefix_tag=*/NULL,
-                  /*prefix_tag_len=*/0, &url, &url_len, error_tag)) {
-    free(host_id);
-    free(action);
-    return EXITCODE_PANIC;
-  }
-
-  free(host_id);
-  host_id = NULL;
-  free(action);
-  action = NULL;
-
+  struct pam_message msg[1] = {
+      {.msg = message, .msg_style = PAM_ERROR_MSG},
+  };
+  const struct pam_message *pmsg[1] = {&msg[0]};
+  struct pam_response *resp = NULL;
   struct pam_conv *conv;
   if (pam_get_item(pamh, PAM_CONV, (const void **)&conv) != PAM_SUCCESS) {
-    return failure(EXITCODE_PANIC, error_tag, "pam-get-conv");
+    return;
   }
+  if (conv->conv(1, pmsg, &resp, conv->appdata_ptr) != PAM_SUCCESS) {
+    return;
+  }
+  if (resp != NULL) {
+    free(resp->resp);
+    free(resp);
+  }
+}
 
-  const char *template = "GLOME link: %s%s";
-  size_t message_len =
-      strlen(template) + strlen(config->url_prefix) + strlen(url) - 4 + 1;
-  char *message = malloc(message_len);
-  if (message == NULL) {
-    return failure(EXITCODE_PANIC, error_tag, "malloc-message");
-  }
-  int written =
-      snprintf(message, message_len, template, config->url_prefix, url);
-  if (written < 0 || written >= message_len) {
-    return failure(EXITCODE_PANIC, error_tag, "broken-template");
-  }
-  free(url);
-  url = NULL;
+void login_syslog(glome_login_config_t *config, pam_handle_t *pamh,
+                  int priority, const char *format, ...) {
+  UNUSED(config);
+  va_list argptr;
+  va_start(argptr, format);
+  pam_vsyslog(pamh, priority, format, argptr);
+  va_end(argptr);
+}
 
+int login_prompt(glome_login_config_t *config, pam_handle_t *pamh,
+                 const char **error_tag, const char *message, char *input,
+                 size_t input_size) {
+  UNUSED(config);
   struct pam_message msg[1] = {
       {.msg = message, .msg_style = PAM_TEXT_INFO},
   };
   const struct pam_message *pmsg[1] = {&msg[0]};
   struct pam_response *resp = NULL;
+  struct pam_conv *conv;
+  if (pam_get_item(pamh, PAM_CONV, (const void **)&conv) != PAM_SUCCESS) {
+    return failure(EXITCODE_PANIC, error_tag, "pam-get-conv");
+  }
   if (conv->conv(1, pmsg, &resp, conv->appdata_ptr) != PAM_SUCCESS) {
-    free(message);
     return failure(EXITCODE_PANIC, error_tag, "pam-conv");
   }
-  free(message);
-
-  const char *input = NULL;
-  if (pam_get_authtok(pamh, PAM_AUTHTOK, &input, NULL) != PAM_SUCCESS) {
+  if (resp != NULL) {
+    free(resp->resp);
+    free(resp);
+  }
+  const char *token;
+  if (pam_get_authtok(pamh, PAM_AUTHTOK, &token, NULL) != PAM_SUCCESS) {
     return failure(EXITCODE_PANIC, error_tag, "pam-get-authtok");
   }
-
-  int bytes_read = strlen(input);
-  if (config->options & INSECURE) {
-    pam_syslog(pamh, LOG_DEBUG, "user input: %s", input);
+  if (strlen(token) >= input_size) {
+    return failure(EXITCODE_PANIC, error_tag, "pam-authtok-size");
   }
 
-  // Calculate the correct authcode.
-  char authcode_encoded[ENCODED_BUFSIZE(sizeof authcode)] = {0};
-  if (base64url_encode(authcode, sizeof authcode, (uint8_t *)authcode_encoded,
-                       sizeof authcode_encoded) == 0) {
-    return failure(EXITCODE_PANIC, error_tag, "authcode-encode");
+  // OpenSSH provides fake password when login is not allowed,
+  // for example due to PermitRootLogin set to 'no'
+  // https://github.com/openssh/openssh-portable/commit/283b97
+  const char fake_password[] =
+      "\b\n\r\177INCORRECT";  // auth-pam.c from OpenSSH
+  bool is_fake = true;
+
+  // Constant-time comparison in case token contains user's password
+  for (size_t i = 0; i < strlen(token); i++) {
+    is_fake &= (token[i] == fake_password[i % (sizeof(fake_password) - 1)]);
   }
-  if (config->options & INSECURE) {
-    pam_syslog(pamh, LOG_DEBUG, "expect input: %s", authcode_encoded);
+  if (is_fake) {
+    return failure(EXITCODE_PANIC, error_tag, "pam-authtok-openssh-no-login");
   }
 
-  if (bytes_read < MIN_ENCODED_AUTHCODE_LEN) {
-    return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
-  }
-  if (bytes_read > strlen(authcode_encoded)) {
-    return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
-  }
-
-  if (CRYPTO_memcmp(input, authcode_encoded, bytes_read) != 0) {
-    return failure(EXITCODE_INVALID_AUTHCODE, error_tag, "authcode-invalid");
-  }
-
+  strncpy(input, token, input_size);
   return 0;
 }
 
 int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
                         const char **argv) {
+  UNUSED(flags);
+
   const char *error_tag = NULL;
   glome_login_config_t config = {0};
   int rc = PAM_AUTH_ERR;
@@ -228,10 +211,10 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return rc;
   }
 
-  r = glome_login_parse_config_file(&config);
-  if (r < 0) {
-    pam_syslog(pamh, LOG_ERR, "failed to read config file: %s (%d)",
-               config.config_path, r);
+  status_t status = glome_login_parse_config_file(&config);
+  if (status != STATUS_OK) {
+    pam_syslog(pamh, LOG_ERR, "failed to read config file %s: %s",
+               config.config_path, status);
     return rc;
   }
 
@@ -241,7 +224,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return rc;
   }
 
-  r = glome_authenticate(pamh, &config, &error_tag, argc, argv);
+  r = login_authenticate(&config, pamh, "GLOME link: %s%s", &error_tag);
   if (!r) {
     rc = PAM_SUCCESS;
     if (config.options & VERBOSE) {
@@ -257,5 +240,9 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
 
 int pam_sm_setcred(pam_handle_t *pamh, int flags, int argc, const char **argv) {
   /* This module does not generate any user credentials, so just skip. */
+  UNUSED(pamh);
+  UNUSED(flags);
+  UNUSED(argc);
+  UNUSED(argv);
   return PAM_SUCCESS;
 }

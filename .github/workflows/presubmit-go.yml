@@ -15,10 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: gofmt
-        run: test -z "$(gofmt -d .)"
+        run: test -z "$(gofmt -d . | tee >&2)"
       - name: golint
         run: |
-          go get -u golang.org/x/lint/golint
+          go install golang.org/x/lint/golint@latest
           $(go env GOPATH)/bin/golint -set_exit_status=1 ./...
 
   unit-test:

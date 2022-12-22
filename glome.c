@@ -118,14 +118,19 @@ int glome_tag(bool verify, unsigned char counter,
   memcpy(hmac_key + X25519_SHARED_KEY_LEN + GLOME_MAX_PUBLIC_KEY_LENGTH,
          (verify ? peer_key : public_key), GLOME_MAX_PUBLIC_KEY_LENGTH);
 
-  HMAC_CTX *hmac_ctx = HMAC_CTX_new();
+  // data := (counter | message)
+  size_t data_len = message_len + sizeof counter;
+  uint8_t *data = malloc(data_len);
+  if (data == NULL) {
+    return 1;
+  }
+  memcpy(data, &counter, sizeof counter);
+  memcpy(data + sizeof counter, message, message_len);
+
   unsigned int tag_length = GLOME_MAX_TAG_LENGTH;
-  int success =
-      (HMAC_Init_ex(hmac_ctx, hmac_key, sizeof hmac_key, EVP_sha256(), NULL) &&
-       HMAC_Update(hmac_ctx, &counter, sizeof counter) &&
-       HMAC_Update(hmac_ctx, message, message_len) &&
-       HMAC_Final(hmac_ctx, tag, &tag_length) &&
-       tag_length == GLOME_MAX_TAG_LENGTH);
-  HMAC_CTX_free(hmac_ctx);
+  int success = (HMAC(EVP_sha256(), hmac_key, sizeof hmac_key, data, data_len,
+                      tag, &tag_length) &&
+                 tag_length == GLOME_MAX_TAG_LENGTH);
+  free(data);
   return success ? 0 : 1;
 }

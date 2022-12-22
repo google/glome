@@ -24,7 +24,9 @@ const char *authtoks[] = {
     "lyHuaHuCck",  /* Correct code */
     "lyHuaHuCc",   /* Too short */
     "INVALIDCODE", /* Wrong code */
-    NULL           /* Terminator */
+    /* fake passwords that might be provided by openssh-portable/auth-pam.c */
+    "\b\n\r\177", "\b\n\r\177INCORRECT", "\b\n\r\177INCORRECT\b\n\r\177",
+    NULL /* Terminator */
 };
 
 struct pamtest_conv_data conv_data = {
@@ -33,6 +35,9 @@ struct pamtest_conv_data conv_data = {
 
 struct pam_testcase tests[] = {
     pam_test(PAMTEST_AUTHENTICATE, PAM_SUCCESS),
+    pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
+    pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
+    pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
     pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
     pam_test(PAMTEST_AUTHENTICATE, PAM_AUTH_ERR),
 };
@@ -76,16 +81,20 @@ int test_service() {
 
   fprintf(f,
           "auth required %s url_prefix=https://test.service "
-          "service_key="
+          "key="
           "de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f "
-          "service_key_version=1 "
-          "insecure_secret_key="
+          "key_version=1 "
+          "ephemeral_key="
           "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a "
-          "insecure_host_id=my-server.local",
+          "host_id=my-server.local",
           pam_glome);
   fclose(f);
 
+#if defined(OLDSTYLE_RUN_PAMTEST)
   perr = run_pamtest(service, username, &conv_data, tests);
+#else
+  perr = run_pamtest(service, username, &conv_data, tests, NULL);
+#endif
   if (perr != PAMTEST_ERR_OK) {
     puts(pamtest_strerror(perr));
     return 1;
@@ -156,14 +165,19 @@ int test_config() {
 
   fprintf(f,
           "auth required %s config_path=%s "
-          "insecure_secret_key="
+          "ephemeral-key="
           "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a "
-          "insecure_host_id=my-server.local",
+          "host-id=my-server.local",
           pam_glome, config_file);
   fclose(f);
   free(config_file);
 
+#if defined(OLDSTYLE_RUN_PAMTEST)
   perr = run_pamtest(service, username, &conv_data, tests);
+#else
+  perr = run_pamtest(service, username, &conv_data, tests, NULL);
+#endif
+
   if (perr != PAMTEST_ERR_OK) {
     puts(pamtest_strerror(perr));
     return 1;
