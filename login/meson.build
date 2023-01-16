@@ -58,6 +58,13 @@ if get_option('tests')
         link_with : [glome_lib, login_lib],
         include_directories : glome_incdir)
     test('crypto test', crypto_test)
+
+    config_test = executable(
+        'config_test', 'config_test.c',
+        dependencies : [openssl_dep, glib_dep],
+        link_with : [glome_lib, login_lib],
+        include_directories : glome_incdir)
+    test('config test', config_test)
 endif
 
 if get_option('pam-glome')
