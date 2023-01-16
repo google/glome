@@ -88,20 +88,14 @@ static void key_value(char *line, char **key, char **val) {
     return;
   }
 
-  char *v = p;
-  for (; !isspace(*p) && *p != '\0'; p++) {
+  // Trim whitespace at the end of the value.
+  int k = strlen(p) - 1;
+  for (; k >= 0 && isspace(p[k]); k--) {
   }
-  if (*p != '\0') {
-    *p = '\0';
-    for (p++; isspace(*p); p++) {
-    }
-  }
-  if (*p != '\0') {
-    return;
-  }
+  p[k+1] = '\0';
 
   *key = line;
-  *val = v;
+  *val = p;
 }
 
 bool glome_login_parse_public_key(const char *encoded_key, uint8_t *public_key,
@@ -265,6 +259,8 @@ static status_t assign_default_option(glome_login_config_t *config,
                                       const char *key, const char *val) {
   if (strcmp(key, "auth-delay") == 0) {
     return assign_positive_int_option(&config->auth_delay_sec, val);
+  } else if (strcmp(key, "input-timeout") == 0) {
+    return assign_positive_int_option(&config->input_timeout_sec, val);
   } else if (strcmp(key, "config-path") == 0) {
     return assign_string_option(&config->config_path, val);
   } else if (strcmp(key, "ephemeral-key") == 0) {
@@ -282,11 +278,6 @@ static status_t assign_default_option(glome_login_config_t *config,
     return assign_positive_int_option(&config->input_timeout_sec, val);
   } else if (strcmp(key, "verbose") == 0) {
     return update_bitfield_option(config, VERBOSE, false, val);
-  } else if (strcmp(key, "public-key") == 0) {
-    if (!glome_login_parse_public_key(val, config->service_key,
-                                      sizeof(config->service_key))) {
-      return status_createf("ERROR: Failed to decode public-key\n");
-    }
   }
 
   return status_createf("ERROR: unrecognized default option: %s", key);
@@ -303,6 +294,12 @@ static status_t assign_service_option(glome_login_config_t *config,
     if (config->url_prefix == NULL) {
       return assign_string_option(&config->url_prefix, val);
     }
+  } else if (strcmp(key, "public-key") == 0) {
+    if (!glome_login_parse_public_key(val, config->service_key,
+                                      sizeof(config->service_key))) {
+      return status_createf("ERROR: failed to decode public-key");
+    }
+    return STATUS_OK;
   }
 
   return status_createf("ERROR: unrecognized service option: %s", key);

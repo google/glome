@@ -64,7 +64,7 @@ if get_option('tests')
         dependencies : [openssl_dep, glib_dep],
         link_with : [glome_lib, login_lib],
         include_directories : glome_incdir)
-    test('config test', config_test)
+    test('config test', config_test, args: files('config_test.cfg'))
 endif
 
 if get_option('pam-glome')
