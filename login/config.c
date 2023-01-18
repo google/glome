@@ -92,7 +92,7 @@ static void key_value(char *line, char **key, char **val) {
   int k = strlen(p) - 1;
   for (; k >= 0 && isspace(p[k]); k--) {
   }
-  p[k+1] = '\0';
+  p[k + 1] = '\0';
 
   *key = line;
   *val = p;
