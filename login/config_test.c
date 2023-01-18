@@ -19,18 +19,23 @@
 
 #include "ui.h"
 
-static const char* ENCODED_PUBLIC_KEY = "glome-v1 aqA9yqe1RXoOT6HrmCbF40wVUhYp50FYZR9q8_X5KF4=";
+static const char* ENCODED_PUBLIC_KEY =
+    "glome-v1 aqA9yqe1RXoOT6HrmCbF40wVUhYp50FYZR9q8_X5KF4=";
 
-static const uint8_t DECODED_PUBLIC_KEY[32] = {0x6a, 0xa0, 0x3d, 0xca, 0xa7, 0xb5, 0x45, 0x7a, 0x0e, 0x4f, 0xa1, 0xeb, 0x98, 0x26, 0xc5, 0xe3, 0x4c, 0x15, 0x52, 0x16, 0x29, 0xe7, 0x41, 0x58, 0x65, 0x1f, 0x6a, 0xf3, 0xf5, 0xf9, 0x28, 0x5e};
+static const uint8_t DECODED_PUBLIC_KEY[32] = {
+    0x6a, 0xa0, 0x3d, 0xca, 0xa7, 0xb5, 0x45, 0x7a, 0x0e, 0x4f, 0xa1,
+    0xeb, 0x98, 0x26, 0xc5, 0xe3, 0x4c, 0x15, 0x52, 0x16, 0x29, 0xe7,
+    0x41, 0x58, 0x65, 0x1f, 0x6a, 0xf3, 0xf5, 0xf9, 0x28, 0x5e};
 
 static void test_parse_public_key() {
   uint8_t decoded[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
-  g_assert_true(
-      glome_login_parse_public_key(ENCODED_PUBLIC_KEY, decoded, sizeof(decoded)));
-  g_assert_cmpmem(decoded, sizeof(decoded), DECODED_PUBLIC_KEY, sizeof(DECODED_PUBLIC_KEY));
+  g_assert_true(glome_login_parse_public_key(ENCODED_PUBLIC_KEY, decoded,
+                                             sizeof(decoded)));
+  g_assert_cmpmem(decoded, sizeof(decoded), DECODED_PUBLIC_KEY,
+                  sizeof(DECODED_PUBLIC_KEY));
 
-  g_assert_false(
-      glome_login_parse_public_key(ENCODED_PUBLIC_KEY, decoded, sizeof(decoded) - 1));
+  g_assert_false(glome_login_parse_public_key(ENCODED_PUBLIC_KEY, decoded,
+                                              sizeof(decoded) - 1));
   g_assert_false(glome_login_parse_public_key(
       "glome-group1-md5 QUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUE=", decoded,
       sizeof(decoded)));
@@ -43,7 +48,8 @@ static void test_parse_public_key() {
       "root@localhost";
   g_assert_true(
       glome_login_parse_public_key(extra_chars, decoded, sizeof(decoded)));
-  g_assert_cmpmem(decoded, sizeof(decoded), DECODED_PUBLIC_KEY, sizeof(DECODED_PUBLIC_KEY));
+  g_assert_cmpmem(decoded, sizeof(decoded), DECODED_PUBLIC_KEY,
+                  sizeof(DECODED_PUBLIC_KEY));
 }
 
 static char* EXAMPLE_CFG = NULL;
@@ -68,7 +74,8 @@ static void test_parse_config_file() {
   g_assert_false(config.options & SYSLOG);
   g_assert_false(config.options & INSECURE);
 
-  g_assert_cmpmem(DECODED_PUBLIC_KEY, sizeof(DECODED_PUBLIC_KEY), config.service_key, GLOME_MAX_PUBLIC_KEY_LENGTH);
+  g_assert_cmpmem(DECODED_PUBLIC_KEY, sizeof(DECODED_PUBLIC_KEY),
+                  config.service_key, GLOME_MAX_PUBLIC_KEY_LENGTH);
   g_assert_true(config.service_key_id == 42);
   g_assert_cmpstr("glome://", ==, config.url_prefix);
 }

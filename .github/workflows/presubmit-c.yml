@@ -38,7 +38,7 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
     - name: install Nix dependencies
       if: ${{ matrix.container == null }}
-      run: nix-shell --run 'meson --werror build && ninja -C build && meson test --print-errorlogs -C build'
+      run: nix-shell --run 'meson --buildtype=release --werror build && ninja -C build && meson test --print-errorlogs -C build'
     - name: setup build directory
       if: ${{ matrix.container != null }}
       run: meson --werror build
