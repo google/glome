@@ -154,12 +154,13 @@ char* escape_host(const char* host) {
   return ret;
 }
 
-int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                int service_key_id, const uint8_t public_key[PUBLIC_KEY_LENGTH],
-                const char* host_id, const char* action,
-                const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
-                size_t prefix_tag_len, char** url, int* url_len,
-                const char** error_tag) {
+int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
+                      int service_key_id,
+                      const uint8_t public_key[PUBLIC_KEY_LENGTH],
+                      const char* host_id, const char* action,
+                      const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
+                      size_t prefix_tag_len, char** challenge,
+                      int* challenge_len, const char** error_tag) {
   if (prefix_tag_len > GLOME_MAX_TAG_LENGTH) {
     return failure(EXITCODE_PANIC, error_tag, "prefix-tag-too-large");
   }
@@ -200,7 +201,7 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
   char* buf = malloc(len);
   if (buf == NULL) {
     free(host_id_escaped);
-    return failure(EXITCODE_PANIC, error_tag, "url-malloc-error");
+    return failure(EXITCODE_PANIC, error_tag, "challenge-malloc-error");
   }
   int ret = snprintf(buf, len, "v1/%s/%s/%s/", handshake_encoded,
                      host_id_escaped, action);
@@ -208,15 +209,15 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
   host_id_escaped = NULL;
   if (ret < 0) {
     free(buf);
-    return failure(EXITCODE_PANIC, error_tag, "url-sprintf-error");
+    return failure(EXITCODE_PANIC, error_tag, "challenge-sprintf-error");
   }
   if (ret >= len) {
     free(buf);
-    return failure(EXITCODE_PANIC, error_tag, "url-sprintf-trunc");
+    return failure(EXITCODE_PANIC, error_tag, "challenge-sprintf-trunc");
   }
 
-  *url = buf;
-  *url_len = len;
+  *challenge = buf;
+  *challenge_len = len;
   return 0;
 }
 
@@ -368,11 +369,12 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
     return failure(EXITCODE_PANIC, error_tag, "get-authcode");
   }
 
-  char* url = NULL;
-  int url_len = 0;
-  if (request_url(config->service_key, config->service_key_id, public_key,
-                  host_id, action, /*prefix_tag=*/NULL,
-                  /*prefix_tag_len=*/0, &url, &url_len, error_tag)) {
+  char* challenge = NULL;
+  int challenge_len = 0;
+  if (request_challenge(config->service_key, config->service_key_id, public_key,
+                        host_id, action, /*prefix_tag=*/NULL,
+                        /*prefix_tag_len=*/0, &challenge, &challenge_len,
+                        error_tag)) {
     free(host_id);
     free(action);
     return EXITCODE_PANIC;
@@ -384,19 +386,19 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   action = NULL;
 
   const char* prompt = config->prompt;
-  size_t message_len = strlen(prompt) + strlen(url) + 1;
+  size_t message_len = strlen(prompt) + strlen(challenge) + 1;
   char* message = malloc(message_len);
   if (message == NULL) {
-    free(url);
+    free(challenge);
     return failure(EXITCODE_PANIC, error_tag, "malloc-message");
   }
   message[0] = '\0';  // required by strncat()
   if (prompt != NULL) {
     strncat(message, prompt, message_len - 1);
   }
-  strncat(message, url, message_len - strlen(message) - 1);
-  free(url);
-  url = NULL;
+  strncat(message, challenge, message_len - strlen(message) - 1);
+  free(challenge);
+  challenge = NULL;
   if (message[message_len - 1] != '\0') {
     free(message);
     return failure(EXITCODE_PANIC, error_tag, "strncat-failure");

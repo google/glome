@@ -62,25 +62,25 @@ static void test_vector_1() {
 
   {
     const char* error_tag = NULL;
-    char* url = NULL;
-    int url_len = 0;
+    char* challenge = NULL;
+    int challenge_len = 0;
     int service_key_id = 1;
     uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH];
 
     g_assert_true(get_msg_tag(host_id, action, service_key, private_key,
                               prefix_tag) == 0);
 
-    if (request_url(service_key, service_key_id, public_key, host_id, action,
-                    prefix_tag, /*prefix_tag_len=*/2, &url, &url_len,
-                    &error_tag)) {
-      g_test_message("construct_request_url failed: %s", error_tag);
+    if (request_challenge(service_key, service_key_id, public_key, host_id,
+                          action, prefix_tag, /*prefix_tag_len=*/2, &challenge,
+                          &challenge_len, &error_tag)) {
+      g_test_message("construct_request_challenge failed: %s", error_tag);
       g_test_fail();
     }
 
     g_assert_cmpstr(
         "v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/"
         "my-server.local/shell/root/",
-        ==, url);
+        ==, challenge);
     g_assert_null(error_tag);
   }
 }
@@ -115,20 +115,21 @@ static void test_vector_2() {
 
   {
     const char* error_tag = NULL;
-    char* url = NULL;
-    int url_len = 0;
+    char* challenge = NULL;
+    int challenge_len = 0;
     int service_key_id = 0;
-    if (request_url(service_key, service_key_id, public_key, host_id, action,
-                    /*prefix_tag=*/NULL, /*prefix_tag_len=*/0, &url, &url_len,
-                    &error_tag)) {
-      g_test_message("construct_request_url failed: %s", error_tag);
+    if (request_challenge(service_key, service_key_id, public_key, host_id,
+                          action,
+                          /*prefix_tag=*/NULL, /*prefix_tag_len=*/0, &challenge,
+                          &challenge_len, &error_tag)) {
+      g_test_message("construct_request_challenge failed: %s", error_tag);
       g_test_fail();
     }
 
     g_assert_cmpstr(
         "v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/"
         "serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/",
-        ==, url);
+        ==, challenge);
     g_assert_null(error_tag);
   }
 }
