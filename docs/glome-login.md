@@ -48,7 +48,7 @@ is exchanged.
 The GLOME login client generates the challenge in the form of an URL:
 
 ```
-<url-prefix>/v<V>/<glome-handshake>[/<message>]/
+<prompt>v<V>/<glome-handshake>[/<message>]/
 
 glome-handshake := base64url(
     <prefix-type>
@@ -64,7 +64,7 @@ where <fields> have the following meanings:
 
 | Field           |      Length | Description                                      |
 | :-------------- | ----------: | :----------------------------------------------- |
-| url-prefix      | arbitrary   |                                                  |
+| prompt          | arbitrary   |                                                  |
 | V               | 1 byte      | URL format version. Currently always 1.          |
 | prefix-type     | 1 bits      | Determines the meaning of (prefix7; prefixN) fields: <br><ul><li>0: (service key indicator; message tag prefix)</li><li>1: reserved</li></ul>Service key indicator is either index, or if no index found will be matched<br>with the public key (to be administrator configurable) |
 | prefix7         | 7 bits      | Purpose determined by prefix-type.               |
