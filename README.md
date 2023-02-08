@@ -4,11 +4,11 @@
 
 - It is stateless (unlike [HOTP]).
 - It does not depend on time (unlike [TOTP]).
-- It does not require a predefined secret sharing (unlike [HOTP] and [TOTP]).
+- It does not require predefined secret sharing (unlike [HOTP] and [TOTP]).
 
-These properties make it a good choice for low dependency environments (e.g., devices with no persistent storage, source of entropy, or a real-time clock). It can be also useful for managing access to a large fleet of hosts where synchronising state or sharing a predefined secrets can be a challenge. 
+These properties make it a good choice for low dependency environments (e.g., devices with no persistent storage a real-time clock). It can be also useful for managing access to a large fleet of hosts where synchronising state or sharing predefined secrets can be a challenge. 
 
-GLOME Login can be easily integrated with existing systems through [PAM](https://en.wikipedia.org/wiki/Pluggable_authentication_module) (`lib_glome`) or through the a [login(1)](https://manpages.debian.org/testing/login/login.1.en.html) wrapper ([glome-login](login)).
+GLOME Login can be easily integrated with existing systems through [PAM](https://en.wikipedia.org/wiki/Pluggable_authentication_module) (`libglome`) or through the [login(1)](https://manpages.debian.org/testing/login/login.1.en.html) wrapper ([glome-login](login)).
 
 [GLOME Login protocol](docs/glome-login.md) is is built on top of the [Generic Low Overhead Message Exchange (GLOME) protocol](docs/protocol.md).
 
@@ -21,9 +21,9 @@ Let's imagine the following scenario:
 
 Alice is a system engineer who got paged to investigate an unresponsive machine that happens to be located far away. She calls Bob, a datacenter technican with physical access to the machine.
 
-Alice is authorized to access the machine but has no connectivity. Bob faces the the opposite problem, he can access the machine's serial port but does not have credentials to log in.
+Alice is authorized to access the machine but has no connectivity. Bob faces the opposite problem, he can access the machine's serial port but does not have credentials to log in.
 
-Alice is able to use GLOME Login to grant Bob one-time access to the machine. First, Bob connects to the machine over serial port and types `root` on the login prompt. It is then provided with a challenge that he forwards to Alice. The challenge contains information about the identity of accessed host and the requrested action (i.e., root shell acess). Alice verifies that the request is legitimate (e.g., the accessed host is indeed the one she's trying to diagnose), and uses [`glome` CLI](cli) to generate an authorization code. She forwards that authorization code to Bob who provides it as a challenge response.
+Alice is able to use GLOME Login to grant Bob one-time access to the machine. First, Bob connects to the machine over serial port and types `root` on the login prompt. He is then provided with a challenge that he forwards to Alice. The challenge contains information about the identity of accessed host and the requested action (i.e., root shell access). Alice verifies that the request is legitimate (e.g., the accessed host is indeed the one she's trying to diagnose), and uses the [`glome` CLI](cli) to generate an authorization code. She forwards that authorization code to Bob who provides it as a challenge response.
 
 The authorization succeeds and Bob is able to run diagnostic commands and share the results with Alice.
 
@@ -45,7 +45,7 @@ The output of that command is the approver public key that will be used to confi
 
 ### Installation on the target host
 
-1. Follow [instructions](login) to configure your host to use PAM module (recommended) or glome-login.
+1. Follow [instructions](login) to configure your host to use PAM module (recommended) or `glome-login`.
 1. Edit the configuration file (by default located at `/etc/glome/config`) and replace the key value with the approver public key generated in the previous section.
 ```
 $ cat /etc/glome/config
