@@ -1,13 +1,14 @@
 # GLOME-Go
+
 **This is not an officially supported Google product.**
 
 This repository contains a Golang implementation for the GLOME protocol. You can
 find the library as well as the tests in the folder `glome`.
 
-
 ## Go API
 
 ### Note
+
 This API is Alpha. Thus, it might be subject to changes in the future.
 
 ### Example
@@ -40,7 +41,7 @@ if err != nil { [...] }
 ```
 
 Suppose that Alice knows `bobPub` and wants to send Bob the message
-`msg` and no other message have been shared before. Alice will need to generate 
+`msg` and no other message have been shared before. Alice will need to generate
 a `Dialog`:
 
 ```go

@@ -27,14 +27,14 @@ reduced overhead by operating on truncated HMAC tags.
 An example of a real-world scenario fitting the description above is authorizing
 a human operator to access a device with the following constraints:
 
-*   The device does not have a network connectivity (e.g. due to a failure or
+* The device does not have a network connectivity (e.g. due to a failure or
     by design).
-*   The device does not have a synchronized time (e.g. no real-time clock).
-*   The device does not store any secrets (e.g. all its storage is easily
+* The device does not have a synchronized time (e.g. no real-time clock).
+* The device does not store any secrets (e.g. all its storage is easily
     readable by an adversary).
-*   The device accepts input from a human operator via a very low-bandwidth
+* The device accepts input from a human operator via a very low-bandwidth
     device (e.g. a keyboard).
-*   The device provides output to a human operator (e.g. via display).
+* The device provides output to a human operator (e.g. via display).
 
 With the constraints above, the operator effectively provides a low-bandwidth
 channel for the device and the authorization server to communicate by passing
@@ -50,13 +50,13 @@ GLOME was invented.
 
 ## Caveats
 
-*   GLOME does not protect confidentiality of exchanged messages. This is not a
+* GLOME does not protect confidentiality of exchanged messages. This is not a
     technical limitation (given that the protocol already performs a key
     exchange) but avoiding introducing unnecessary complexity. This decision can
     be revised in future revisions of this protocol, once there is a compelling
     use case to provide this.
 
-*   The server is unable to authenticate the client just using GLOME due to the
+* The server is unable to authenticate the client just using GLOME due to the
     usage of ephemeral keys. A protocol built on top of GLOME should implement
     its own client authentication (if necessary).
 
@@ -65,9 +65,9 @@ GLOME was invented.
 Alice and Bob want to exchange messages over an expensive untrusted channel,
 i.e.:
 
-*   The channel can be actively MITM-ed.
-*   Cost-per-byte and cost-per-message are relatively high.
-*   The cost function can be asymmetrical, i.e., the cost can be higher in one
+* The channel can be actively MITM-ed.
+* Cost-per-byte and cost-per-message are relatively high.
+* The cost function can be asymmetrical, i.e., the cost can be higher in one
     direction.
 
 Alice and Bob can choose to lower the cost (i.e., the overhead) by accepting
@@ -91,23 +91,23 @@ For full reference, see
 
 #### Alice
 
-1.  Alice generates an ephemeral private key $K_a'$.
-1.  Alice computes the corresponding public key $K_a$ from $K_a'$.
-1.  Alice uses $K_a'$ and Bob's public key $K_b$ to derive the shared secret
+1. Alice generates an ephemeral private key $K_a'$.
+1. Alice computes the corresponding public key $K_a$ from $K_a'$.
+1. Alice uses $K_a'$ and Bob's public key $K_b$ to derive the shared secret
     $K_s$.
-1.  Alice uses $K_a$, $K_b$ and $K_s$ to construct MAC keys:
-    1.  For messages from Alice to Bob: $K_{ab} = K_s ⧺ K_b ⧺ K_a$
-    1.  For messages from Bob to Alice: $K_{ba} = K_s ⧺ K_a ⧺ K_b$
-1.  At this point Alice can forget $K_a'$ and $K_s$ so they cannot be
+1. Alice uses $K_a$, $K_b$ and $K_s$ to construct MAC keys:
+    1. For messages from Alice to Bob: $K_{ab} = K_s ⧺ K_b ⧺ K_a$
+    1. For messages from Bob to Alice: $K_{ba} = K_s ⧺ K_a ⧺ K_b$
+1. At this point Alice can forget $K_a'$ and $K_s$ so they cannot be
     accidentally reused.
-1.  Alice sends $K_a$ and indicates which $K_b$ was used to Bob.
+1. Alice sends $K_a$ and indicates which $K_b$ was used to Bob.
 
 #### Bob
 
-1.  Bob receives $K_a$ and an indication of which $K_b$ to be used.
-1.  Bob uses the corresponding private key $K_b'$ and $K_a$ to derive the
+1. Bob receives $K_a$ and an indication of which $K_b$ to be used.
+1. Bob uses the corresponding private key $K_b'$ and $K_a$ to derive the
     shared secret $K_s$.
-1.  Bob computes the MAC keys $K_{ab}$ and $K_{ba}$ in the same way as Alice
+1. Bob computes the MAC keys $K_{ab}$ and $K_{ba}$ in the same way as Alice
     did.
 
 ### Exchanging messages
@@ -129,10 +129,10 @@ received tag.
 
 There is currently only one variant of the protocol defined. This variant uses:
 
-*   Curve25519 keys ($K_a$, $K_a'$, $K_b$, $K_b'$).
-*   X25519 to derive the shared secret $K_s$.
-*   HMAC-SHA256 to calculate the message tag.
-*   Unsigned 8-bit counters (0..255).
+* Curve25519 keys ($K_a$, $K_a'$, $K_b$, $K_b'$).
+* X25519 to derive the shared secret $K_s$.
+* HMAC-SHA256 to calculate the message tag.
+* Unsigned 8-bit counters (0..255).
 
 While the use of 8-bit counters limits the number of messages exchanged between
 the parties, it is likely to be sufficient given the constraints that warrant
@@ -140,35 +140,35 @@ the usage of the protocol.
 
 ### Optional optimizations
 
-*   To reduce the overhead at the cost of security, parties can truncate the
+* To reduce the overhead at the cost of security, parties can truncate the
     exchanged tags and compare only prefixes of an acceptable length.
-*   To reduce the number of messages exchanged, Alice can combine the initial
+* To reduce the number of messages exchanged, Alice can combine the initial
     handshake with sending the first message.
-*   Sending the tag in the first message sent from Alice to Bob is not
+* Sending the tag in the first message sent from Alice to Bob is not
     security-relevant since it does not authenticate the message as Alice uses
     ephemeral keys. It might be useful to detect accidental errors and for Bob
     to disambiguate between his multiple key pairs (more on that below).
-*   The indication of Bob's public key ($K_b$) can be done in different ways, 
+* The indication of Bob's public key ($K_b$) can be done in different ways,
     each leading to varying degrees of communication overhead:
-    1.  Specifying a truncated version of Bob's public key.
-        *   The truncation can cause ambiguity if it matches multiple of Bob's
+    1. Specifying a truncated version of Bob's public key.
+        * The truncation can cause ambiguity if it matches multiple of Bob's
             keys.
-    1.  Specifying a key identifier, e.g. the key's serial number.
-        *   Requires pre-agreeing to key identifiers between both parties.
-    1.  By including an (optionally truncated) tag over the message sent
+    1. Specifying a key identifier, e.g. the key's serial number.
+        * Requires pre-agreeing to key identifiers between both parties.
+    1. By including an (optionally truncated) tag over the message sent
         together with the handshake.
-        *   This can cause ambiguity, if Bob discovers that multiple key pairs
+        * This can cause ambiguity, if Bob discovers that multiple key pairs
             produce the same (truncated) tag.
-    1.  If Bob has only one key, there is no need to indicate which one is being
+    1. If Bob has only one key, there is no need to indicate which one is being
         used.
-        *   Not recommended, as this makes any key rotation difficult.
+        * Not recommended, as this makes any key rotation difficult.
 
 ### Future improvements
 
-*   Given that the protocol already establishes a shared secret between Alice
+* Given that the protocol already establishes a shared secret between Alice
     and Bob, it could be used to encrypt the exchanged messages. We decided not
     to add it at this point to keep the protocol simpler.
-*   The protocol could be extended to support multi-party settings (i.e., a
+* The protocol could be extended to support multi-party settings (i.e., a
     client exchanging messages with multiple servers at the same time).
 
 ### Test vectors
@@ -220,7 +220,7 @@ following operations.
 #### Key pair generation
 
 ```
-$ glome keygen <secret-key>
+glome keygen <secret-key>
 ```
 
 If `<secret-key>` does not exist, the private key is generated and written to
@@ -231,7 +231,7 @@ The tool prints out the corresponding public key to stdout (hex-encoded).
 #### HMAC tag computation
 
 ```
-$ glome tag <secret-key> <peer-key> [<message> [<counter>]]
+glome tag <secret-key> <peer-key> [<message> [<counter>]]
 ```
 
 Prints the hex-encoded tag over `<message>` (defaults to empty) with the counter
@@ -240,7 +240,7 @@ set to `<counter>` (defaults to 0).
 #### HMAC tag verification
 
 ```
-$ glome verify <secret-key> <peer-key> <tag> [<message> [<counter>]]
+glome verify <secret-key> <peer-key> <tag> [<message> [<counter>]]
 ```
 
 Verifies that the provided tag matches the expected tag over message `<message>`

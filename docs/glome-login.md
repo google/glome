@@ -24,23 +24,23 @@ The current version of the GLOME login protocol uses the
 Counters are set to constant `0` since only a single set of messages
 is exchanged.
 
-*   GLOME handshake information and tags are encoded as Base64-encoded URLs or
+* GLOME handshake information and tags are encoded as Base64-encoded URLs or
     "base64url"
     [[RFC4648 section 5](https://tools.ietf.org/html/rfc4648#section-5)].
-*   Initial message from the GLOME login client to the server contains the
+* Initial message from the GLOME login client to the server contains the
     context required for authorization (i.e. host identity, requested action).
-*   The authorization context is sent in clear for easier debuggability and
+* The authorization context is sent in clear for easier debuggability and
     reducing the likelihood of human errors (e.g. incomplete URL copy and
     paste).
-*   Server's public key can be identified by:
-    *   7-bit service key identifier and message tag prefix (of any
+* Server's public key can be identified by:
+  * 7-bit service key identifier and message tag prefix (of any
         length, including 0).
-    *   7-bit service key prefix and message tag prefix (of any length,
+  * 7-bit service key prefix and message tag prefix (of any length,
         including 0),
-*   Using a message tag prefix provides an additional protection against channel
+* Using a message tag prefix provides an additional protection against channel
     errors (e.g. caused by operator errors).
-*   The message sent from the GLOME login client to the server contains the context required for authorization (i.e. host identity, requested action).
-*   In this protocol the client and the server sign identical messages.
+* The message sent from the GLOME login client to the server contains the context required for authorization (i.e. host identity, requested action).
+* In this protocol the client and the server sign identical messages.
     the client to the server, and therefore is omitted.
 
 ### Challenge request format
@@ -60,7 +60,7 @@ glome-handshake := base64url(
 message := [<hostid-type>:]<hostid>[/<action>]
 ```
 
-where <fields> have the following meanings:
+where `<fields>` have the following meanings:
 
 | Field           |      Length | Description                                      |
 | :-------------- | ----------: | :----------------------------------------------- |
@@ -89,24 +89,24 @@ The `<action>` field represents the action being authorized and should not
 be ambiguous in a way that affects security. The format of the action is left
 up to the implementer to decide but it has to take into account these points:
 
-  * The `<action>` needs to be suitable for embedding in a URL.
-  * The `<action>` should be human readable and easy to understand
+* The `<action>` needs to be suitable for embedding in a URL.
+* The `<action>` should be human readable and easy to understand
     both as part of the URL and stand alone.
 
 Good examples:
 
-  * `shell/root` starts a shell as the given user, root in this case.
-  * `reboot` reboots the target.
-  * `show-logs/httpd` outputs debug logs for the HTTPD application.
+* `shell/root` starts a shell as the given user, root in this case.
+* `reboot` reboots the target.
+* `show-logs/httpd` outputs debug logs for the HTTPD application.
 
 Bad examples:
 
-  * `exec` executes a command.
-    * This is bad because it does not specify which command is being executed.
-  * `exec/cm0gLWZyIC8=` executes a given command (Base64 encoded).
-    * This is not human readable.
-  * `shell` starts a shell as an user-provided but undisclosed user.
-    * This is bad if there exists ambiguity on which user the shell will launch
+* `exec` executes a command.
+  * This is bad because it does not specify which command is being executed.
+* `exec/cm0gLWZyIC8=` executes a given command (Base64 encoded).
+  * This is not human readable.
+* `shell` starts a shell as an user-provided but undisclosed user.
+  * This is bad if there exists ambiguity on which user the shell will launch
       as. E.g. if the system is hard-coded to only allow login as root, this
       example is OK - otherwise not.
 
@@ -119,10 +119,10 @@ A GLOME login client should make sure to format the URL as per
 [[RFC 3986 Section 2.4](https://tools.ietf.org/html/rfc3986#section-2.4)]. The
 intent should be to maximize the human readability of the URL.
 
-**Example:** If the GLOME login server is running on https://glome.example.com/
+**Example:** If the GLOME login server is running on <https://glome.example.com/>
 and the challenge is `/v1/AAAAAAA.../serial:ab@!c/action/` the resulting URL
 should be presented as
-https://glome.example.com/v1/AAAAAAA.../serial:ab@!c/action/.
+<https://glome.example.com/v1/AAAAAAA.../serial:ab@!c/action/>.
 The important lesson from this example is that `serial:ab@!c` is **not** encoded
 using percent encoding as there is no reason to and would sacrifice human
 readability needlessly.

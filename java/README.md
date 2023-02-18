@@ -1,4 +1,5 @@
 # jGLOME
+
 **This is not an officially supported Google product.**
 
 This module contains a Java implementation for the GLOME
@@ -7,7 +8,7 @@ protocol.
 ## Usage
 
 Let's say Alice and Bob want to establish a communication. Then both parties
-should know their peer's public key. This is an example of how Alice can use 
+should know their peer's public key. This is an example of how Alice can use
 the Glome object to generate a tag:
 
 ```Java
@@ -32,7 +33,7 @@ public class Main {
 ```
 
 Then Alice should send Bob both `msg`, `tag` and Alice's public key.
-As soon as the information is received by Bob, the following can be done 
+As soon as the information is received by Bob, the following can be done
 to verify it:
 
 ```Java
@@ -65,7 +66,7 @@ Please see the source-code for more details.
 
 ## Keys
 
-The library by default generates an ephemeral key but can be instructed to use 
+The library by default generates an ephemeral key but can be instructed to use
 a given private key as well. If you want to use a predefined key-pair you can
 create a Glome object in the following way:
 
@@ -90,12 +91,12 @@ public class Main {
 
 If you would like the keys to be generated, please see the previous section.
 
-## Building 
+## Building
 
 ### Requirements
 
--   Java >= 8
--   Tink > 1.4.0
+- Java >= 8
+- Tink > 1.4.0
 
 ### Instructions
 

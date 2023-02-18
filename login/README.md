@@ -28,7 +28,7 @@ The installation is dependent on what system you are running.
 Create a override file for the getty instance e.g. in
 `/etc/systemd/system/serial-getty@.service.d/glome.conf`.
 
-```
+```ini
 [Service]
 ExecStart=
 ExecStart=-/sbin/agetty -l /usr/local/sbin/glome-login \
@@ -38,29 +38,17 @@ ExecStart=-/sbin/agetty -l /usr/local/sbin/glome-login \
 Alternatively or for a normal VTY, use
 `/etc/systemd/system/getty@.service.d/glome.conf`.
 
-```
+```ini
 [Service]
 ExecStart=
 ExecStart=-/sbin/agetty -l /usr/local/sbin/glome-login \
   -o '-- \\u' --noclear %I $TERM
 ```
 
-## Troubleshooting
-
-glome-login uses error tags to communicate errors.
-
-### no-service-key
-
-This error means that `glome-login` could not figure out what service key to
-use. This most likely means that you have not specified a service key in the
-configuration file (by default `/etc/glome/config`).
-
-# PAM module
+### PAM module
 
 `pam_glome.so` library implements the PAM authentication module for the
 [GLOME Login](../docs/glome-login.md) protocol.
-
-## Installation
 
 1. Install the library into the system dependent location for PAM modules
    (for example `/lib/security/pam_glome.so`).
@@ -70,8 +58,6 @@ configuration file (by default `/etc/glome/config`).
 ```
 auth       requisite  pam_glome.so
 ```
-
-## Usage
 
 PAM module supports the following options:
 
@@ -91,45 +77,53 @@ PAM module supports the following options:
 
 ## Troubleshooting
 
-PAM module uses error tags to communicate errors in the syslog messages.
+glome-login uses error tags to communicate errors on `stderr`.
 
-# Docker
+The PAM module logs errors with `syslog`.
+
+### no-service-key
+
+This error means that `glome-login` could not figure out what service key to
+use. This most likely means that you have not specified a service key in the
+configuration file (by default `/etc/glome/config`).
+
+## Docker
 
 Dockerfile included in the repository creates a Docker image that can be used
 to test `glome-login` and the PAM module.
 
-## Instalation
+### Building the Container
 
 Docker image for GLOME needs to be built first using the following command:
 
-```
-$ docker build -t glome -f kokoro/docker/Dockerfile .
+```sh
+docker build -t glome -f kokoro/docker/Dockerfile .
 ```
 
-## Usage
+### Running the Container
 
 Container is than started in the background with two TCP ports published to the
 host:
 
-```
-$ container=$(docker run -d -p 2022:22 -p 2023:23 glome)
+```sh
+container=$(docker run -d -p 2022:22 -p 2023:23 glome)
 ```
 
 Once the container is running it is possible to login using `netcat` or
 `socat`, for example:
 
-```
-$ socat tcp-connect:localhost:2023 file:`tty`,raw,echo=0
+```sh
+socat tcp-connect:localhost:2023 file:`tty`,raw,echo=0
 ```
 
 Regular SSH client can be used for testing the PAM module:
 
-```
-$ ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2022 root@localhost
+```sh
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 2022 root@localhost
 ```
 
 Authorization code required for GLOME Login can be obtained by running:
 
-```
-$ docker exec $container /usr/local/bin/glome login --key /usr/local/etc/glome/private.key https://glome.example.com/v1/...
+```sh
+docker exec $container /usr/local/bin/glome login --key /usr/local/etc/glome/private.key https://glome.example.com/v1/...
 ```

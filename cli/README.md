@@ -7,8 +7,8 @@ This is a CLI utility to facilitate GLOME operations from the command line.
 Generating two key pairs:
 
 ```shell
-$ glome genkey | tee Alice | glome pubkey >Alice.pub
-$ glome genkey | tee Bob   | glome pubkey >Bob.pub
+glome genkey | tee Alice | glome pubkey >Alice.pub
+glome genkey | tee Bob   | glome pubkey >Bob.pub
 ```
 
 Alice calculates a tag and send it together with message and counter to Bob:

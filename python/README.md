@@ -1,4 +1,5 @@
 # PyGLOME
+
 **This is not an officially supported Google product.**
 
 This repository contains a Python implementation for the GLOME
@@ -9,8 +10,8 @@ files can be found in the test folder.
 
 ### Requirements
 
--   Python >= 3.6
--   pyca/cryptography >= 2.5
+- Python >= 3.6
+- pyca/cryptography >= 2.5
 
 ### Example
 
@@ -44,7 +45,7 @@ except pyglome.TagCheckError as tag_error:
 ## do what you have to do
 ```
 
-### Key generation.
+### Key generation
 
 Should you want to use a preexisting key, it should match the format
 `X25519Private/PublicKey` provided in [pyca/cryptography](https://cryptography.io/en/latest/).
@@ -67,19 +68,22 @@ For more information see the in-code documentation.
 
 In the test folder we have scripts that implement test classes based on unittest. To run all unittest use:
 
-```
+```sh
 python -m test
 ```
+
 from this directory. If you only want to execute a particular test module, then run:
 
-```
+```sh
 python -m test.my_module_name
 ```
 
-where `my_module_name` is the name of the test module to be executed (the name of the file without the .py). 
+where `my_module_name` is the name of the test module to be executed (the name of the file without the .py).
 
 To run the fuzzing test use:
-```
+
+```sh
 python -m test.fuzzing_test
 ```
+
 from this directory.
