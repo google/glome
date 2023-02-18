@@ -8,6 +8,7 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    container: ghcr.io/igorshubovych/markdownlint-cli:latest
     steps:
     - uses: actions/checkout@v2
     - name: markdownlint
@@ -15,51 +16,3 @@ jobs:
         markdownlint . -i .git \
           --disable MD040 MD013 -- \
           -i docs/glome-login.md
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        container:
-        - 'debian:stable'
-        - 'debian:testing'
-        - 'alpine:latest'
-        - null
-    container: ${{ matrix.container }}
-    steps:
-    - uses: actions/checkout@v2
-    - name: install Debian dependencies
-      if: ${{ startsWith(matrix.container, 'debian:') }}
-      run: ./kokoro/rodete/fetch_dependencies.sh
-    - name: install Alpine dependencies
-      if: ${{ matrix.container == 'alpine:latest' }}
-      run: ./kokoro/alpine/fetch_dependencies.sh
-    - uses: cachix/install-nix-action@v17
-      if: ${{ matrix.container == null }}
-      with:
-        nix_path: nixpkgs=channel:nixos-unstable
-    - name: install Nix dependencies
-      if: ${{ matrix.container == null }}
-      run: nix-shell --run 'meson --buildtype=release --werror build && ninja -C build && meson test --print-errorlogs -C build'
-    - name: setup build directory
-      if: ${{ matrix.container != null }}
-      run: meson --werror build
-    - name: build
-      if: ${{ matrix.container != null }}
-      run: ninja -C build
-    - name: test
-      if: ${{ matrix.container != null }}
-      run: meson test --print-errorlogs -C build
-    - name: install
-      if: ${{ matrix.container != null }}
-      run: |
-        DESTDIR=out meson install -C build
-        find build/out/
-        test -x build/out/usr/local/bin/glome
-        test -x build/out/usr/local/sbin/glome-login
-        test -f build/out/usr/local/etc/glome/config
-        test -f build/out/usr/local/include/glome.h
-        # Dereference the library and check that it points to a valid file.
-        test -f build/out/usr/local/lib/libglome.so || \
-        test -f build/out/usr/local/lib/x86_64-linux-gnu/libglome.so
-        test -f build/out/usr/local/lib/security/pam_glome.so || \
-        test -f build/out/usr/local/lib/x86_64-linux-gnu/security/pam_glome.so
