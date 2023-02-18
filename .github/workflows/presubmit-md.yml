@@ -1,4 +1,4 @@
-name: c-presubmit
+name: markdown-presubmit
 on:
   push:
     branches: ['master']
