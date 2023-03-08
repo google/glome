@@ -42,7 +42,7 @@ static const char *kUsage =
     "    %s verify --key PRIVATE-KEY-FILE --peer PEER-KEY-FILE --tag TAG "
     "[--counter COUNTER] <MESSAGE-FILE\n\n"
     "  To generate a tag for a glome-login challenge:\n"
-    "    %s login --key PRIVATE-KEY-FILE /v1/AYUg8AmJMKdUdIt93LQ-91oNvzoN"
+    "    %s login --key PRIVATE-KEY-FILE v1/AYUg8AmJMKdUdIt93LQ-91oNvzoN"
     "Jjga9OukqY6qm05q0PU=/my-server.local/shell/root/\n";
 
 static int print_help(int argc, char **argv) {
