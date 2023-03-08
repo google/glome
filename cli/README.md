@@ -41,6 +41,6 @@ $ echo $?
 CLI also supports ganerating tags for the GLOME Login requests:
 
 ```shell
-$ glome login --key Bob https://glome.example.com/v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/
+$ glome login --key Bob v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/
 MT_Zc-hucXRjTXTBEo53ehoeUsFn1oFyVadViXf-I4k=
 ```

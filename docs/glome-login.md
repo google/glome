@@ -48,7 +48,7 @@ is exchanged.
 The GLOME login client generates the challenge in the form:
 
 ```
-<prompt>v<V>/<glome-handshake>[/<message>]/
+v<V>/<glome-handshake>[/<message>]/
 
 glome-handshake := base64url(
     <prefix-type>
@@ -64,7 +64,6 @@ where <fields> have the following meanings:
 
 | Field           |      Length | Description                                      |
 | :-------------- | ----------: | :----------------------------------------------- |
-| prompt          | arbitrary   |                                                  |
 | V               | 1 byte      | Challenge format version. Currently always 1.    |
 | prefix-type     | 1 bits      | Determines the meaning of (prefix7; prefixN) fields: <br><ul><li>0: (service key indicator; message tag prefix)</li><li>1: reserved</li></ul>Service key indicator is either index, or if no index found will be matched<br>with the public key (to be administrator configurable) |
 | prefix7         | 7 bits      | Purpose determined by prefix-type.               |
@@ -120,7 +119,7 @@ A GLOME login client should make sure to format the URL as per
 intent should be to maximize the human readability of the URL.
 
 **Example:** If the GLOME login server is running on https://glome.example.com/
-and the challenge is `/v1/AAAAAAA.../serial:ab@!c/action/` the resulting challenge
+and the challenge is `v1/AAAAAAA.../serial:ab@!c/action/` the resulting challenge
 should be presented as
 https://glome.example.com/v1/AAAAAAA.../serial:ab@!c/action/.
 The important lesson from this example is that `serial:ab@!c` is **not** encoded
@@ -197,7 +196,7 @@ and response tag length of 60 bits.
 | `prefixN`              | `d0f59d0b17cb155a1b9cd2b5cdea3a17f37a200e95e3651af2c88e1c5fc8108e` |
 | ![T][T]                | `9721ee687b827249dbe6c244ba459216cf01d525012163025df358eb87c89059` |
 |                        |                                                                    |
-| Challenge              | `/v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/` |
+| Challenge              | `v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/` |
 | Response token         | `lyHuaHuCck`                                                       |
 
 #### Vector 2
@@ -221,7 +220,7 @@ Login request using service key prefix, no message tag prefix, and full response
 | `prefixN`              | `dff5aae753a8bdce06038a20adcdb26c7be19cb6bd05a7850fae542f4af29720` |
 | ![T][T]                | `a7c33f0542a3ef35c154cd8995084d605c6ce09f83cf1440a6cf3765a343aae6` |
 |                        |                                                                    |
-| Challenge              | `/v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/` |
+| Challenge              | `v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/` |
 | Response token         | `p8M_BUKj7zXBVM2JlQhNYFxs4J-DzxRAps83ZaNDquY=`                     |
 
 ## Alternatives
