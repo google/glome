@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	validURLPrefix = regexp.MustCompile(`/(?P<v>v[1-9][0-9]*)/(?P<handshake>[\w=-]+)/`)
+	validURLPrefix = regexp.MustCompile(`(?P<v>v[1-9][0-9]*)/(?P<handshake>[\w=-]+)/`)
 )
 
 var (

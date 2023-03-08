@@ -84,7 +84,7 @@ func serverTests() map[string]testVector {
 		"test vector 1": {
 			kbp:         decodeString("5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb"),
 			index:       1,
-			Request:     "/v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/",
+			Request:     "v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/",
 			Response:    "lyHuaHuCck\n",
 			ResponseLen: 10,
 			authFunc:    AuthorizerFunc(constantTrue),
@@ -92,7 +92,7 @@ func serverTests() map[string]testVector {
 		"test vector 2": {
 			kbp:         decodeString("b105f00db105f00db105f00db105f00db105f00db105f00db105f00db105f00d"),
 			index:       0x51,
-			Request:     "/v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/",
+			Request:     "v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/",
 			Response:    "p8M_BUKj7zXBVM2JlQhNYFxs4J-DzxRAps83ZaNDquY=\n",
 			ResponseLen: MaxResponseSize,
 			authFunc:    AuthorizerFunc(constantTrue),
@@ -100,7 +100,7 @@ func serverTests() map[string]testVector {
 		"test vector 3": {
 			kbp:         decodeString("b105f00db105f00db105f00db105f00db105f00db105f00db105f00db105f00d"),
 			index:       0x51,
-			Request:     "/v1/UycvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/",
+			Request:     "v1/UycvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/",
 			Response:    "Server key not found for prefix 83.\n",
 			ResponseLen: MaxResponseSize,
 			authFunc:    AuthorizerFunc(constantTrue),
@@ -108,7 +108,7 @@ func serverTests() map[string]testVector {
 		"test vector 4": {
 			kbp:         decodeString("5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb"),
 			index:       1,
-			Request:     "/v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/",
+			Request:     "v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/",
 			Response:    "unauthorized action\n",
 			ResponseLen: 10,
 			authFunc:    AuthorizerFunc(constantFalse),
@@ -116,7 +116,7 @@ func serverTests() map[string]testVector {
 		"test vector 5": {
 			kbp:         decodeString("5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb"),
 			index:       1,
-			Request:     "/v1/aYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/",
+			Request:     "v1/aYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/",
 			Response:    "Server key not found for prefix 105.\n",
 			ResponseLen: 10,
 			authFunc:    AuthorizerFunc(constantFalse),
