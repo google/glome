@@ -385,7 +385,10 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   free(action);
   action = NULL;
 
-  const char* prompt = config->prompt;
+  const char* prompt = "";
+  if (config->prompt != NULL) {
+    prompt = config->prompt;
+  }
   size_t message_len = strlen(prompt) + strlen(challenge) + 1;
   char* message = malloc(message_len);
   if (message == NULL) {
@@ -393,9 +396,7 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
     return failure(EXITCODE_PANIC, error_tag, "malloc-message");
   }
   message[0] = '\0';  // required by strncat()
-  if (prompt != NULL) {
-    strncat(message, prompt, message_len - 1);
-  }
+  strncat(message, prompt, message_len - 1);
   strncat(message, challenge, message_len - strlen(message) - 1);
   free(challenge);
   challenge = NULL;
@@ -407,6 +408,8 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   char input[ENCODED_BUFSIZE(GLOME_MAX_TAG_LENGTH)];
   int rc = login_prompt(config, pamh, error_tag, message, input, sizeof(input));
   free(message);
+  message = NULL;
+
   if (rc != 0) {
     return rc;
   }
