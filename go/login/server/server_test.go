@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/google/glome/go/glome"
@@ -130,7 +131,11 @@ func TestServer(t *testing.T) {
 		tv := tv
 
 		t.Run(name, func(t *testing.T) {
-			r := httptest.NewRequest("GET", tv.Request, nil)
+			url := tv.Request
+			if !strings.HasPrefix(url, "/") {
+				url = "/" + url
+			}
+			r := httptest.NewRequest("GET", url, nil)
 			w := httptest.NewRecorder()
 
 			login, err := NewLoginServer(tv.authFunc, ResponseLen(tv.ResponseLen))
