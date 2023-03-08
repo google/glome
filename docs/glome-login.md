@@ -73,14 +73,15 @@ where <fields> have the following meanings:
 | hostid          | 1..n bytes  | Identity of the target (e.g. hostname, serial number, etc.) |
 | action          | 0..n bytes  | Action that is being authorized (e.g. reboot, shell).<br>Both parties should agree what the default action is if not set. |
 
-The client should then output the resulting challenge containing a
-fully-qualified URL, with the server portion set to the GLOME server able to
-sign responses for this request and the protocol preferably set to HTTPS.
+The client should then output the resulting challenge prefixed by the
+configured prompt. In practice, that configurable prefix can be used to present
+the challenge as an URL which can be used to submit the challenge to a GLOME
+serve.
 
-The challenge should always end in a `/` to make it easy for the GLOME login
+The challenge must always end in a `/` to make it easy for the GLOME login
 server to detect truncated requests and reject those early. Without the
-trailing slash requirement the request will likely look correct and may result
-in an invalid request being signed causing confusion for the operator.
+trailing slash requirement the request will still likely look correct but may
+result in an invalid request being signed causing confusion for the operator.
 
 #### Action
 
@@ -112,16 +113,15 @@ Bad examples:
 #### Challenge construction
 
 Care must be taken to ensure that the challenge outputted by the GLOME login
-client contains a well-formed URL.
+client is suitable to be embedded in an URL.
 
-A GLOME login client should make sure to format the URL as per
-[[RFC 3986 Section 2.4](https://tools.ietf.org/html/rfc3986#section-2.4)]. The
-intent should be to maximize the human readability of the URL.
+A GLOME login client should make sure to format the challenge as per [[RFC 3986
+Section 2.4](https://tools.ietf.org/html/rfc3986#section-2.4)]. The intent
+should be to maximize the human readability of the URL.
 
-**Example:** If the GLOME login server is running on https://glome.example.com/
-and the challenge is `v1/AAAAAAA.../serial:ab@!c/action/` the resulting challenge
-should be presented as
-https://glome.example.com/v1/AAAAAAA.../serial:ab@!c/action/.
+**Example:** If the challenge prefix is set to `https://glome.example.com/` and
+the challenge is `v1/ABCD…/serial:ab@!c/action/` the resulting challenge should
+be presented as `https://glome.example.com/v1/ABCD…/serial:ab@!c/action/`.
 The important lesson from this example is that `serial:ab@!c` is **not** encoded
 using percent encoding as there is no reason to and would sacrifice human
 readability needlessly.
