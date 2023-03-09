@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	validURLPrefix = regexp.MustCompile(`/(?P<v>v[1-9][0-9]*)/(?P<handshake>[\w=-]+)/`)
+	validURLPrefix = regexp.MustCompile(`(?P<v>v[1-9][0-9]*)/(?P<handshake>[\w=-]+)(?:/(?P<message>.+))?/`)
 )
 
 var (
@@ -198,7 +198,7 @@ func (c *Client) Construct(V byte, hostIDType string, hostID string, action stri
 
 	var handshake = c.constructHandshake()
 	var msg = c.response.Msg.Construct(true)
-	var u = fmt.Sprintf("/v%d/%s/", c.response.V, handshake)
+	var u = fmt.Sprintf("v%d/%s/", c.response.V, handshake)
 	if len(msg) > 0 {
 		u += fmt.Sprintf("%s/", msg)
 	}
@@ -206,12 +206,13 @@ func (c *Client) Construct(V byte, hostIDType string, hostID string, action stri
 }
 
 // constructHandshake returns base64-url encoded handshake. The handshake is constructed following the format:
-//		glome-handshake := base64url(
-//    		<prefix-type>
-//    		<prefix7>
-//    		<eph-key>
-//    		[<prefixN>]
-//  	).
+//
+//			glome-handshake := base64url(
+//	   		<prefix-type>
+//	   		<prefix7>
+//	   		<eph-key>
+//	   		[<prefixN>]
+//	 	).
 func (c *Client) constructHandshake() string {
 	var handshake []byte
 	h := c.response.HandshakeInfo
@@ -273,23 +274,18 @@ type Server struct {
 func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 	response := URLResponse{}
 
-	names := validURLPrefix.SubexpNames()[1:]        // as "The name for the first sub-expression is names[1].."
 	parsed := validURLPrefix.FindStringSubmatch(url) // save first element (full substring) to be trimmed later in url
 	if parsed == nil {
 		return nil, &ErrInvalidURLFormat{url}
 	}
-	reqParts := map[string]string{}
-	for i := 0; i < len(names); i++ {
-		reqParts[names[i]] = parsed[i+1]
-	}
 
-	v, err := parseVersion(reqParts["v"])
+	version, err := parseVersion(parsed[1])
 	if err != nil {
 		return nil, err
 	}
-	response.V = v
+	response.V = version
 
-	handshake, err := parseHandshake(reqParts["handshake"])
+	handshake, err := parseHandshake(parsed[2])
 	if err != nil {
 		return nil, err
 	}
@@ -307,30 +303,21 @@ func (s *Server) ParseURLResponse(url string) (*URLResponse, error) {
 		return nil, err
 	}
 
-	message := strings.TrimPrefix(url, parsed[0])
-	if len(message) == 0 { // <message> is empty
-		if len(response.HandshakeInfo.MessageTagPrefix) == 0 {
-			return &response, nil
-		}
-		return nil, ErrIncorrectTag
-	}
-	if message[len(message)-1] == '/' { // check last slash
-		parsed, err := parseMsg(strings.TrimSuffix(message, "/"))
+	if len(parsed) > 3 {
+		message, err := parseMsg(parsed[3])
 		if err != nil {
 			return nil, err
 		}
-		response.Msg = *parsed
-
-		if len(response.HandshakeInfo.MessageTagPrefix) == 0 {
-			return &response, nil
-		}
-		if response.ValidateAuthCode(response.HandshakeInfo.MessageTagPrefix) != true {
-			return nil, ErrIncorrectTag
-		}
-		return &response, nil
+		response.Msg = *message
 	}
 
-	return nil, &ErrInvalidURLFormat{url}
+	if len(handshake.MessageTagPrefix) == 0 {
+		return &response, nil
+	}
+	if response.ValidateAuthCode(handshake.MessageTagPrefix) != true {
+		return nil, ErrIncorrectTag
+	}
+	return &response, nil
 }
 
 // parseVersion returns the parsed version of the URL format version. Returns ErrVersionNotSupported,
@@ -349,12 +336,14 @@ func parseVersion(v string) (byte, error) {
 
 // parseHandshake returns the parsed V of the URL handshake.
 // The handshake should satisfy the following format:
-//		glome-handshake := base64url(
-//    		<prefix-type>
-//    		<prefix7>
-//    		<eph-key>
-//    		[<prefixN>]
-//  	).
+//
+//			glome-handshake := base64url(
+//	   		<prefix-type>
+//	   		<prefix7>
+//	   		<eph-key>
+//	   		[<prefixN>]
+//	 	).
+//
 // Returns ErrInvalidHandshakeLen if the tag length is less than minHandshakeLen,
 // ErrInvalidPrefixType if prefix-type is different from 0,
 // glome.ErrInvalidTagSize if the tag length is bigger than glome.MaxTagSize.

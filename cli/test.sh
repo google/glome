@@ -70,7 +70,7 @@ done
 
 # Test login subcommand according to specification.
 key="$t/vector-1/b"
-path="/v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/"
+path="v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/"
 expected_tag="lyHuaHuCcknb5sJEukWSFs8B1SUBIWMCXfNY64fIkFk="
 tag=$("$binary" login --key "$key" "$path")
 if [ "$tag" != "$expected_tag" ]; then
@@ -81,7 +81,7 @@ if [ "$tag" != "$expected_tag" ]; then
 fi
 
 key="$t/vector-2/a"
-path="/v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/"
+path="v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/"
 expected_tag="p8M_BUKj7zXBVM2JlQhNYFxs4J-DzxRAps83ZaNDquY="
 tag=$("$binary" login --key "$key" "$path")
 if [ "$tag" != "$expected_tag" ]; then

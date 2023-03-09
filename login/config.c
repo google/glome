@@ -291,8 +291,14 @@ static status_t assign_service_option(glome_login_config_t *config,
   } else if (strcmp(key, "key-version") == 0) {
     return assign_key_version_option(config, val);
   } else if (strcmp(key, "url-prefix") == 0) {
-    if (config->url_prefix == NULL) {
-      return assign_string_option(&config->url_prefix, val);
+    // `url-prefix` support is provided only for backwards-compatiblity
+    // TODO: to be removed in the 1.0 release
+    if (config->prompt == NULL) {
+      return assign_string_option(&config->prompt, val);
+    }
+  } else if (strcmp(key, "prompt") == 0) {
+    if (config->prompt == NULL) {
+      return assign_string_option(&config->prompt, val);
     }
   } else if (strcmp(key, "public-key") == 0) {
     if (!glome_login_parse_public_key(val, config->service_key,

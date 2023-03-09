@@ -272,17 +272,16 @@ out:
 static bool parse_login_path(char *path, char **handshake, char **host,
                              char **action) {
   size_t path_len = strlen(path);
-  if (path_len < 4 || path[0] != '/' || path[1] != 'v' || path[2] != '1' ||
-      path[3] != '/') {
-    fprintf(stderr, "unexpected url path prefix: %s\n", path);
+  if (path_len < 3 || path[0] != 'v' || path[1] != '1' || path[2] != '/') {
+    fprintf(stderr, "unexpected challenge prefix: %s\n", path);
     return false;
   }
   if (path[path_len - 1] != '/') {
-    fprintf(stderr, "unexpected url path suffix: %s\n", path);
+    fprintf(stderr, "unexpected challenge suffix: %s\n", path);
     return false;
   }
 
-  char *start = path + 4;
+  char *start = path + 3;
   char *slash = strchr(start, '/');
   if (slash == NULL || slash - start == 0) {
     fprintf(stderr, "could not parse handshake from %s\n", start);
@@ -388,7 +387,7 @@ int login(int argc, char **argv) {
   }
   char *cmd = argv[optind++];
   if (optind >= argc) {
-    fprintf(stderr, "missing url path argument for subcommand %s\n", cmd);
+    fprintf(stderr, "missing challenge for subcommand %s\n", cmd);
     return EXIT_FAILURE;
   }
 
@@ -401,7 +400,7 @@ int login(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  char *path = strstr(argv[optind], "/v1/");
+  char *path = strstr(argv[optind], "v1/");
   if (!parse_login_path(path, &handshake_b64, &host_esc, &action)) {
     return EXIT_FAILURE;
   }
@@ -446,9 +445,10 @@ int login(int argc, char **argv) {
   }
   if (CRYPTO_memcmp(handshake + 1 + GLOME_MAX_PUBLIC_KEY_LENGTH, tag,
                     handshake_len - 1 - GLOME_MAX_PUBLIC_KEY_LENGTH) != 0) {
-    fprintf(stderr,
-            "The URL includes a message tag prefix which does not match the "
-            "message\n");
+    fprintf(
+        stderr,
+        "The challenge includes a message tag prefix which does not match the "
+        "message\n");
     goto out;
   }
 

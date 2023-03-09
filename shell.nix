@@ -13,6 +13,9 @@ stdenv.mkDerivation {
       glib      # >=2.0   (glome-login and tests)
       linux-pam #         (PAM module)
 
+      # for `./go/`
+      go
+
       # Test dependencies
       libpam-wrapper
 
