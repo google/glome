@@ -143,8 +143,7 @@ char* escape_host(const char* host) {
   // Only /, ?, and # would be problematic given our URL encoding
   for (size_t i = 0; i < host_len; ++i) {
     if (host[i] == '/' || host[i] == '?' || host[i] == '#') {
-      sprintf(ret_end, "%%%02X", host[i]);
-      ret_end += 3;
+      ret_end += snprintf(ret_end, 3 + 1, "%%%02X", host[i]);
     } else {
       ret_end[0] = host[i];
       ret_end += 1;

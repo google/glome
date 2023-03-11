@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GLOME_H
-#define GLOME_H
+#ifndef GLOME_H_
+#define GLOME_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -47,4 +47,4 @@ int glome_tag(bool verify, unsigned char counter,
 }  // extern "C"
 #endif
 
-#endif  // GLOME_H
+#endif  // GLOME_H_
