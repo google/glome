@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "config.h"
+
 #include <alloca.h>
 #include <ctype.h>
 #include <errno.h>
@@ -150,18 +152,13 @@ static status_t assign_string_option(const char **option, const char *val) {
 
 static status_t assign_positive_int_option(unsigned int *option,
                                            const char *val) {
-  char *endptr;
-  long l;
-
+  char *end;
   errno = 0;
-  l = strtol(val, &endptr, 0);
-  if (errno) {
-    return status_createf("ERROR: invalid numeric value: %s", val);
-  }
-  if (*endptr != '\0' || l < 0 || l > UINT_MAX) {
+  unsigned long n = strtoul(val, &end, 0);  // NOLINT(runtime/int)
+  if (errno || val == end || *end != '\0' || n > UINT_MAX) {
     return status_createf("ERROR: invalid value for option: %s", val);
   }
-  *option = (unsigned int)l;
+  *option = (unsigned int)n;
   return STATUS_OK;
 }
 
@@ -236,22 +233,12 @@ static status_t assign_key_version_option(glome_login_config_t *config,
                                           const char *val) {
   char *end;
   errno = 0;
-  long n = strtol(val, &end, 10);
-  if (errno != 0 || *end != '\0') {
-    return status_createf("ERROR: failed to parse service key version: %s",
+  unsigned long n = strtoul(val, &end, 0);  // NOLINT(runtime/int)
+  if (errno || val == end || *end != '\0' || n > 127) {
+    return status_createf("ERROR: '%s' is not a valid key version (0..127)",
                           val);
   }
-  if (n <= 0) {
-    return status_createf("ERROR: key version should be a positive value: %s",
-                          val);
-  }
-  if (n > 255) {
-    return status_createf(
-        "ERROR: key version too large, must fit into 8-bit int: %s", val);
-  }
-  if (n > 0 && config->service_key_id == 0) {
-    config->service_key_id = n;
-  }
+  config->service_key_id = (unsigned int)n;
   return STATUS_OK;
 }
 
