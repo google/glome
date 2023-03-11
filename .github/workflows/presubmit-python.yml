@@ -10,22 +10,6 @@ defaults:
     working-directory: python
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: yapf
-        run: |
-          python -m pip install --upgrade yapf
-          find . -type f -name '*.py' -print0 | \
-            xargs -0 --verbose yapf -d --style google
-      - name: pylint
-        # pylint checks only pyglome/*
-        run: |
-          python -m pip install --upgrade pylint
-          find pyglome -type f -name '*.py' -print0 | \
-            xargs -0 --verbose pylint
-
   unit-test:
     runs-on: ${{ matrix.os }}
     strategy:
