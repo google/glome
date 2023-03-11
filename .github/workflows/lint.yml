@@ -23,6 +23,6 @@ jobs:
         # https://github.com/github/super-linter#slim-image
         uses: github/super-linter:slim-v4
         env:
-          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: master
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
