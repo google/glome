@@ -253,6 +253,8 @@ static status_t assign_default_option(glome_login_config_t *config,
   } else if (strcmp(key, "ephemeral-key") == 0) {
     return assign_key_option(config->secret_key, sizeof config->secret_key,
                              val);
+  } else if (strcmp(key, "min-authcode-len") == 0) {
+    return assign_positive_int_option(&config->min_authcode_len, val);
   } else if (strcmp(key, "host-id") == 0) {
     return assign_string_option(&config->host_id, val);
   } else if (strcmp(key, "login-path") == 0) {

@@ -40,6 +40,9 @@ typedef struct glome_login_config {
   // How long to wait for authentication code input in seconds.
   unsigned int input_timeout_sec;
 
+  // Minimum required length of the encoded authentication code.
+  unsigned int min_authcode_len;
+
   // Service key of the remote peer.
   uint8_t service_key[PUBLIC_KEY_LENGTH];
 

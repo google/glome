@@ -81,6 +81,9 @@ static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
     } else if ((val = arg_value(argv[i], "ephemeral-key", NULL))) {
       status = glome_login_assign_config_option(config, "default",
                                                 "ephemeral-key", val);
+    } else if ((val = arg_value(argv[i], "min-authcode-len", NULL))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "min-authcode-len", val);
     } else {
       pam_syslog(pamh, LOG_ERR, "invalid option %s", argv[i]);
       errors++;
