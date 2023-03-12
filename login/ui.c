@@ -111,7 +111,7 @@ static const char flags_help[] =
     "\n -M, --host-id=NAME         use NAME as the host-id"
     "\n";
 
-static const char* short_options = "hc:d:k:l:st:u:vIK:M:";
+static const char* short_options = "hc:d:k:l:p:st:u:vIK:M:";
 static const struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
     {"config-path", required_argument, 0, 'c'},
@@ -128,7 +128,7 @@ static const struct option long_options[] = {
     {0, 0, 0, 0},
 };
 
-int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
+void default_config(glome_login_config_t* config) {
   memset(config, 0, sizeof(glome_login_config_t));
 
   // Setting defaults.
@@ -137,6 +137,10 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
   config->auth_delay_sec = DEFAULT_AUTH_DELAY;
   config->input_timeout_sec = DEFAULT_INPUT_TIMEOUT;
   config->options = SYSLOG;
+}
+
+int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
+  default_config(config);
 
   int c;
   int errors = 0;
@@ -161,7 +165,7 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
                                                   "login-path", optarg);
         break;
       case 'p':
-        status = glome_login_assign_config_option(config, "default", "prompt",
+        status = glome_login_assign_config_option(config, "service", "prompt",
                                                   optarg);
         break;
       case 's':

@@ -53,7 +53,7 @@ static const char *arg_value(const char *arg, const char *key,
 
 static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
                           glome_login_config_t *config) {
-  memset(config, 0, sizeof(glome_login_config_t));
+  default_config(config);
   int errors = 0;
   status_t status;
   const char *val;
