@@ -280,7 +280,16 @@ static status_t assign_service_option(glome_login_config_t *config,
   } else if (strcmp(key, "url-prefix") == 0) {
     // `url-prefix` support is provided only for backwards-compatiblity
     // TODO: to be removed in the 1.0 release
-    return assign_string_option(&config->prompt, val);
+    size_t len = strlen(val);
+    char *url_prefix = malloc(len + 2);
+    if (url_prefix == NULL) {
+      return status_createf("ERROR: failed to allocate memory for url_prefix");
+    }
+    strncpy(url_prefix, val, len + 1);
+    url_prefix[len] = '/';
+    url_prefix[len + 1] = '\0';
+    config->prompt = url_prefix;
+    return STATUS_OK;
   } else if (strcmp(key, "prompt") == 0) {
     return assign_string_option(&config->prompt, val);
   } else if (strcmp(key, "public-key") == 0) {

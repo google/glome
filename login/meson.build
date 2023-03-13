@@ -65,6 +65,7 @@ if get_option('tests')
         link_with : [glome_lib, login_lib],
         include_directories : glome_incdir)
     test('config test', config_test, args: files('config_test.cfg'))
+    test('config test with url-prefix', config_test, args: files('config_test_url-prefix.cfg'))
 endif
 
 if get_option('pam-glome')
