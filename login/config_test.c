@@ -58,6 +58,7 @@ static void test_parse_config_file() {
   g_assert_true(EXAMPLE_CFG != NULL);
 
   glome_login_config_t config = {0};
+  default_config(&config);
   config.config_path = EXAMPLE_CFG;
 
   status_t s = glome_login_parse_config_file(&config);

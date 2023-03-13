@@ -46,6 +46,9 @@
 // decode_hex converts a hex-encoded string into the equivalent bytes.
 int decode_hex(uint8_t* dst, size_t dst_len, const char* in);
 
+// default_config initializes the config with the default values.
+void default_config(glome_login_config_t* config);
+
 // parse_args parses command-line arguments into a config struct. It will
 // forcefully initialize the whole content of the struct to zero.
 int parse_args(glome_login_config_t* config, int argc, char* argv[]);
