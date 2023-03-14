@@ -53,7 +53,6 @@ static const char *arg_value(const char *arg, const char *key,
 
 static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
                           glome_login_config_t *config) {
-  default_config(config);
   int errors = 0;
   status_t status;
   const char *val;
@@ -205,16 +204,30 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   glome_login_config_t config = {0};
   int rc = PAM_AUTH_ERR;
 
+  // Parse arguments to initialize the config path.
   int r = parse_pam_args(pamh, argc, argv, &config);
   if (r < 0) {
     pam_syslog(pamh, LOG_ERR, "failed to parse pam module arguments (%d)", r);
     return rc;
   }
 
+  // Reset config while preserving the config path.
+  const char *config_path = config.config_path;
+  default_config(&config);
+  config.config_path = config_path;
+
+  // Read configuration file.
   status_t status = glome_login_parse_config_file(&config);
   if (status != STATUS_OK) {
     pam_syslog(pamh, LOG_ERR, "failed to read config file %s: %s",
                config.config_path, status);
+    return rc;
+  }
+
+  // Parse arguments again to override config values.
+  r = parse_pam_args(pamh, argc, argv, &config);
+  if (r < 0) {
+    pam_syslog(pamh, LOG_ERR, "failed to parse pam module arguments (%d)", r);
     return rc;
   }
 

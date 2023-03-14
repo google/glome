@@ -140,11 +140,13 @@ void default_config(glome_login_config_t* config) {
 }
 
 int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
-  default_config(config);
-
   int c;
   int errors = 0;
   status_t status;
+
+  // Reset current position to allow parsing arguments multiple times.
+  optind = 1;
+
   while ((c = getopt_long(argc, argv, short_options, long_options, NULL)) !=
          -1) {
     switch (c) {
