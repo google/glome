@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GLOME_LOGIN_CONFIG_H_
-#define GLOME_LOGIN_CONFIG_H_
+#ifndef LOGIN_CONFIG_H_
+#define LOGIN_CONFIG_H_
 
 #include "crypto.h"
 
@@ -30,8 +30,8 @@ typedef struct glome_login_config {
   // Login binary for fallback authentication.
   const char* login_path;
 
-  // URL prefix to use for HTTP service.
-  const char* url_prefix;
+  // Challenge prompt.
+  const char* prompt;
 
   // Delay to wait before confirming if the authentication code is valid
   // or not, to stop brute forcing; in seconds.
@@ -81,4 +81,4 @@ status_t glome_login_assign_config_option(glome_login_config_t* config,
                                           const char* section, const char* key,
                                           const char* val);
 
-#endif  // GLOME_LOGIN_CONFIG_H_
+#endif  // LOGIN_CONFIG_H_

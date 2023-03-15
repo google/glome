@@ -58,6 +58,7 @@ static void test_parse_config_file() {
   g_assert_true(EXAMPLE_CFG != NULL);
 
   glome_login_config_t config = {0};
+  default_config(&config);
   config.config_path = EXAMPLE_CFG;
 
   status_t s = glome_login_parse_config_file(&config);
@@ -77,7 +78,7 @@ static void test_parse_config_file() {
   g_assert_cmpmem(DECODED_PUBLIC_KEY, sizeof(DECODED_PUBLIC_KEY),
                   config.service_key, GLOME_MAX_PUBLIC_KEY_LENGTH);
   g_assert_true(config.service_key_id == 42);
-  g_assert_cmpstr("glome://", ==, config.url_prefix);
+  g_assert_cmpstr("glome://", ==, config.prompt);
 }
 
 int main(int argc, char** argv) {

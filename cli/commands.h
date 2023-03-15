@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GLOME_CLI_COMMANDS_H
-#define GLOME_CLI_COMMANDS_H
+#ifndef CLI_COMMANDS_H_
+#define CLI_COMMANDS_H_
 
 // Generates a new key and writes it to stdout.
 int genkey(int argc, char **argv);
@@ -28,7 +28,7 @@ int tag(int argc, char **argv);
 // Returns 0 iff the tag could be verified.
 int verify(int argc, char **argv);
 
-// Generates a tag for a glome-login URL path and writes it to stdout.
+// Generates a tag for a glome-login challenge and writes it to stdout.
 int login(int argc, char **argv);
 
-#endif  // GLOME_CLI_COMMANDS_H
+#endif  // CLI_COMMANDS_H_

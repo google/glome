@@ -15,7 +15,6 @@ RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
        openssh-server \
        socat \
-       xxd \
     && rm -rf /var/lib/apt/lists/*
 CMD ["/usr/local/sbin/glome-start"]
 EXPOSE 22 23
