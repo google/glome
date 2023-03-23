@@ -435,7 +435,7 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
                    "minimum authcode too long: %d bytes (%s)",
                    config->min_authcode_len, config->username);
       login_error(config, pamh,
-                  "Minimum input too long: expected at least %d characters.\n",
+                  "Minimum input too long: expected at most %d characters.\n",
                   config->min_authcode_len);
       return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
     }
