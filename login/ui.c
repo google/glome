@@ -84,7 +84,9 @@ static const char flags_help[] =
     "(default: " DEFAULT_CONFIG_FILE
     ")"
 
-    "\n -d, --auth-delay=N         sleep N seconds before the auth code check "
+    "\n -a, --min-authcode-len=N   minimum length of the encoded authcode"
+
+    "\n -d, --auth-delay=N         sleep N seconds before the authcode check "
     "(default: %d)"
 
     "\n -k, --key=KEY              use hex-encoded KEY as the service key "
@@ -111,9 +113,10 @@ static const char flags_help[] =
     "\n -M, --host-id=NAME         use NAME as the host-id"
     "\n";
 
-static const char* short_options = "hc:d:k:l:p:st:u:vIK:M:";
+static const char* short_options = "ha:c:d:k:l:p:st:u:vIK:M:";
 static const struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
+    {"min-authcode-len", required_argument, 0, 'a'},
     {"config-path", required_argument, 0, 'c'},
     {"auth-delay", required_argument, 0, 'd'},
     {"key", required_argument, 0, 'k'},
@@ -150,6 +153,10 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
   while ((c = getopt_long(argc, argv, short_options, long_options, NULL)) !=
          -1) {
     switch (c) {
+      case 'a':
+        status = glome_login_assign_config_option(config, "default",
+                                                  "min-authcode-len", optarg);
+        break;
       case 'c':
         status = glome_login_assign_config_option(config, "default",
                                                   "config-path", optarg);

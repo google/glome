@@ -428,12 +428,25 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
     login_syslog(config, pamh, LOG_DEBUG, "expect input: %s", authcode_encoded);
   }
 
-  if (bytes_read < MIN_ENCODED_AUTHCODE_LEN) {
+  size_t min_len = MIN_ENCODED_AUTHCODE_LEN;
+  if (config->min_authcode_len > min_len) {
+    if (config->min_authcode_len > strlen(authcode_encoded)) {
+      login_syslog(config, pamh, LOG_INFO,
+                   "minimum authcode too long: %d bytes (%s)",
+                   config->min_authcode_len, config->username);
+      login_error(config, pamh,
+                  "Minimum input too long: expected at most %d characters.\n",
+                  config->min_authcode_len);
+      return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
+    }
+    min_len = config->min_authcode_len;
+  }
+  if ((size_t)bytes_read < min_len) {
     login_syslog(config, pamh, LOG_INFO, "authcode too short: %d bytes (%s)",
                  bytes_read, config->username);
     login_error(config, pamh,
                 "Input too short: expected at least %d characters, got %d.\n",
-                MIN_ENCODED_AUTHCODE_LEN, bytes_read);
+                min_len, bytes_read);
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
   if ((size_t)bytes_read > strlen(authcode_encoded)) {

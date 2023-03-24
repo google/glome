@@ -68,6 +68,7 @@ static void test_parse_config_file() {
   g_assert_true(s == STATUS_OK);
 
   g_assert_true(config.auth_delay_sec == 7);
+  g_assert_true(config.min_authcode_len == 15);
   g_assert_true(config.input_timeout_sec == 321);
   g_assert_cmpstr("/bin/true", ==, config.login_path);
   g_assert_cmpstr("my-host", ==, config.host_id);
