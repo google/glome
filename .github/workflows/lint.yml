@@ -21,7 +21,7 @@ jobs:
 
       - name: Lint Code Base
         # https://github.com/github/super-linter#slim-image
-        uses: github/super-linter:slim-v4
+        uses: github/super-linter/slim@v4
         env:
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: master
