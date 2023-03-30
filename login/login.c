@@ -340,11 +340,37 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   char* host_id = NULL;
   if (config->host_id != NULL) {
     host_id = strdup(config->host_id);
+    if (host_id == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
+    }
   } else {
     host_id = calloc(HOST_NAME_MAX + 1, 1);
+    if (host_id == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
+    }
     if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
       return failure(EXITCODE_PANIC, error_tag, "get-machine-id");
     }
+  }
+
+  if (config->host_id_type != NULL) {
+    size_t host_id_len = strlen(config->host_id_type) + 1 + strlen(host_id) + 1;
+    char* host_id_full = calloc(host_id_len, 1);
+    if (host_id_full == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id-full");
+    }
+    int ret = snprintf(host_id_full, host_id_len, "%s:%s", config->host_id_type,
+                       host_id);
+    if (ret < 0) {
+      free(host_id_full);
+      return failure(EXITCODE_PANIC, error_tag, "generate-host-id-full");
+    }
+    if ((size_t)ret >= host_id_len) {
+      free(host_id_full);
+      return failure(EXITCODE_PANIC, error_tag, "generate-host-id-full");
+    }
+    free(host_id);
+    host_id = host_id_full;
   }
 
   char* action = NULL;

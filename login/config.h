@@ -54,6 +54,9 @@ typedef struct glome_login_config {
 
   // Explicitly set host-id to use in the login request.
   const char* host_id;
+
+  // Type of host-id to use in the login request.
+  const char* host_id_type;
 } glome_login_config_t;
 
 #define GLOME_LOGIN_PUBLIC_KEY_ID "glome-v1"

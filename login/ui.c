@@ -94,6 +94,8 @@ static const char flags_help[] =
 
     "\n -l, --login-path=PATH      use PATH instead of " DEFAULT_LOGIN_PATH
 
+    "\n -m, --host-id-type=TYPE    use TYPE as the host-id type"
+
     "\n -p, --prompt=PROMPT        print PROMPT before the challenge is "
     "printed (default: '" DEFAULT_PROMPT
     "')"
@@ -113,7 +115,7 @@ static const char flags_help[] =
     "\n -M, --host-id=NAME         use NAME as the host-id"
     "\n";
 
-static const char* short_options = "ha:c:d:k:l:p:st:u:vIK:M:";
+static const char* short_options = "ha:c:d:k:l:m:p:st:u:vIK:M:";
 static const struct option long_options[] = {
     {"help", no_argument, 0, 'h'},
     {"min-authcode-len", required_argument, 0, 'a'},
@@ -128,6 +130,7 @@ static const struct option long_options[] = {
     {"print-secrets", no_argument, 0, 'I'},
     {"ephemeral-key", required_argument, 0, 'K'},
     {"host-id", required_argument, 0, 'M'},
+    {"host-id-type", required_argument, 0, 'm'},
     {0, 0, 0, 0},
 };
 
@@ -172,6 +175,10 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
       case 'l':
         status = glome_login_assign_config_option(config, "service",
                                                   "login-path", optarg);
+        break;
+      case 'm':
+        status = glome_login_assign_config_option(config, "default",
+                                                  "host-id-type", optarg);
         break;
       case 'p':
         status = glome_login_assign_config_option(config, "service", "prompt",

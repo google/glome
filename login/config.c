@@ -257,6 +257,8 @@ static status_t assign_default_option(glome_login_config_t *config,
     return assign_positive_int_option(&config->min_authcode_len, val);
   } else if (strcmp(key, "host-id") == 0) {
     return assign_string_option(&config->host_id, val);
+  } else if (strcmp(key, "host-id-type") == 0) {
+    return assign_string_option(&config->host_id_type, val);
   } else if (strcmp(key, "login-path") == 0) {
     return assign_string_option(&config->login_path, val);
   } else if (strcmp(key, "disable-syslog") == 0) {

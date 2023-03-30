@@ -72,6 +72,7 @@ static void test_parse_config_file() {
   g_assert_true(config.input_timeout_sec == 321);
   g_assert_cmpstr("/bin/true", ==, config.login_path);
   g_assert_cmpstr("my-host", ==, config.host_id);
+  g_assert_cmpstr("hostname", ==, config.host_id_type);
   g_assert_true(config.options & VERBOSE);
   g_assert_false(config.options & SYSLOG);
   g_assert_false(config.options & INSECURE);
