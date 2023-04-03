@@ -78,6 +78,9 @@ static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
     } else if ((val = arg_value(argv[i], "host-id", NULL))) {
       status =
           glome_login_assign_config_option(config, "default", "host-id", val);
+    } else if ((val = arg_value(argv[i], "host-id-type", NULL))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "host-id-type", val);
     } else if ((val = arg_value(argv[i], "ephemeral-key", NULL))) {
       status = glome_login_assign_config_option(config, "default",
                                                 "ephemeral-key", val);
