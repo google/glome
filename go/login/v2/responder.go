@@ -10,12 +10,16 @@ import (
 
 const versionPrefix = "v2/"
 
-// TODO: document that the constructor needs to be used.
+// Responder can parse challenges and create responses.
+//
+// Instances of Responder must be created with NewResponder().
 type Responder struct {
 	keysByIndex  map[uint8]*glome.PrivateKey
 	keysByPrefix map[byte]*glome.PrivateKey
 }
 
+// NewResponder creates a Responder that uses the given private keys to respond
+// to challenges.
 func NewResponder(keys map[uint8]*glome.PrivateKey) (*Responder, error) {
 	r := &Responder{
 		keysByIndex:  make(map[uint8]*glome.PrivateKey),
@@ -36,12 +40,19 @@ func NewResponder(keys map[uint8]*glome.PrivateKey) (*Responder, error) {
 	return r, nil
 }
 
-type serverChallenge struct {
+// ServerChallenge contains the parsed Message from a challenge and an
+// appropriate response.
+//
+// The Response must only be used after verifying the message content!
+//
+// Instances of ServerChallenge should be created by Responder.Accept().
+type ServerChallenge struct {
 	Message  *Message
 	Response string
 }
 
-func (r *Responder) Accept(encodedChallenge string) (*serverChallenge, error) {
+// Accept an encoded challenge and produce a response.
+func (r *Responder) Accept(encodedChallenge string) (*ServerChallenge, error) {
 	s := strings.TrimPrefix(encodedChallenge, "/")
 	if len(s) < len(versionPrefix) {
 		return nil, fmt.Errorf("format error")
@@ -87,7 +98,7 @@ func (r *Responder) Accept(encodedChallenge string) (*serverChallenge, error) {
 	}
 
 	tag := d.Tag(encodedMessage, 0)
-	return &serverChallenge{
+	return &ServerChallenge{
 		Message:  m,
 		Response: base64.URLEncoding.EncodeToString(tag),
 	}, nil

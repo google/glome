@@ -26,6 +26,7 @@ func escape(s string) string {
 	return res
 }
 
+// Encode the message into its URI path representation.
 func (m *Message) Encode() string {
 	sb := &strings.Builder{}
 	if len(m.HostIDType) > 0 {

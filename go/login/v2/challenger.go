@@ -42,8 +42,10 @@ type Challenger struct {
 	RNG io.Reader
 }
 
-// clientChallenge is the internal representation of a challenge as it would be used on a client.
-type clientChallenge struct {
+// ClientChallenge is the internal representation of a challenge as it would be used on a client.
+//
+// ClientChallenge instances must be created by Challenger.Challenge()!
+type ClientChallenge struct {
 	d *glome.Dialog
 	// The minimum length of an acceptable response.
 	min uint8
@@ -53,7 +55,7 @@ type clientChallenge struct {
 }
 
 // Challenge creates a clientChallenge object for this message and the Challenger configuration.
-func (c *Challenger) Challenge(msg *Message) (*clientChallenge, error) {
+func (c *Challenger) Challenge(msg *Message) (*ClientChallenge, error) {
 	h := &handshake{}
 
 	rng := c.RNG
@@ -91,16 +93,16 @@ func (c *Challenger) Challenge(msg *Message) (*clientChallenge, error) {
 		h.MessageTagPrefix = d.Tag(encodedMsg, 0)[:c.MessageTagPrefixLength]
 	}
 
-	return &clientChallenge{h: h, d: d, m: encodedMsg, min: minResponseSize}, nil
+	return &ClientChallenge{h: h, d: d, m: encodedMsg, min: minResponseSize}, nil
 }
 
 // Encode encodes the challenge into its URI path represenation.
-func (c *clientChallenge) Encode() string {
+func (c *ClientChallenge) Encode() string {
 	return strings.Join([]string{"v2", c.h.Encode(), string(c.m), ""}, "/")
 }
 
 // Verify a challenge response string.
-func (c *clientChallenge) Verify(s string) bool {
+func (c *ClientChallenge) Verify(s string) bool {
 	// In order to accept truncated base64 data, we need to handle special cases:
 	// - a single byte from an encoded triple can never decode correctly
 	// - 32 byte encode with a trailing padding character, which makes RawURLEncoding unhappy.
@@ -112,7 +114,7 @@ func (c *clientChallenge) Verify(s string) bool {
 		return false
 	}
 	if n%4 == 1 || n == 44 {
-		n -= 1
+		n--
 	}
 	tag, err := base64.RawURLEncoding.DecodeString(s[:n])
 	if err != nil {
