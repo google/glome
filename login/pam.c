@@ -53,7 +53,6 @@ static const char *arg_value(const char *arg, const char *key,
 
 static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
                           glome_login_config_t *config) {
-  memset(config, 0, sizeof(glome_login_config_t));
   int errors = 0;
   status_t status;
   const char *val;
@@ -67,9 +66,9 @@ static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
     } else if ((val = arg_value(argv[i], "key-version", NULL))) {
       status = glome_login_assign_config_option(config, "service",
                                                 "key-version", val);
-    } else if ((val = arg_value(argv[i], "url-prefix", NULL))) {
-      status = glome_login_assign_config_option(config, "service", "url-prefix",
-                                                val);
+    } else if ((val = arg_value(argv[i], "prompt", NULL))) {
+      status =
+          glome_login_assign_config_option(config, "service", "prompt", val);
     } else if ((val = arg_value(argv[i], "debug", "true"))) {
       status =
           glome_login_assign_config_option(config, "default", "verbose", val);
@@ -79,9 +78,15 @@ static int parse_pam_args(pam_handle_t *pamh, int argc, const char **argv,
     } else if ((val = arg_value(argv[i], "host-id", NULL))) {
       status =
           glome_login_assign_config_option(config, "default", "host-id", val);
+    } else if ((val = arg_value(argv[i], "host-id-type", NULL))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "host-id-type", val);
     } else if ((val = arg_value(argv[i], "ephemeral-key", NULL))) {
       status = glome_login_assign_config_option(config, "default",
                                                 "ephemeral-key", val);
+    } else if ((val = arg_value(argv[i], "min-authcode-len", NULL))) {
+      status = glome_login_assign_config_option(config, "default",
+                                                "min-authcode-len", val);
     } else {
       pam_syslog(pamh, LOG_ERR, "invalid option %s", argv[i]);
       errors++;
@@ -205,16 +210,30 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
   glome_login_config_t config = {0};
   int rc = PAM_AUTH_ERR;
 
+  // Parse arguments to initialize the config path.
   int r = parse_pam_args(pamh, argc, argv, &config);
   if (r < 0) {
     pam_syslog(pamh, LOG_ERR, "failed to parse pam module arguments (%d)", r);
     return rc;
   }
 
+  // Reset config while preserving the config path.
+  const char *config_path = config.config_path;
+  default_config(&config);
+  config.config_path = config_path;
+
+  // Read configuration file.
   status_t status = glome_login_parse_config_file(&config);
   if (status != STATUS_OK) {
     pam_syslog(pamh, LOG_ERR, "failed to read config file %s: %s",
                config.config_path, status);
+    return rc;
+  }
+
+  // Parse arguments again to override config values.
+  r = parse_pam_args(pamh, argc, argv, &config);
+  if (r < 0) {
+    pam_syslog(pamh, LOG_ERR, "failed to parse pam module arguments (%d)", r);
     return rc;
   }
 
@@ -224,7 +243,7 @@ int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc,
     return rc;
   }
 
-  r = login_authenticate(&config, pamh, "GLOME link: %s%s", &error_tag);
+  r = login_authenticate(&config, pamh, &error_tag);
   if (!r) {
     rc = PAM_SUCCESS;
     if (config.options & VERBOSE) {

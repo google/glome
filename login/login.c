@@ -143,8 +143,7 @@ char* escape_host(const char* host) {
   // Only /, ?, and # would be problematic given our URL encoding
   for (size_t i = 0; i < host_len; ++i) {
     if (host[i] == '/' || host[i] == '?' || host[i] == '#') {
-      sprintf(ret_end, "%%%02X", host[i]);
-      ret_end += 3;
+      ret_end += snprintf(ret_end, 3 + 1, "%%%02X", host[i]);
     } else {
       ret_end[0] = host[i];
       ret_end += 1;
@@ -154,12 +153,13 @@ char* escape_host(const char* host) {
   return ret;
 }
 
-int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                int service_key_id, const uint8_t public_key[PUBLIC_KEY_LENGTH],
-                const char* host_id, const char* action,
-                const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
-                size_t prefix_tag_len, char** url, int* url_len,
-                const char** error_tag) {
+int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
+                      int service_key_id,
+                      const uint8_t public_key[PUBLIC_KEY_LENGTH],
+                      const char* host_id, const char* action,
+                      const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
+                      size_t prefix_tag_len, char** challenge,
+                      int* challenge_len, const char** error_tag) {
   if (prefix_tag_len > GLOME_MAX_TAG_LENGTH) {
     return failure(EXITCODE_PANIC, error_tag, "prefix-tag-too-large");
   }
@@ -195,28 +195,28 @@ int request_url(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
     return failure(EXITCODE_PANIC, error_tag, "host-id-malloc-error");
   }
 
-  int len = strlen("/v1/") + strlen(handshake_encoded) + 1 +
+  int len = strlen("v1/") + strlen(handshake_encoded) + 1 +
             strlen(host_id_escaped) + 1 + strlen(action) + 2;
   char* buf = malloc(len);
   if (buf == NULL) {
     free(host_id_escaped);
-    return failure(EXITCODE_PANIC, error_tag, "url-malloc-error");
+    return failure(EXITCODE_PANIC, error_tag, "challenge-malloc-error");
   }
-  int ret = snprintf(buf, len, "/v1/%s/%s/%s/", handshake_encoded,
+  int ret = snprintf(buf, len, "v1/%s/%s/%s/", handshake_encoded,
                      host_id_escaped, action);
   free(host_id_escaped);
   host_id_escaped = NULL;
   if (ret < 0) {
     free(buf);
-    return failure(EXITCODE_PANIC, error_tag, "url-sprintf-error");
+    return failure(EXITCODE_PANIC, error_tag, "challenge-sprintf-error");
   }
   if (ret >= len) {
     free(buf);
-    return failure(EXITCODE_PANIC, error_tag, "url-sprintf-trunc");
+    return failure(EXITCODE_PANIC, error_tag, "challenge-sprintf-trunc");
   }
 
-  *url = buf;
-  *url_len = len;
+  *challenge = buf;
+  *challenge_len = len;
   return 0;
 }
 
@@ -327,7 +327,7 @@ int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
 #endif
 
 int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
-                       const char* prompt_format, const char** error_tag) {
+                       const char** error_tag) {
   if (is_zeroed(config->service_key, sizeof config->service_key)) {
     return failure(EXITCODE_PANIC, error_tag, "no-service-key");
   }
@@ -340,11 +340,37 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   char* host_id = NULL;
   if (config->host_id != NULL) {
     host_id = strdup(config->host_id);
+    if (host_id == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
+    }
   } else {
     host_id = calloc(HOST_NAME_MAX + 1, 1);
+    if (host_id == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
+    }
     if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
       return failure(EXITCODE_PANIC, error_tag, "get-machine-id");
     }
+  }
+
+  if (config->host_id_type != NULL) {
+    size_t host_id_len = strlen(config->host_id_type) + 1 + strlen(host_id) + 1;
+    char* host_id_full = calloc(host_id_len, 1);
+    if (host_id_full == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id-full");
+    }
+    int ret = snprintf(host_id_full, host_id_len, "%s:%s", config->host_id_type,
+                       host_id);
+    if (ret < 0) {
+      free(host_id_full);
+      return failure(EXITCODE_PANIC, error_tag, "generate-host-id-full");
+    }
+    if ((size_t)ret >= host_id_len) {
+      free(host_id_full);
+      return failure(EXITCODE_PANIC, error_tag, "generate-host-id-full");
+    }
+    free(host_id);
+    host_id = host_id_full;
   }
 
   char* action = NULL;
@@ -368,11 +394,12 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
     return failure(EXITCODE_PANIC, error_tag, "get-authcode");
   }
 
-  char* url = NULL;
-  int url_len = 0;
-  if (request_url(config->service_key, config->service_key_id, public_key,
-                  host_id, action, /*prefix_tag=*/NULL,
-                  /*prefix_tag_len=*/0, &url, &url_len, error_tag)) {
+  char* challenge = NULL;
+  int challenge_len = 0;
+  if (request_challenge(config->service_key, config->service_key_id, public_key,
+                        host_id, action, /*prefix_tag=*/NULL,
+                        /*prefix_tag_len=*/0, &challenge, &challenge_len,
+                        error_tag)) {
     free(host_id);
     free(action);
     return EXITCODE_PANIC;
@@ -383,27 +410,31 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   free(action);
   action = NULL;
 
-  const char* prefix = "";
-  if (config->url_prefix != NULL) {
-    prefix = config->url_prefix;
+  const char* prompt = "";
+  if (config->prompt != NULL) {
+    prompt = config->prompt;
   }
-  size_t message_len =
-      strlen(prompt_format) + strlen(prefix) - 2 + strlen(url) - 2 + 1;
+  size_t message_len = strlen(prompt) + strlen(challenge) + 1;
   char* message = malloc(message_len);
   if (message == NULL) {
+    free(challenge);
     return failure(EXITCODE_PANIC, error_tag, "malloc-message");
   }
-  int written = snprintf(message, message_len, prompt_format, prefix, url);
-  if (written < 0 || (size_t)written >= message_len) {
+  message[0] = '\0';  // required by strncat()
+  strncat(message, prompt, message_len - 1);
+  strncat(message, challenge, message_len - strlen(message) - 1);
+  free(challenge);
+  challenge = NULL;
+  if (message[message_len - 1] != '\0') {
     free(message);
-    return failure(EXITCODE_PANIC, error_tag, "broken-template");
+    return failure(EXITCODE_PANIC, error_tag, "strncat-failure");
   }
-  free(url);
-  url = NULL;
 
   char input[ENCODED_BUFSIZE(GLOME_MAX_TAG_LENGTH)];
   int rc = login_prompt(config, pamh, error_tag, message, input, sizeof(input));
   free(message);
+  message = NULL;
+
   if (rc != 0) {
     return rc;
   }
@@ -423,12 +454,25 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
     login_syslog(config, pamh, LOG_DEBUG, "expect input: %s", authcode_encoded);
   }
 
-  if (bytes_read < MIN_ENCODED_AUTHCODE_LEN) {
+  size_t min_len = MIN_ENCODED_AUTHCODE_LEN;
+  if (config->min_authcode_len > min_len) {
+    if (config->min_authcode_len > strlen(authcode_encoded)) {
+      login_syslog(config, pamh, LOG_INFO,
+                   "minimum authcode too long: %d bytes (%s)",
+                   config->min_authcode_len, config->username);
+      login_error(config, pamh,
+                  "Minimum input too long: expected at most %d characters.\n",
+                  config->min_authcode_len);
+      return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
+    }
+    min_len = config->min_authcode_len;
+  }
+  if ((size_t)bytes_read < min_len) {
     login_syslog(config, pamh, LOG_INFO, "authcode too short: %d bytes (%s)",
                  bytes_read, config->username);
     login_error(config, pamh,
                 "Input too short: expected at least %d characters, got %d.\n",
-                MIN_ENCODED_AUTHCODE_LEN, bytes_read);
+                min_len, bytes_read);
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
   if ((size_t)bytes_read > strlen(authcode_encoded)) {
@@ -477,9 +521,7 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
     openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
   }
 
-  int r = login_authenticate(
-      config, NULL, "Obtain the one-time authorization code from:\n%s%s",
-      error_tag);
+  int r = login_authenticate(config, NULL, error_tag);
   if (r != 0) {
     return r;
   }

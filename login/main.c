@@ -33,6 +33,7 @@ static void handle_error(const char* error_tag) {
 int main(int argc, char* argv[]) {
   glome_login_config_t config = {0};
 
+  // Parse arguments to initialize the config path.
   int r = parse_args(&config, argc, argv);
   if (r > 0) {
     return EXITCODE_USAGE;
@@ -42,9 +43,25 @@ int main(int argc, char* argv[]) {
     return EXITCODE_PANIC;
   }
 
+  // Reset config while preserving the config path.
+  const char* config_path = config.config_path;
+  default_config(&config);
+  config.config_path = config_path;
+
+  // Read configuration file.
   status_t status = glome_login_parse_config_file(&config);
   if (status != STATUS_OK) {
-    handle_error("parse-config");
+    handle_error(status);
+    return EXITCODE_PANIC;
+  }
+
+  // Parse arguments again to override config values.
+  r = parse_args(&config, argc, argv);
+  if (r > 0) {
+    return EXITCODE_USAGE;
+  }
+  if (r < 0) {
+    handle_error("parse-args");
     return EXITCODE_PANIC;
   }
 

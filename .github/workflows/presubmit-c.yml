@@ -6,14 +6,20 @@ on:
     branches: ['master']
 
 jobs:
-  lint:
+  clang-format:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - name: clang-format
       run: |
         find . '(' -name '*.c' -or -name '*.h' ')' -print0 | \
-          xargs -0 --verbose -- clang-format --Werror --dry-run --style=google
+          xargs -0 --verbose -- clang-format --Werror --dry-run
+  cpplint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: cpplint
+      run: pip install cpplint && cpplint --recursive .
   test:
     runs-on: ubuntu-latest
     strategy:

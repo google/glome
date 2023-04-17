@@ -119,7 +119,6 @@ Core libraries:
 
  - [libglome](glome.h) *C*
  - [PyGLOME](python) *Python*
- - [jGLOME](java) *Java*
  - [GLOME-Go](go/glome) *Go*
 
 Binaries:
@@ -127,9 +126,6 @@ Binaries:
  - [glome](cli) *Command-line interface for GLOME*
  - [glome-login](login) *Replacement of login(1) implementing GLOME Login
    protocol*
-
-In addition to the above components there are libraries planned for Java and Go
-as well as a turnkey server for self-hosted GLOME login.
 
 ## Building
 

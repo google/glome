@@ -32,6 +32,8 @@ a human operator to access a device with the following constraints:
 *   The device does not have a synchronized time (e.g. no real-time clock).
 *   The device does not store any secrets (e.g. all its storage is easily
     readable by an adversary).
+*   The device has access to a [cryptographically secure pseudorandom number generator](https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator) (e.g. a hardware-based random number
+    generator).
 *   The device accepts input from a human operator via a very low-bandwidth
     device (e.g. a keyboard).
 *   The device provides output to a human operator (e.g. via display).
