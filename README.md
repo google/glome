@@ -62,9 +62,12 @@ authorization codes (e.g., a laptop).
 1. Follow [build](docs/build) to build the `glome` CLI binary.
 1. Generate a key pair using the `glome` command. Note that if the `glome`
 command is not in your `$PATH`, you might need to provide a full path to the
-binary. ``` $ glome genkey | tee glome-private.key | glome pubkey | tee
-glome-public.key | xxd -c 32 -p
-4242424242424242424242424242424242424242424242424242424242424242 ```
+binary.
+
+```
+$ glome genkey | tee glome-private.key | glome pubkey | tee glome-public.key | xxd -c 32 -p
+4242424242424242424242424242424242424242424242424242424242424242
+```
 
 The output of that command is the approver public key that will be used to
 configure the target host.
@@ -76,22 +79,29 @@ configure the target host.
 (recommended) or `glome-login`.
 1. Edit the configuration file (by default located at `/etc/glome/config`) and
 replace the key value with the approver public key generated in the previous
-section. ``` $ cat /etc/glome/config
+section.
+
+```
+$ cat /etc/glome/config
 key=4242424242424242424242424242424242424242424242424242424242424242
-key-version=1 ```
+key-version=1
+```
 
 ### Usage
 
 Try to log in to the target host. You should see the prompt with the challenge:
 
-``` GLOME: v1/AU7U7GiFDG-ITgOh8K_ND9u41S3S-joGp7MAdhIp_rQt/myhost/shell/root/
-Password: ```
+```
+GLOME: v1/AU7U7GiFDG-ITgOh8K_ND9u41S3S-joGp7MAdhIp_rQt/myhost/shell/root/
+Password:
+```
 
 Use the `glome` CLI on the client host to obtain an authorization code:
 
-``` $ glome --key glome-private.key login
-v1/AU7U7GiFDG-ITgOh8K_ND9u41S3S-joGp7MAdhIp_rQt/myhost/shell/root/
-Tm90aGluZyB0byBzZWUgaGVyZSwgbW92ZSBhbG9uZy4K ```
+```
+$ glome --key glome-private.key login
+v1/AU7U7GiFDG-ITgOh8K_ND9u41S3S-joGp7MAdhIp_rQt/myhost/shell/root/Tm90aGluZyB0byBzZWUgaGVyZSwgbW92ZSBhbG9uZy4K
+```
 
 Provide the generated authcode as a response to the challenge.
 
