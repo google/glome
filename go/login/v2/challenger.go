@@ -3,7 +3,7 @@ package v2
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"fmt"
+	"errors"
 	"io"
 	"strings"
 
@@ -69,7 +69,7 @@ func (c *Challenger) Challenge(msg *Message) (*ClientChallenge, error) {
 	h.PublicKey = publicKey
 
 	if c.PublicKey == nil {
-		return nil, fmt.Errorf("need a public key")
+		return nil, ErrNoPublicKey
 	}
 
 	if c.KeyIndex != nil {
@@ -122,3 +122,5 @@ func (c *ClientChallenge) Verify(s string) bool {
 	}
 	return c.d.Check(tag, c.m, 0)
 }
+
+var ErrNoPublicKey = errors.New("no public key")

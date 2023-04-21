@@ -3,7 +3,7 @@ package v2
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
+	"errors"
 	"net/url"
 	"strings"
 
@@ -17,6 +17,7 @@ type Message struct {
 	Action     string // action that is being authorized
 }
 
+// escape a URI path minimally according to RFD001.
 func escape(s string) string {
 	res := url.PathEscape(s)
 	for _, c := range "!*'();:@&=+$,[]" {
@@ -39,12 +40,18 @@ func (m *Message) Encode() string {
 	return sb.String()
 }
 
+// TODO: document
+
+var ErrMessageFormat = errors.New("message format error")
+var ErrHandshakeTooShort = errors.New("handshake to short")
+var ErrTagPrefixTooLong = errors.New("message tag prefix too long")
+
 func decodeMessage(s string) (*Message, error) {
 	m := &Message{}
 
 	subs := strings.Split(s, "/")
 	if len(subs) != 2 {
-		return nil, fmt.Errorf("format error")
+		return nil, ErrMessageFormat
 	}
 
 	hostSegment, err := url.PathUnescape(subs[0])
@@ -95,7 +102,7 @@ func decodeHandshake(s string) (*handshake, error) {
 		return nil, err
 	}
 	if len(data) < 33 {
-		return nil, fmt.Errorf("handshake to short")
+		return nil, ErrHandshakeTooShort
 	}
 
 	handshake := &handshake{}
@@ -114,7 +121,7 @@ func decodeHandshake(s string) (*handshake, error) {
 
 	msgTagPrefix := data[glome.PublicKeySize+1:]
 	if len(msgTagPrefix) > glome.MaxTagSize {
-		return nil, fmt.Errorf("message tag prefix too long")
+		return nil, ErrTagPrefixTooLong
 	}
 	if len(msgTagPrefix) > 0 {
 		handshake.MessageTagPrefix = msgTagPrefix
