@@ -28,11 +28,11 @@ func NewResponder(keys map[uint8]*glome.PrivateKey) (*Responder, error) {
 	}
 	for i, k := range keys {
 		if i >= 1<<7 {
-			return nil, &InvalidIndexError{i}
+			return nil, fmt.Errorf("key index %d is not in range [0; 127]", i)
 		}
 		pk, err := k.Public()
 		if err != nil {
-			return nil, errors.Join(&InvalidKeyError{i}, err)
+			return nil, fmt.Errorf("invalid private key at index %d: %w", i, err)
 		}
 		r.keysByIndex[i] = k
 		// We _could_ validate that prefixes are unique here, but we choose not to.
@@ -56,17 +56,17 @@ type ServerChallenge struct {
 func (r *Responder) Accept(encodedChallenge string) (*ServerChallenge, error) {
 	s := strings.TrimPrefix(encodedChallenge, "/")
 	if len(s) < len(versionPrefix) {
-		return nil, ErrChallengeTooShort
+		return nil, errors.New("challenge format error: too short")
 	}
 	if s[:len(versionPrefix)] != versionPrefix {
-		return nil, ErrIncompatibleVersion
+		return nil, fmt.Errorf("challenge version incompatible: expected %q, got %q", versionPrefix, s[:len(versionPrefix)])
 	}
 	s = strings.TrimPrefix(s, versionPrefix)
 	s = strings.TrimSuffix(s, "/")
 
 	subs := strings.SplitN(s, "/", 2)
 	if len(subs) != 2 {
-		return nil, ErrNumPathSegments
+		return nil, errors.New("challenge format error: wrong number of path segments")
 	}
 	h, err := decodeHandshake(subs[0])
 	if err != nil {
@@ -87,7 +87,7 @@ func (r *Responder) Accept(encodedChallenge string) (*ServerChallenge, error) {
 		key, ok = r.keysByIndex[h.Index]
 	}
 	if !ok {
-		return nil, &KeyNotFoundError{h}
+		return nil, &keyNotFoundError{h}
 	}
 
 	d, err := key.TruncatedExchange(h.PublicKey, 1)
@@ -106,36 +106,19 @@ func (r *Responder) Accept(encodedChallenge string) (*ServerChallenge, error) {
 	}, nil
 }
 
-// TODO: document and test
-
-type InvalidIndexError struct {
-	Idx uint8
-}
-
-func (e *InvalidIndexError) Error() string {
-	return fmt.Sprintf("key index %d is not in range [0; 127]", e.Idx)
-}
-
-type InvalidKeyError struct {
-	Idx uint8
-}
-
-func (e *InvalidKeyError) Error() string {
-	return fmt.Sprintf("invalid private key at index %d", e.Idx)
-}
-
-type KeyNotFoundError struct {
+type keyNotFoundError struct {
 	h *handshake
 }
 
-func (e *KeyNotFoundError) Error() string {
+func (e *keyNotFoundError) Error() string {
 	if e.h.Prefix != nil {
 		return fmt.Sprintf("no key found with prefix 0x%02x", *e.h.Prefix)
 	}
 	return fmt.Sprintf("no key found with index %d", e.h.Index)
 }
 
-var ErrChallengeTooShort = errors.New("TODO")
-var ErrIncompatibleVersion = fmt.Errorf("incompatible challenge version: expected %q", versionPrefix)
-var ErrNumPathSegments = errors.New("challenge format error: wrong number of path segments")
+// ErrTagPrefixMismatch is returned when a tag prefix is included in the
+// challenge, but it does not verify with the chosen key. This means that the
+// public key chosen based on handshake information is not the one the client
+// expected.
 var ErrTagPrefixMismatch = errors.New("message tag prefix did not match")

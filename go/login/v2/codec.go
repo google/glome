@@ -40,18 +40,12 @@ func (m *Message) Encode() string {
 	return sb.String()
 }
 
-// TODO: document
-
-var ErrMessageFormat = errors.New("message format error")
-var ErrHandshakeTooShort = errors.New("handshake to short")
-var ErrTagPrefixTooLong = errors.New("message tag prefix too long")
-
 func decodeMessage(s string) (*Message, error) {
 	m := &Message{}
 
 	subs := strings.Split(s, "/")
 	if len(subs) != 2 {
-		return nil, ErrMessageFormat
+		return nil, errors.New("message format error")
 	}
 
 	hostSegment, err := url.PathUnescape(subs[0])
@@ -102,7 +96,7 @@ func decodeHandshake(s string) (*handshake, error) {
 		return nil, err
 	}
 	if len(data) < 33 {
-		return nil, ErrHandshakeTooShort
+		return nil, errors.New("handshake too short")
 	}
 
 	handshake := &handshake{}
@@ -121,7 +115,7 @@ func decodeHandshake(s string) (*handshake, error) {
 
 	msgTagPrefix := data[glome.PublicKeySize+1:]
 	if len(msgTagPrefix) > glome.MaxTagSize {
-		return nil, ErrTagPrefixTooLong
+		return nil, errors.New("message tag prefix too long")
 	}
 	if len(msgTagPrefix) > 0 {
 		handshake.MessageTagPrefix = msgTagPrefix

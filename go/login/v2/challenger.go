@@ -69,7 +69,7 @@ func (c *Challenger) Challenge(msg *Message) (*ClientChallenge, error) {
 	h.PublicKey = publicKey
 
 	if c.PublicKey == nil {
-		return nil, ErrNoPublicKey
+		return nil, errors.New("no public key")
 	}
 
 	if c.KeyIndex != nil {
@@ -122,5 +122,3 @@ func (c *ClientChallenge) Verify(s string) bool {
 	}
 	return c.d.Check(tag, c.m, 0)
 }
-
-var ErrNoPublicKey = errors.New("no public key")
