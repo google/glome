@@ -82,7 +82,7 @@ func (h *handshake) Encode() string {
 	if h.Prefix != nil {
 		data.WriteByte(*h.Prefix)
 	} else {
-		data.WriteByte(128 | h.Index)
+		data.WriteByte(1<<7 | h.Index)
 	}
 	data.Write(h.PublicKey[:])
 	data.Write(h.MessageTagPrefix)
@@ -104,7 +104,7 @@ func decodeHandshake(s string) (*handshake, error) {
 	if data[0]>>7 == 0 { // check Prefix-type
 		handshake.Prefix = &data[0]
 	} else {
-		handshake.Index = data[0] % 128
+		handshake.Index = data[0] % (1 << 7)
 	}
 
 	key, err := glome.PublicKeyFromSlice(data[1 : glome.PublicKeySize+1])
