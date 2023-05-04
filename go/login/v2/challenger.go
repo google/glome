@@ -10,6 +10,13 @@ import (
 	"github.com/google/glome/go/glome"
 )
 
+var (
+	// defaultMinResponseSize is the recommended minimal size of a tag so that
+	// brute-forcing is infeasible (see MIN_ENCODED_AUTHCODE_LEN in the C
+	// sources).
+	defaultMinResponseSize uint8 = 10
+)
+
 // Challenger produces challenges that a Responder can respond to.
 type Challenger struct {
 	// PublicKey is the server's public key.
@@ -80,7 +87,7 @@ func (c *Challenger) Challenge(msg *Message) (*ClientChallenge, error) {
 
 	minResponseSize := uint8(c.MinResponseLength)
 	if minResponseSize == 0 {
-		minResponseSize = 10
+		minResponseSize = defaultMinResponseSize
 	}
 
 	d, err := key.TruncatedExchange(c.PublicKey, glome.MinTagSize)
