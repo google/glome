@@ -143,8 +143,7 @@ char* escape_host(const char* host) {
   // Only /, ?, and # would be problematic given our URL encoding
   for (size_t i = 0; i < host_len; ++i) {
     if (host[i] == '/' || host[i] == '?' || host[i] == '#') {
-      sprintf(ret_end, "%%%02X", host[i]);
-      ret_end += 3;
+      ret_end += snprintf(ret_end, 3 + 1, "%%%02X", host[i]);
     } else {
       ret_end[0] = host[i];
       ret_end += 1;
@@ -341,11 +340,37 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   char* host_id = NULL;
   if (config->host_id != NULL) {
     host_id = strdup(config->host_id);
+    if (host_id == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
+    }
   } else {
     host_id = calloc(HOST_NAME_MAX + 1, 1);
+    if (host_id == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
+    }
     if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
       return failure(EXITCODE_PANIC, error_tag, "get-machine-id");
     }
+  }
+
+  if (config->host_id_type != NULL) {
+    size_t host_id_len = strlen(config->host_id_type) + 1 + strlen(host_id) + 1;
+    char* host_id_full = calloc(host_id_len, 1);
+    if (host_id_full == NULL) {
+      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id-full");
+    }
+    int ret = snprintf(host_id_full, host_id_len, "%s:%s", config->host_id_type,
+                       host_id);
+    if (ret < 0) {
+      free(host_id_full);
+      return failure(EXITCODE_PANIC, error_tag, "generate-host-id-full");
+    }
+    if ((size_t)ret >= host_id_len) {
+      free(host_id_full);
+      return failure(EXITCODE_PANIC, error_tag, "generate-host-id-full");
+    }
+    free(host_id);
+    host_id = host_id_full;
   }
 
   char* action = NULL;
@@ -429,12 +454,25 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
     login_syslog(config, pamh, LOG_DEBUG, "expect input: %s", authcode_encoded);
   }
 
-  if (bytes_read < MIN_ENCODED_AUTHCODE_LEN) {
+  size_t min_len = MIN_ENCODED_AUTHCODE_LEN;
+  if (config->min_authcode_len > min_len) {
+    if (config->min_authcode_len > strlen(authcode_encoded)) {
+      login_syslog(config, pamh, LOG_INFO,
+                   "minimum authcode too long: %d bytes (%s)",
+                   config->min_authcode_len, config->username);
+      login_error(config, pamh,
+                  "Minimum input too long: expected at most %d characters.\n",
+                  config->min_authcode_len);
+      return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
+    }
+    min_len = config->min_authcode_len;
+  }
+  if ((size_t)bytes_read < min_len) {
     login_syslog(config, pamh, LOG_INFO, "authcode too short: %d bytes (%s)",
                  bytes_read, config->username);
     login_error(config, pamh,
                 "Input too short: expected at least %d characters, got %d.\n",
-                MIN_ENCODED_AUTHCODE_LEN, bytes_read);
+                min_len, bytes_read);
     return failure(EXITCODE_INVALID_INPUT_SIZE, error_tag, "authcode-length");
   }
   if ((size_t)bytes_read > strlen(authcode_encoded)) {

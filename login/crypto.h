@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CRYPTO_H_
-#define CRYPTO_H_
+#ifndef LOGIN_CRYPTO_H_
+#define LOGIN_CRYPTO_H_
 #include <glome.h>
 #include <inttypes.h>
 #include <stddef.h>
@@ -42,4 +42,4 @@ int get_msg_tag(const char* host_id, const char* action,
 // This is to avoid timing attacks.
 int is_zeroed(const uint8_t* buf, size_t len);
 
-#endif  // CRYPTO_H_
+#endif  // LOGIN_CRYPTO_H_

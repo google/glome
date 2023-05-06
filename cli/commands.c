@@ -39,7 +39,7 @@
 static const char *key_file = NULL;
 static const char *peer_file = NULL;
 static const char *tag_b64 = NULL;
-static unsigned long counter = 0;
+static unsigned long counter = 0;  // NOLINT(runtime/int)
 
 static bool parse_args(int argc, char **argv) {
   int c;
@@ -55,8 +55,9 @@ static bool parse_args(int argc, char **argv) {
     switch (c) {
       case 'c': {
         char *endptr;
+        errno = 0;
         counter = strtoul(optarg, &endptr, 0);
-        if (counter > UCHAR_MAX || optarg[0] == '\0' || *endptr != '\0') {
+        if (errno || counter > 255 || optarg == endptr || *endptr != '\0') {
           fprintf(stderr, "'%s' is not a valid counter (0..255)\n", optarg);
           return false;
         }
@@ -184,7 +185,7 @@ int tag_impl(uint8_t tag[GLOME_MAX_TAG_LENGTH], bool verify,
   if (!read_file(key_file, private_key, sizeof private_key) ||
       !read_public_key_file(peer_file, peer_key, sizeof(peer_key))) {
     return EXIT_FAILURE;
-  };
+  }
   size_t msg_len = fread(message, 1, GLOME_CLI_MAX_MESSAGE_LENGTH, stdin);
   if (!feof(stdin)) {
     fprintf(stderr, "message exceeds maximum supported size of %u\n",

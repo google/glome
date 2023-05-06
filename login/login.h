@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LOGIN_H_
-#define LOGIN_H_
+#ifndef LOGIN_LOGIN_H_
+#define LOGIN_LOGIN_H_
 
 #include <glome.h>
 
@@ -95,4 +95,4 @@ int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
 int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
                        const char** error_tag);
 
-#endif  // LOGIN_H_
+#endif  // LOGIN_LOGIN_H_

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BASE64_H_
-#define BASE64_H_
+#ifndef LOGIN_BASE64_H_
+#define LOGIN_BASE64_H_
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -27,4 +27,4 @@ size_t base64url_encode(const uint8_t* src, size_t src_len, uint8_t* dst,
 size_t base64url_decode(const uint8_t* src, size_t src_len, uint8_t* dst,
                         size_t dst_len);
 
-#endif  // BASE64_H_
+#endif  // LOGIN_BASE64_H_

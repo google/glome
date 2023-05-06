@@ -58,6 +58,7 @@ static void test_parse_config_file() {
   g_assert_true(EXAMPLE_CFG != NULL);
 
   glome_login_config_t config = {0};
+  default_config(&config);
   config.config_path = EXAMPLE_CFG;
 
   status_t s = glome_login_parse_config_file(&config);
@@ -67,9 +68,11 @@ static void test_parse_config_file() {
   g_assert_true(s == STATUS_OK);
 
   g_assert_true(config.auth_delay_sec == 7);
+  g_assert_true(config.min_authcode_len == 15);
   g_assert_true(config.input_timeout_sec == 321);
   g_assert_cmpstr("/bin/true", ==, config.login_path);
   g_assert_cmpstr("my-host", ==, config.host_id);
+  g_assert_cmpstr("hostname", ==, config.host_id_type);
   g_assert_true(config.options & VERBOSE);
   g_assert_false(config.options & SYSLOG);
   g_assert_false(config.options & INSECURE);
