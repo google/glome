@@ -104,7 +104,7 @@ class Glome:
 
     def __init__(self,
                  peer_key: x25519.X25519PublicKey,
-                 my_private_key: x25519.X25519PrivateKey = None,
+                 my_private_key: x25519.X25519PrivateKey = None, #gitleaks:allow
                  min_peer_tag_len: int = MAX_TAG_LEN):
         """Initialize Glome class.
 
@@ -240,7 +240,7 @@ class AutoGlome:
 
     def __init__(self,
                  peer_key: x25519.X25519PublicKey,
-                 my_private_key: x25519.X25519PrivateKey = None,
+                 my_private_key: x25519.X25519PrivateKey = None, #gitleaks:allow
                  *,
                  min_peer_tag_len: int = Glome.MAX_TAG_LEN,
                  skippable_range: int = 0):
