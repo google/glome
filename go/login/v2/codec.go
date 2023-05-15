@@ -99,27 +99,27 @@ func decodeHandshake(s string) (*handshake, error) {
 		return nil, errors.New("handshake too short")
 	}
 
-	handshake := &handshake{}
+	h := &handshake{}
 
 	if data[0]>>7 == 0 { // check Prefix-type
-		handshake.Prefix = &data[0]
+		h.Prefix = &data[0]
 	} else {
-		handshake.Index = data[0] % (1 << 7)
+		h.Index = data[0] % (1 << 7)
 	}
 
 	key, err := glome.PublicKeyFromSlice(data[1 : glome.PublicKeySize+1])
 	if err != nil {
 		return nil, err
 	}
-	handshake.PublicKey = key
+	h.PublicKey = key
 
 	msgTagPrefix := data[glome.PublicKeySize+1:]
 	if len(msgTagPrefix) > glome.MaxTagSize {
 		return nil, errors.New("message tag prefix too long")
 	}
 	if len(msgTagPrefix) > 0 {
-		handshake.MessageTagPrefix = msgTagPrefix
+		h.MessageTagPrefix = msgTagPrefix
 	}
 
-	return handshake, nil
+	return h, nil
 }

@@ -225,17 +225,17 @@ func TestSpec(t *testing.T) {
 				t.Errorf("Responder generated wrong response: got %q, want %q", sc.Response, tc.response)
 			}
 
-			min := uint8(10)
+			min := 10
 			if tc.minResponseLength != nil {
-				min = *tc.minResponseLength
+				min = int(*tc.minResponseLength)
 			}
 
-			for i := 1; i < int(min); i++ {
+			for i := 1; i < min; i++ {
 				if cc.Verify(tc.response[:i]) {
 					t.Errorf("Verification succeeded with response length %d, although the minimum is %d", i, min)
 				}
 			}
-			for i := int(min); i <= len(tc.response); i++ {
+			for i := min; i <= len(tc.response); i++ {
 				if !cc.Verify(tc.response[:i]) {
 					t.Errorf("Verification failed with %d characters, although the minimum is %d", i, min)
 				}
