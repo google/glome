@@ -230,11 +230,14 @@ func TestSpec(t *testing.T) {
 				min = int(*tc.minResponseLength)
 			}
 
+			// Tags shorter than min must be rejected.
 			for i := 1; i < min; i++ {
 				if cc.Verify(tc.response[:i]) {
 					t.Errorf("Verification succeeded with response length %d, although the minimum is %d", i, min)
 				}
 			}
+
+			// Long enough tags must not be rejected.
 			for i := min; i <= len(tc.response); i++ {
 				if !cc.Verify(tc.response[:i]) {
 					t.Errorf("Verification failed with %d characters, although the minimum is %d", i, min)
