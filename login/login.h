@@ -56,19 +56,24 @@ int login_run(glome_login_config_t* config, const char** error_tag);
 // On error, the error_tag is set to an error token which should NOT be freed.
 int shell_action(const char* user, char** action, size_t* action_len,
                  const char** error_tag);
+// TODO: this is a weird function that I hope we don't need
 
 // Construct a challenge given the key parameters, host ID, an action, and
 // optionally a message prefix tag.
 //
 // The length of the message prefix tag is in bytes. Only tag sizes of multiples
 // by 8 is supported.
+// TODO: what does the sentence above mean?
+//
+// TODO: passing a negative service key id means service key prefix!
 //
 // Caller is expected to free returned challenge.
 // On error, the error_tag is set to an error token which should NOT be freed.
 int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                       int service_key_id,
                       const uint8_t public_key[PUBLIC_KEY_LENGTH],
-                      const char* host_id, const char* action,
+                      const char* host_id_type, const char* host_id,
+                      const char* action,
                       const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
                       size_t prefix_tag_len, char** challenge,
                       int* challenge_len, const char** error_tag);

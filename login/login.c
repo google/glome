@@ -134,29 +134,11 @@ int shell_action(const char* user, char** action, size_t* action_len,
   return 0;
 }
 
-char* escape_host(const char* host) {
-  size_t host_len = strlen(host);
-  char *ret = malloc(host_len * 3 + 1), *ret_end = ret;
-  if (ret == NULL) {
-    return NULL;
-  }
-  // Only /, ?, and # would be problematic given our URL encoding
-  for (size_t i = 0; i < host_len; ++i) {
-    if (host[i] == '/' || host[i] == '?' || host[i] == '#') {
-      ret_end += snprintf(ret_end, 3 + 1, "%%%02X", host[i]);
-    } else {
-      ret_end[0] = host[i];
-      ret_end += 1;
-    }
-  }
-  ret_end[0] = '\0';
-  return ret;
-}
-
 int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                       int service_key_id,
                       const uint8_t public_key[PUBLIC_KEY_LENGTH],
-                      const char* host_id, const char* action,
+                      const char* host_id_type, const char* host_id,
+                      const char* action,
                       const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
                       size_t prefix_tag_len, char** challenge,
                       int* challenge_len, const char** error_tag) {
@@ -172,11 +154,16 @@ int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
   uint8_t handshake[PUBLIC_KEY_LENGTH + 1 + GLOME_MAX_TAG_LENGTH] = {0};
   size_t handshake_len = PUBLIC_KEY_LENGTH + 1 + prefix_tag_len;
 
-  if (service_key_id == 0) {
-    // If no key ID was specified, send the first key byte as the ID.
-    handshake[0] = service_key[0] & 0x7f;
+  if (service_key_id < 0 || service_key_id > 127) {
+    // If no key ID was specified, send the most significant key byte as the ID.
+    handshake[0] = service_key[GLOME_MAX_PUBLIC_KEY_LENGTH - 1];
+    // Indicate 'service key prefix' by setting the high bit 0.
+    handshake[0] &= 0x7f;
   } else {
-    handshake[0] = service_key_id & 0x7f;
+    //
+    handshake[0] = (uint8_t)service_key_id;
+    // Indicate 'service key index' by setting the high bit 1.
+    handshake[0] |= 0x80;
   }
 
   memcpy(handshake + 1, public_key, PUBLIC_KEY_LENGTH);
@@ -190,32 +177,31 @@ int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
     return failure(EXITCODE_PANIC, error_tag, "handshake-encode");
   }
 
-  char* host_id_escaped = escape_host(host_id);
-  if (host_id_escaped == NULL) {
-    return failure(EXITCODE_PANIC, error_tag, "host-id-malloc-error");
+  char* message_encoded = glome_login_message(host_id_type, host_id, action);
+  if (message_encoded == NULL) {
+    return failure(EXITCODE_PANIC, error_tag,
+                   "glome-login-message-malloc-error");
   }
 
-  int len = strlen("v1/") + strlen(handshake_encoded) + 1 +
-            strlen(host_id_escaped) + 1 + strlen(action) + 2;
-  char* buf = malloc(len);
+  // Compute the required buffer length for the concatenated challenge string:
+  //   "v2/" ++ handshake_encoded ++ "/" ++ message_encoded ++ "/\x00"
+  int len =
+      strlen("v2/") + strlen(handshake_encoded) + strlen(message_encoded) + 3;
+
+  char* buf = calloc(len, 1);
   if (buf == NULL) {
-    free(host_id_escaped);
+    free(message_encoded);
     return failure(EXITCODE_PANIC, error_tag, "challenge-malloc-error");
   }
-  int ret = snprintf(buf, len, "v1/%s/%s/%s/", handshake_encoded,
-                     host_id_escaped, action);
-  free(host_id_escaped);
-  host_id_escaped = NULL;
-  if (ret < 0) {
-    free(buf);
-    return failure(EXITCODE_PANIC, error_tag, "challenge-sprintf-error");
-  }
-  if (ret >= len) {
-    free(buf);
-    return failure(EXITCODE_PANIC, error_tag, "challenge-sprintf-trunc");
-  }
-
   *challenge = buf;
+  buf = stpcpy(buf, "v2/");
+  buf = stpcpy(buf, handshake_encoded);
+  buf = stpcpy(buf, "/");
+  buf = stpcpy(buf, message_encoded);
+  buf = stpcpy(buf, "/");
+  free(message_encoded);
+
+  // TODO: this is (a) false and (b) not needed!
   *challenge_len = len;
   return 0;
 }
@@ -337,6 +323,8 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
     return failure(EXITCODE_PANIC, error_tag, "derive-or-generate-key");
   }
 
+  // TODO: read host id type instead of concatenating it to host_id.
+  char* host_id_type = NULL;
   char* host_id = NULL;
   if (config->host_id != NULL) {
     host_id = strdup(config->host_id);
@@ -387,8 +375,8 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   }
 
   uint8_t authcode[GLOME_MAX_TAG_LENGTH];
-  if (get_authcode(host_id, action, config->service_key, config->secret_key,
-                   authcode)) {
+  if (get_authcode(host_id_type, host_id, action, config->service_key,
+                   config->secret_key, authcode)) {
     free(host_id);
     free(action);
     return failure(EXITCODE_PANIC, error_tag, "get-authcode");
@@ -397,7 +385,7 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   char* challenge = NULL;
   int challenge_len = 0;
   if (request_challenge(config->service_key, config->service_key_id, public_key,
-                        host_id, action, /*prefix_tag=*/NULL,
+                        host_id_type, host_id, action, /*prefix_tag=*/NULL,
                         /*prefix_tag_len=*/0, &challenge, &challenge_len,
                         error_tag)) {
     free(host_id);

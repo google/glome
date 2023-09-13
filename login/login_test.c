@@ -34,8 +34,9 @@ static void test_shell_action() {
 }
 
 static void test_vector_1() {
-  const char* host_id = "my-server.local";
-  const char* action = "shell/root";
+  const char* host_id_type = "mytype";
+  const char* host_id = "myhost";
+  const char* action = "root";
 
   uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
@@ -51,43 +52,46 @@ static void test_vector_1() {
 
   {
     uint8_t authcode[GLOME_MAX_TAG_LENGTH];
-    g_assert_true(
-        get_authcode(host_id, action, service_key, private_key, authcode) == 0);
-    char authcode_encoded[ENCODED_BUFSIZE(sizeof authcode)] = {0};
+    g_assert_true(get_authcode(host_id_type, host_id, action, service_key,
+                               private_key, authcode) == 0);
+    char authcode_encoded[ENCODED_BUFSIZE(sizeof authcode) + 1] = {0};
     g_assert_true(base64url_encode(authcode, sizeof authcode,
                                    (uint8_t*)authcode_encoded,
                                    sizeof authcode_encoded));
-    g_assert_cmpmem("lyHuaHuCck", 10, authcode_encoded, 10);
+    g_assert_cmpmem("BB4BYjXonlIRtXZORkQ5bF5xTZwW6o60ylqfCuyAHTQ=", 44,
+                    authcode_encoded, 44);
   }
 
   {
     const char* error_tag = NULL;
     char* challenge = NULL;
     int challenge_len = 0;
-    int service_key_id = 1;
+    int service_key_id = 0;
+    int messageTagPrefixLength = 3;
     uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH];
 
-    g_assert_true(get_msg_tag(host_id, action, service_key, private_key,
-                              prefix_tag) == 0);
+    g_assert_true(get_msg_tag(host_id_type, host_id, action, service_key,
+                              private_key, prefix_tag) == 0);
 
-    if (request_challenge(service_key, service_key_id, public_key, host_id,
-                          action, prefix_tag, /*prefix_tag_len=*/2, &challenge,
-                          &challenge_len, &error_tag)) {
+    if (request_challenge(service_key, service_key_id, public_key, host_id_type,
+                          host_id, action, prefix_tag, messageTagPrefixLength,
+                          &challenge, &challenge_len, &error_tag)) {
       g_test_message("construct_request_challenge failed: %s", error_tag);
       g_test_fail();
     }
 
     g_assert_cmpstr(
-        "v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/"
-        "my-server.local/shell/root/",
+        "v2/gIUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05qlyPH/mytype:myhost/"
+        "root/",
         ==, challenge);
     g_assert_null(error_tag);
   }
 }
 
 static void test_vector_2() {
-  const char* host_id = "serial-number:1234567890=ABCDFGH/#?";
-  const char* action = "reboot";
+  const char* host_id_type = "";
+  const char* host_id = "myhost";
+  const char* action = "exec=/bin/sh";
 
   uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
@@ -103,32 +107,31 @@ static void test_vector_2() {
 
   {
     uint8_t authcode[GLOME_MAX_TAG_LENGTH];
-    g_assert_true(
-        get_authcode(host_id, action, service_key, private_key, authcode) == 0);
+    g_assert_true(get_authcode(host_id_type, host_id, action, service_key,
+                               private_key, authcode) == 0);
     char authcode_encoded[ENCODED_BUFSIZE(sizeof authcode)] = {0};
     g_assert_true(base64url_encode(authcode, sizeof authcode,
                                    (uint8_t*)authcode_encoded,
                                    sizeof authcode_encoded));
-    g_assert_cmpstr("p8M_BUKj7zXBVM2JlQhNYFxs4J-DzxRAps83ZaNDquY=", ==,
-                    authcode_encoded);
+    g_assert_cmpmem("ZmxczN4x3g4goXu-A2AuuEEVftgS6xM-6gYj-dRrlis=", 44,
+                    authcode_encoded, 44);
   }
 
   {
     const char* error_tag = NULL;
     char* challenge = NULL;
     int challenge_len = 0;
-    int service_key_id = 0;
-    if (request_challenge(service_key, service_key_id, public_key, host_id,
-                          action,
-                          /*prefix_tag=*/NULL, /*prefix_tag_len=*/0, &challenge,
-                          &challenge_len, &error_tag)) {
+    int service_key_id = -1;
+    if (request_challenge(service_key, service_key_id, public_key, host_id_type,
+                          host_id, action, NULL, 0, &challenge, &challenge_len,
+                          &error_tag)) {
       g_test_message("construct_request_challenge failed: %s", error_tag);
       g_test_fail();
     }
 
     g_assert_cmpstr(
-        "v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/"
-        "serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/",
+        "v2/R4cvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/myhost/"
+        "exec=%2Fbin%2Fsh/",
         ==, challenge);
     g_assert_null(error_tag);
   }

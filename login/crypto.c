@@ -14,6 +14,7 @@
 
 #include "crypto.h"
 
+#include <ctype.h>
 #include <glome.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,24 +39,91 @@ int derive_or_generate_key(uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
   }
 }
 
-static int login_tag(bool verify, const char* host_id, const char* action,
+static const char* valid_url_path_chars = "-._~!$&'()*+,;=";
+
+// TODO: document
+static char* urlescape_path(const char* raw, const char* extra) {
+  if (!raw) return NULL;
+  if (!extra) extra = "";
+
+  // TODO: find better variable names in this function.
+
+  size_t n = 1;
+  for (const char* c = raw; *c != '\0'; c++) {
+    if (!strchr(extra, *c) &&
+        (isalnum(*c) || strchr(valid_url_path_chars, *c))) {
+      n += 1;
+    } else {
+      n += 3;
+    }
+  }
+  char* ret = calloc(n, 1);
+  if (!ret) return ret;
+
+  char* r = ret;
+  for (const char* c = raw; *c != '\0'; c++) {
+    if (!strchr(extra, *c) &&
+        (isalnum(*c) || strchr(valid_url_path_chars, *c))) {
+      *r = *c;
+      r++;
+    } else {
+      sprintf(r, "%%%02X", *c);
+      r += 3;
+    }
+  }
+  return ret;
+}
+
+// TODO: document
+char* glome_login_message(const char* host_id_type, const char* host_id,
+                          const char* action) {
+  char *host_id_type_escaped = NULL, *host_id_escaped = NULL,
+       *action_escaped = NULL, *message = NULL;
+
+  host_id_escaped = urlescape_path(host_id, ":");
+  action_escaped = urlescape_path(action, "");
+  if (!host_id_escaped || !action_escaped) goto end;
+
+  size_t message_len = strlen(host_id_escaped) + 1 + strlen(action_escaped) + 1;
+
+  // Only prefix host_id_type if it's not empty.
+  if (host_id_type && *host_id_type) {
+    host_id_type_escaped = urlescape_path(host_id_type, ":");
+    if (!host_id_type_escaped) goto end;
+    message_len += strlen(host_id_type_escaped) + 1;
+  }
+
+  message = calloc(message_len, 1);
+  if (message == NULL) {
+    goto end;
+  }
+
+  char* dst = message;
+  if (host_id_type_escaped) {
+    dst = stpcpy(dst, host_id_type_escaped);
+    *(dst++) = ':';
+  }
+  dst = stpcpy(dst, host_id_escaped);
+  *(dst++) = '/';
+  dst = stpcpy(dst, action_escaped);
+
+end:
+  free(host_id_type_escaped);
+  free(host_id_escaped);
+  free(action_escaped);
+  return message;
+}
+
+// TODO: inline all functions below.
+
+static int login_tag(bool verify, const char* host_id_type, const char* host_id,
+                     const char* action,
                      const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                      const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
                      uint8_t output[GLOME_MAX_TAG_LENGTH]) {
-  size_t message_len = strlen(host_id) + 1 + strlen(action) + 1;
-  char* message = calloc(message_len, 1);
-  if (message == NULL) {
-    return -1;
-  }
-  int ret = snprintf(message, message_len, "%s/%s", host_id, action);
-  if (ret < 0) {
-    free(message);
-    return -1;
-  }
-  if ((size_t)ret >= message_len) {
-    free(message);
-    return -1;
-  }
+  char* message = glome_login_message(host_id_type, host_id, action);
+  if (!message) return -1;
+
   if (glome_tag(verify, 0, private_key, peer_key, (uint8_t*)message,
                 strlen(message), output) != 0) {
     free(message);
@@ -66,16 +134,20 @@ static int login_tag(bool verify, const char* host_id, const char* action,
   return 0;
 }
 
-int get_authcode(const char* host_id, const char* action,
+int get_authcode(const char* host_id_type, const char* host_id,
+                 const char* action,
                  const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                  const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
                  uint8_t authcode[GLOME_MAX_TAG_LENGTH]) {
-  return login_tag(true, host_id, action, peer_key, private_key, authcode);
+  return login_tag(true, host_id_type, host_id, action, peer_key, private_key,
+                   authcode);
 }
 
-int get_msg_tag(const char* host_id, const char* action,
+int get_msg_tag(const char* host_id_type, const char* host_id,
+                const char* action,
                 const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                 const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
                 uint8_t tag[GLOME_MAX_TAG_LENGTH]) {
-  return login_tag(false, host_id, action, peer_key, private_key, tag);
+  return login_tag(false, host_id_type, host_id, action, peer_key, private_key,
+                   tag);
 }

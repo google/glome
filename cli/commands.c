@@ -270,10 +270,10 @@ out:
   return ret;
 }
 
-static bool parse_login_path(char *path, char **handshake, char **host,
-                             char **action) {
+static bool parse_login_path(const char *path, char **handshake,
+                             char **message) {
   size_t path_len = strlen(path);
-  if (path_len < 3 || path[0] != 'v' || path[1] != '1' || path[2] != '/') {
+  if (path_len < 3 || path[0] != 'v' || path[1] != '2' || path[2] != '/') {
     fprintf(stderr, "unexpected challenge prefix: %s\n", path);
     return false;
   }
@@ -282,7 +282,7 @@ static bool parse_login_path(char *path, char **handshake, char **host,
     return false;
   }
 
-  char *start = path + 3;
+  const char *start = path + 3;
   char *slash = strchr(start, '/');
   if (slash == NULL || slash - start == 0) {
     fprintf(stderr, "could not parse handshake from %s\n", start);
@@ -294,93 +294,23 @@ static bool parse_login_path(char *path, char **handshake, char **host,
     return false;
   }
 
+  // Everything left (not including the trailing slash) is the message.
   start = slash + 1;
-  slash = strchr(start, '/');
-  if (slash == NULL || slash - start == 0) {
+  *message = strndup(start, path + path_len - 1 - start);
+  if (*message == NULL) {
     free(*handshake);
     *handshake = NULL;
-    fprintf(stderr, "could not parse host from %s\n", start);
-    return false;
-  }
-  *host = strndup(start, slash - start);
-  if (*host == NULL) {
-    free(*handshake);
-    *handshake = NULL;
-    fprintf(stderr, "failed to duplicate host\n");
-    return false;
-  }
-
-  // Everything left (not including the trailing slash) is an action. It may
-  // include slashes and it can also be empty.
-  start = slash + 1;
-  *action = strndup(start, path + path_len - 1 - start);
-  if (*action == NULL) {
-    free(*host);
-    *host = NULL;
-    free(*handshake);
-    *handshake = NULL;
-    fprintf(stderr, "failed to duplicate action\n");
+    fprintf(stderr, "failed to duplicate message\n");
     return false;
   }
 
   return true;
 }
 
-static int unhex(char c) {
-  if (c >= '0' && c <= '9') {
-    return c - '0';
-  } else if (c >= 'a' && c <= 'f') {
-    return c - 'a' + 10;
-  } else if (c >= 'A' && c <= 'F') {
-    return c - 'A' + 10;
-  } else {
-    return -1;
-  }
-}
-
-static char *uri_unescape(char *e) {
-  size_t len = strlen(e);
-  char *u = malloc(len + 1);
-  if (u == NULL) {
-    return NULL;
-  }
-
-  size_t i, j;
-  for (i = 0, j = 0; i < len; j++) {
-    if (e[i] != '%') {
-      u[j] = e[i];
-      i += 1;
-      continue;
-    }
-    if (i + 2 >= len) {
-      goto fail;
-    }
-    int n = unhex(e[i + 1]);
-    if (n < 0) {
-      goto fail;
-    }
-    u[j] = (char)(n << 4);
-    n = unhex(e[i + 2]);
-    if (n < 0) {
-      goto fail;
-    }
-    u[j] |= (char)n;
-    i += 3;
-  }
-  u[j] = '\0';
-  return u;
-
-fail:
-  free(u);
-  return NULL;
-}
-
 int login(int argc, char **argv) {
   char *handshake = NULL;
   char *handshake_b64 = NULL;
-  char *host = NULL;
-  char *host_esc = NULL;
-  char *action = NULL;
+  char *message = NULL;
   int ret = EXIT_FAILURE;
 
   if (!parse_args(argc, argv)) {
@@ -401,15 +331,13 @@ int login(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  char *path = strstr(argv[optind], "v1/");
-  if (!parse_login_path(path, &handshake_b64, &host_esc, &action)) {
-    return EXIT_FAILURE;
-  }
-
-  host = uri_unescape(host_esc);
-  if (host == NULL) {
-    fprintf(stderr, "failed to parse hostname in path %s\n", path);
+  char *path = strstr(argv[optind], "v2/");
+  if (path == NULL) {
+    fprintf(stderr, "unsupported challenge format\n");
     goto out;
+  }
+  if (!parse_login_path(path, &handshake_b64, &message)) {
+    return EXIT_FAILURE;
   }
 
   size_t handshake_b64_len = strlen(handshake_b64);
@@ -440,7 +368,8 @@ int login(int argc, char **argv) {
   memcpy(peer_key, handshake + 1, GLOME_MAX_PUBLIC_KEY_LENGTH);
 
   uint8_t tag[GLOME_MAX_TAG_LENGTH] = {0};
-  if (get_authcode(host, action, peer_key, private_key, tag)) {
+  if (glome_tag(true, 0, private_key, peer_key, (uint8_t *)message,
+                strlen(message), tag)) {
     fprintf(stderr, "MAC authcode generation failed\n");
     goto out;
   }
@@ -453,7 +382,8 @@ int login(int argc, char **argv) {
     goto out;
   }
 
-  if (get_msg_tag(host, action, peer_key, private_key, tag)) {
+  if (glome_tag(false, 0, private_key, peer_key, (uint8_t *)message,
+                strlen(message), tag)) {
     fprintf(stderr, "GLOME tag generation failed\n");
     goto out;
   }
@@ -468,9 +398,7 @@ int login(int argc, char **argv) {
 
 out:
   free(handshake);
-  free(host);
   free(handshake_b64);
-  free(host_esc);
-  free(action);
+  free(message);
   return ret;
 }

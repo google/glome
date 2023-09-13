@@ -28,18 +28,21 @@
 int derive_or_generate_key(uint8_t private_key[PRIVATE_KEY_LENGTH],
                            uint8_t public_key[PUBLIC_KEY_LENGTH]);
 
-int get_authcode(const char* host_id, const char* action,
-                 const uint8_t peer_key[PUBLIC_KEY_LENGTH],
+int get_authcode(const char* host_id_type, const char* host_id,
+                 const char* action, const uint8_t peer_key[PUBLIC_KEY_LENGTH],
                  const uint8_t private_key[PRIVATE_KEY_LENGTH],
                  uint8_t authcode[GLOME_MAX_TAG_LENGTH]);
 
-int get_msg_tag(const char* host_id, const char* action,
-                const uint8_t peer_key[PUBLIC_KEY_LENGTH],
+int get_msg_tag(const char* host_id_type, const char* host_id,
+                const char* action, const uint8_t peer_key[PUBLIC_KEY_LENGTH],
                 const uint8_t private_key[PRIVATE_KEY_LENGTH],
                 uint8_t tag[GLOME_MAX_TAG_LENGTH]);
 
 // is_zeroed() checks (in constant time) if all len bytes of buf are zeros.
 // This is to avoid timing attacks.
 int is_zeroed(const uint8_t* buf, size_t len);
+
+char* glome_login_message(const char* host_id_type, const char* host_id,
+                          const char* action);
 
 #endif  // LOGIN_CRYPTO_H_

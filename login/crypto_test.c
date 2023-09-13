@@ -49,8 +49,8 @@ static void test_generate() {
 }
 
 static void test_authcode() {
-  const char* host_id = "serial-number:1234567890=ABCDFGH/#?";
-  const char* action = "reboot";
+  const char* host_id = "myhost";
+  const char* action = "exec=/bin/sh";
 
   uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
@@ -65,13 +65,14 @@ static void test_authcode() {
   uint8_t expected_authcode[GLOME_MAX_TAG_LENGTH];
   decode_hex(
       expected_authcode, sizeof expected_authcode,
-      "a7c33f0542a3ef35c154cd8995084d605c6ce09f83cf1440a6cf3765a343aae6");
-  g_assert_true(
-      get_authcode(host_id, action, service_key, private_key, authcode) == 0);
+      "666c5cccde31de0e20a17bbe03602eb841157ed812eb133eea0623f9d46b962b");
+  g_assert_true(get_authcode(/*host_id_type=*/NULL, host_id, action,
+                             service_key, private_key, authcode) == 0);
   g_assert_cmpmem(expected_authcode, sizeof expected_authcode, authcode,
                   sizeof authcode);
 }
 
+// TODO: does not use actual test vector
 static void test_msg_tag() {
   const char* host_id = "serial-number:1234567890=ABCDFGH/#?";
   const char* action = "reboot";
@@ -89,9 +90,9 @@ static void test_msg_tag() {
   uint8_t expected_msg_tag[GLOME_MAX_TAG_LENGTH];
   decode_hex(
       expected_msg_tag, sizeof expected_msg_tag,
-      "dff5aae753a8bdce06038a20adcdb26c7be19cb6bd05a7850fae542f4af29720");
-  g_assert_true(
-      get_msg_tag(host_id, action, service_key, private_key, msg_tag) == 0);
+      "76036ab00ec676e453c8a110b6bf63767f2a225f11b0055b18c24554b67a47fd");
+  g_assert_true(get_msg_tag(/*host_id_type=*/NULL, host_id, action, service_key,
+                            private_key, msg_tag) == 0);
   g_assert_cmpmem(expected_msg_tag, sizeof expected_msg_tag, msg_tag,
                   sizeof msg_tag);
 }
