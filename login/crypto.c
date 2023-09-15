@@ -67,7 +67,7 @@ static char* urlescape_path(const char* raw, const char* extra) {
       *r = *c;
       r++;
     } else {
-      sprintf(r, "%%%02X", *c);
+      snprintf(r, 4, "%%%02X", *c);
       r += 3;
     }
   }
