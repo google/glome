@@ -41,6 +41,8 @@ int derive_or_generate_key(uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
 
 static const char* valid_url_path_chars = "-._~!$&'()*+,;=";
 
+static const size_t escaped_char_length = 3;
+
 // TODO: document
 static char* urlescape_path(const char* raw, const char* extra) {
   if (!raw) return NULL;
@@ -54,7 +56,7 @@ static char* urlescape_path(const char* raw, const char* extra) {
         (isalnum(*c) || strchr(valid_url_path_chars, *c))) {
       n += 1;
     } else {
-      n += 3;
+      n += escaped_char_length;
     }
   }
   char* ret = calloc(n, 1);
@@ -67,8 +69,8 @@ static char* urlescape_path(const char* raw, const char* extra) {
       *r = *c;
       r++;
     } else {
-      snprintf(r, 4, "%%%02X", *c);
-      r += 3;
+      snprintf(r, escaped_char_length + 1, "%%%02X", *c);
+      r += escaped_char_length;
     }
   }
   return ret;

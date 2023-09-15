@@ -56,7 +56,6 @@ int login_run(glome_login_config_t* config, const char** error_tag);
 // On error, the error_tag is set to an error token which should NOT be freed.
 int shell_action(const char* user, char** action, size_t* action_len,
                  const char** error_tag);
-// TODO: this is a weird function that I hope we don't need
 
 // Construct a challenge given the key parameters, host ID, an action, and
 // optionally a message prefix tag.
