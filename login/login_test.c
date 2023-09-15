@@ -28,7 +28,7 @@ static void test_shell_action() {
   size_t action_len = 0;
   shell_action("operator", &action, &action_len, &error_tag);
 
-  g_assert_cmpstr("shell/operator", ==, action);
+  g_assert_cmpstr("shell=operator", ==, action);
   g_assert_true(strlen(action) + 1 == action_len);
   g_assert_null(error_tag);
 }

@@ -21,8 +21,8 @@
 #include <libpamtest.h>
 
 const char *authtoks[] = {
-    "lyHuaHuCck",  /* Correct code */
-    "lyHuaHuCc",   /* Too short */
+    "Xt-yvSPnAzMIzd2ZqreAGwZf922uSVpw172_4PLWBU4=",  /* Correct code */
+    "Xt-yvSPnA",   /* Too short */
     "INVALIDCODE", /* Wrong code */
     /* fake passwords that might be provided by openssh-portable/auth-pam.c */
     "\b\n\r\177", "\b\n\r\177INCORRECT", "\b\n\r\177INCORRECT\b\n\r\177",

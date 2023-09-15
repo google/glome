@@ -114,12 +114,12 @@ void timeout_handler(int sig) {
 
 int shell_action(const char* user, char** action, size_t* action_len,
                  const char** error_tag) {
-  size_t buf_len = strlen("shell/") + strlen(user) + 1;
+  size_t buf_len = strlen("shell=") + strlen(user) + 1;
   char* buf = calloc(buf_len, 1);
   if (buf == NULL) {
     return failure(EXITCODE_PANIC, error_tag, "message-calloc-error");
   }
-  int ret = snprintf(buf, buf_len, "shell/%s", user);
+  int ret = snprintf(buf, buf_len, "shell=%s", user);
   if (ret < 0) {
     free(buf);
     return failure(EXITCODE_PANIC, error_tag, "message-sprintf-error");
