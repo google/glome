@@ -43,40 +43,45 @@ static const char* valid_url_path_chars = "-._~!$&'()*+,;=";
 
 static const size_t escaped_char_length = 3;
 
-// TODO: document
-static char* urlescape_path(const char* raw, const char* extra) {
-  if (!raw) return NULL;
+// Escape a string for use as an URL path segment. All characters in the extra
+// string are escaped, even if they would not need to be by the spec, so that
+// they can be used as delimiters, too.
+//
+// See: https://url.spec.whatwg.org/#url-path-segment-string
+static char* urlescape_path(const char* src, const char* extra) {
+  if (!src) return NULL;
   if (!extra) extra = "";
 
-  // TODO: find better variable names in this function.
+  // First pass: output length
 
-  size_t n = 1;
-  for (const char* c = raw; *c != '\0'; c++) {
+  size_t output_length = 1;  // We need at least the trailing NUL byte.
+  for (const char* c = src; *c != '\0'; c++) {
     if (!strchr(extra, *c) &&
         (isalnum(*c) || strchr(valid_url_path_chars, *c))) {
-      n += 1;
+      output_length += 1;
     } else {
-      n += escaped_char_length;
+      output_length += escaped_char_length;
     }
   }
-  char* ret = calloc(n, 1);
-  if (!ret) return ret;
+  char* dst = calloc(output_length, 1);
+  if (!dst) return dst;
 
-  char* r = ret;
-  for (const char* c = raw; *c != '\0'; c++) {
-    if (!strchr(extra, *c) &&
-        (isalnum(*c) || strchr(valid_url_path_chars, *c))) {
-      *r = *c;
-      r++;
+  // Second pass: copy over and escape
+
+  int dst_offset = 0;
+  for (const char* next_char = src; *next_char != '\0'; next_char++) {
+    if (!strchr(extra, *next_char) &&
+        (isalnum(*next_char) || strchr(valid_url_path_chars, *next_char))) {
+      dst[dst_offset] = *next_char;
+      dst_offset++;
     } else {
-      snprintf(r, escaped_char_length + 1, "%%%02X", *c);
-      r += escaped_char_length;
+      snprintf(dst + dst_offset, escaped_char_length + 1, "%%%02X", *next_char);
+      dst_offset += escaped_char_length;
     }
   }
-  return ret;
+  return dst;
 }
 
-// TODO: document
 char* glome_login_message(const char* host_id_type, const char* host_id,
                           const char* action) {
   char *host_id_type_escaped = NULL, *host_id_escaped = NULL,
@@ -114,42 +119,4 @@ end:
   free(host_id_escaped);
   free(action_escaped);
   return message;
-}
-
-// TODO: inline all functions below.
-
-static int login_tag(bool verify, const char* host_id_type, const char* host_id,
-                     const char* action,
-                     const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                     const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
-                     uint8_t output[GLOME_MAX_TAG_LENGTH]) {
-  char* message = glome_login_message(host_id_type, host_id, action);
-  if (!message) return -1;
-
-  if (glome_tag(verify, 0, private_key, peer_key, (uint8_t*)message,
-                strlen(message), output) != 0) {
-    free(message);
-    return -1;
-  }
-
-  free(message);
-  return 0;
-}
-
-int get_authcode(const char* host_id_type, const char* host_id,
-                 const char* action,
-                 const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                 const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
-                 uint8_t authcode[GLOME_MAX_TAG_LENGTH]) {
-  return login_tag(true, host_id_type, host_id, action, peer_key, private_key,
-                   authcode);
-}
-
-int get_msg_tag(const char* host_id_type, const char* host_id,
-                const char* action,
-                const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
-                uint8_t tag[GLOME_MAX_TAG_LENGTH]) {
-  return login_tag(false, host_id_type, host_id, action, peer_key, private_key,
-                   tag);
 }

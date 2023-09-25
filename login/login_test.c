@@ -50,10 +50,13 @@ static void test_vector_1() {
 
   g_assert_true(derive_or_generate_key(private_key, public_key) == 0);
 
+  char* message = glome_login_message(host_id_type, host_id, action);
+  g_assert_nonnull(message);
+
   {
     uint8_t authcode[GLOME_MAX_TAG_LENGTH];
-    g_assert_true(get_authcode(host_id_type, host_id, action, service_key,
-                               private_key, authcode) == 0);
+    g_assert(glome_tag(true, 0, private_key, service_key, (uint8_t*)message,
+                       strlen(message), authcode) == 0);
     char authcode_encoded[ENCODED_BUFSIZE(sizeof authcode) + 1] = {0};
     g_assert_true(base64url_encode(authcode, sizeof authcode,
                                    (uint8_t*)authcode_encoded,
@@ -65,17 +68,16 @@ static void test_vector_1() {
   {
     const char* error_tag = NULL;
     char* challenge = NULL;
-    int challenge_len = 0;
     int service_key_id = 0;
     int messageTagPrefixLength = 3;
     uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH];
 
-    g_assert_true(get_msg_tag(host_id_type, host_id, action, service_key,
-                              private_key, prefix_tag) == 0);
+    g_assert(glome_tag(/*verify=*/false, 0, private_key, service_key,
+                       (uint8_t*)message, strlen(message), prefix_tag) == 0);
 
-    if (request_challenge(service_key, service_key_id, public_key, host_id_type,
-                          host_id, action, prefix_tag, messageTagPrefixLength,
-                          &challenge, &challenge_len, &error_tag)) {
+    if (request_challenge(service_key, service_key_id, public_key, message,
+                          prefix_tag, messageTagPrefixLength, &challenge,
+                          &error_tag)) {
       g_test_message("construct_request_challenge failed: %s", error_tag);
       g_test_fail();
     }
@@ -105,10 +107,13 @@ static void test_vector_2() {
 
   g_assert_true(derive_or_generate_key(private_key, public_key) == 0);
 
+  char* message = glome_login_message(host_id_type, host_id, action);
+  g_assert_nonnull(message);
+
   {
     uint8_t authcode[GLOME_MAX_TAG_LENGTH];
-    g_assert_true(get_authcode(host_id_type, host_id, action, service_key,
-                               private_key, authcode) == 0);
+    g_assert(glome_tag(true, 0, private_key, service_key, (uint8_t*)message,
+                       strlen(message), authcode) == 0);
     char authcode_encoded[ENCODED_BUFSIZE(sizeof authcode)] = {0};
     g_assert_true(base64url_encode(authcode, sizeof authcode,
                                    (uint8_t*)authcode_encoded,
@@ -120,11 +125,9 @@ static void test_vector_2() {
   {
     const char* error_tag = NULL;
     char* challenge = NULL;
-    int challenge_len = 0;
     int service_key_id = -1;
-    if (request_challenge(service_key, service_key_id, public_key, host_id_type,
-                          host_id, action, NULL, 0, &challenge, &challenge_len,
-                          &error_tag)) {
+    if (request_challenge(service_key, service_key_id, public_key, message,
+                          NULL, 0, &challenge, &error_tag)) {
       g_test_message("construct_request_challenge failed: %s", error_tag);
       g_test_fail();
     }
