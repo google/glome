@@ -300,6 +300,56 @@ int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
 }
 #endif
 
+static char* create_login_message(glome_login_config_t* config,
+                                  pam_handle_t* pamh, const char** error_tag) {
+  char* host_id = NULL;
+
+  if (config->host_id != NULL) {
+    host_id = strdup(config->host_id);
+    if (host_id == NULL) {
+      *error_tag = "malloc-host-id";
+      return NULL;
+    }
+  } else {
+    host_id = calloc(HOST_NAME_MAX + 1, 1);
+    if (host_id == NULL) {
+      *error_tag = "malloc-host-id";
+      return NULL;
+    }
+    if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
+      *error_tag = "get-machine-id";
+      return NULL;
+    }
+  }
+
+  char* host_id_type = NULL;
+  if (config->host_id_type != NULL) {
+    host_id_type = strdup(config->host_id_type);
+    if (host_id_type == NULL) {
+      *error_tag = "malloc-host-id-type";
+      free(host_id);
+      return NULL;
+    }
+  }
+
+  char* action = NULL;
+  size_t action_len = 0;
+
+  if (shell_action(config->username, &action, &action_len, error_tag)) {
+    free(host_id_type);
+    free(host_id);
+    return NULL;
+  }
+
+  if (config->options & VERBOSE) {
+    login_syslog(config, pamh, LOG_DEBUG,
+                 "host ID type: %s, host ID: %s, action: %s", host_id_type,
+                 host_id, action);
+  }
+
+  return glome_login_message(host_id_type, host_id, action);
+}
+
 int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
                        const char** error_tag) {
   uint8_t public_key[PUBLIC_KEY_LENGTH] = {0};
@@ -315,55 +365,10 @@ int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
   }
 
   // Derive content for the GLOME Login message.
-  char* message = NULL;
-  {
-    char* host_id = NULL;
 
-    if (config->host_id != NULL) {
-      host_id = strdup(config->host_id);
-      if (host_id == NULL) {
-        return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
-      }
-    } else {
-      host_id = calloc(HOST_NAME_MAX + 1, 1);
-      if (host_id == NULL) {
-        return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
-      }
-      if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
-        return failure(EXITCODE_PANIC, error_tag, "get-machine-id");
-      }
-    }
-
-    char* host_id_type = NULL;
-    if (config->host_id_type != NULL) {
-      host_id_type = strdup(config->host_id_type);
-      if (host_id_type == NULL) {
-        return failure(EXITCODE_PANIC, error_tag, "malloc-host-id-type");
-      }
-    }
-
-    char* action = NULL;
-    size_t action_len = 0;
-
-    if (shell_action(config->username, &action, &action_len, error_tag)) {
-      free(host_id_type);
-      free(host_id);
-      return EXITCODE_PANIC;
-    }
-
-    if (config->options & VERBOSE) {
-      login_syslog(config, pamh, LOG_DEBUG,
-                   "host ID type: %s, host ID: %s, action: %s", host_id_type,
-                   host_id, action);
-    }
-
-    message = glome_login_message(host_id_type, host_id, action);
-    free(host_id_type);
-    free(host_id);
-    free(action);
-    if (!message) {
-      return failure(EXITCODE_PANIC, error_tag, "glome-login-message");
-    }
+  char* message = create_login_message(config, pamh, error_tag);
+  if (!message) {
+    return failure(EXITCODE_PANIC, error_tag, "glome-login-message");
   }
 
   // Prepare auth code for verification of response.
