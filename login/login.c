@@ -114,12 +114,12 @@ void timeout_handler(int sig) {
 
 int shell_action(const char* user, char** action, size_t* action_len,
                  const char** error_tag) {
-  size_t buf_len = strlen("shell/") + strlen(user) + 1;
+  size_t buf_len = strlen("shell=") + strlen(user) + 1;
   char* buf = calloc(buf_len, 1);
   if (buf == NULL) {
     return failure(EXITCODE_PANIC, error_tag, "message-calloc-error");
   }
-  int ret = snprintf(buf, buf_len, "shell/%s", user);
+  int ret = snprintf(buf, buf_len, "shell=%s", user);
   if (ret < 0) {
     free(buf);
     return failure(EXITCODE_PANIC, error_tag, "message-sprintf-error");
@@ -134,32 +134,13 @@ int shell_action(const char* user, char** action, size_t* action_len,
   return 0;
 }
 
-char* escape_host(const char* host) {
-  size_t host_len = strlen(host);
-  char *ret = malloc(host_len * 3 + 1), *ret_end = ret;
-  if (ret == NULL) {
-    return NULL;
-  }
-  // Only /, ?, and # would be problematic given our URL encoding
-  for (size_t i = 0; i < host_len; ++i) {
-    if (host[i] == '/' || host[i] == '?' || host[i] == '#') {
-      ret_end += snprintf(ret_end, 3 + 1, "%%%02X", host[i]);
-    } else {
-      ret_end[0] = host[i];
-      ret_end += 1;
-    }
-  }
-  ret_end[0] = '\0';
-  return ret;
-}
-
 int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                       int service_key_id,
                       const uint8_t public_key[PUBLIC_KEY_LENGTH],
-                      const char* host_id, const char* action,
+                      const char* message,
                       const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
                       size_t prefix_tag_len, char** challenge,
-                      int* challenge_len, const char** error_tag) {
+                      const char** error_tag) {
   if (prefix_tag_len > GLOME_MAX_TAG_LENGTH) {
     return failure(EXITCODE_PANIC, error_tag, "prefix-tag-too-large");
   }
@@ -172,11 +153,16 @@ int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
   uint8_t handshake[PUBLIC_KEY_LENGTH + 1 + GLOME_MAX_TAG_LENGTH] = {0};
   size_t handshake_len = PUBLIC_KEY_LENGTH + 1 + prefix_tag_len;
 
-  if (service_key_id == 0) {
-    // If no key ID was specified, send the first key byte as the ID.
-    handshake[0] = service_key[0] & 0x7f;
+  if (service_key_id < 0 || service_key_id > 127) {
+    // If no key ID was specified, send the most significant key byte as the ID.
+    handshake[0] = service_key[GLOME_MAX_PUBLIC_KEY_LENGTH - 1];
+    // Indicate 'service key prefix' by setting the high bit 0.
+    handshake[0] &= 0x7f;
   } else {
-    handshake[0] = service_key_id & 0x7f;
+    //
+    handshake[0] = (uint8_t)service_key_id;
+    // Indicate 'service key index' by setting the high bit 1.
+    handshake[0] |= 0x80;
   }
 
   memcpy(handshake + 1, public_key, PUBLIC_KEY_LENGTH);
@@ -190,33 +176,21 @@ int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
     return failure(EXITCODE_PANIC, error_tag, "handshake-encode");
   }
 
-  char* host_id_escaped = escape_host(host_id);
-  if (host_id_escaped == NULL) {
-    return failure(EXITCODE_PANIC, error_tag, "host-id-malloc-error");
-  }
+  // Compute the required buffer length for the concatenated challenge string:
+  //   "v2/" ++ handshake_encoded ++ "/" ++ message ++ "/\x00"
+  int len = strlen("v2/") + strlen(handshake_encoded) + strlen(message) + 3;
 
-  int len = strlen("v1/") + strlen(handshake_encoded) + 1 +
-            strlen(host_id_escaped) + 1 + strlen(action) + 2;
-  char* buf = malloc(len);
+  char* buf = calloc(len, 1);
   if (buf == NULL) {
-    free(host_id_escaped);
     return failure(EXITCODE_PANIC, error_tag, "challenge-malloc-error");
   }
-  int ret = snprintf(buf, len, "v1/%s/%s/%s/", handshake_encoded,
-                     host_id_escaped, action);
-  free(host_id_escaped);
-  host_id_escaped = NULL;
-  if (ret < 0) {
-    free(buf);
-    return failure(EXITCODE_PANIC, error_tag, "challenge-sprintf-error");
-  }
-  if (ret >= len) {
-    free(buf);
-    return failure(EXITCODE_PANIC, error_tag, "challenge-sprintf-trunc");
-  }
-
   *challenge = buf;
-  *challenge_len = len;
+  buf = stpcpy(buf, "v2/");
+  buf = stpcpy(buf, handshake_encoded);
+  buf = stpcpy(buf, "/");
+  buf = stpcpy(buf, message);
+  buf = stpcpy(buf, "/");
+
   return 0;
 }
 
@@ -326,113 +300,120 @@ int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
 }
 #endif
 
-int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
-                       const char** error_tag) {
-  if (is_zeroed(config->service_key, sizeof config->service_key)) {
-    return failure(EXITCODE_PANIC, error_tag, "no-service-key");
-  }
-
-  uint8_t public_key[PUBLIC_KEY_LENGTH] = {0};
-  if (derive_or_generate_key(config->secret_key, public_key)) {
-    return failure(EXITCODE_PANIC, error_tag, "derive-or-generate-key");
-  }
-
+static char* create_login_message(glome_login_config_t* config,
+                                  pam_handle_t* pamh, const char** error_tag) {
   char* host_id = NULL;
+
   if (config->host_id != NULL) {
     host_id = strdup(config->host_id);
     if (host_id == NULL) {
-      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
+      *error_tag = "malloc-host-id";
+      return NULL;
     }
   } else {
     host_id = calloc(HOST_NAME_MAX + 1, 1);
     if (host_id == NULL) {
-      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id");
+      *error_tag = "malloc-host-id";
+      return NULL;
     }
     if (get_machine_id(host_id, HOST_NAME_MAX + 1, error_tag) < 0) {
-      return failure(EXITCODE_PANIC, error_tag, "get-machine-id");
+      *error_tag = "get-machine-id";
+      return NULL;
     }
   }
 
+  char* host_id_type = NULL;
   if (config->host_id_type != NULL) {
-    size_t host_id_len = strlen(config->host_id_type) + 1 + strlen(host_id) + 1;
-    char* host_id_full = calloc(host_id_len, 1);
-    if (host_id_full == NULL) {
-      return failure(EXITCODE_PANIC, error_tag, "malloc-host-id-full");
+    host_id_type = strdup(config->host_id_type);
+    if (host_id_type == NULL) {
+      *error_tag = "malloc-host-id-type";
+      free(host_id);
+      return NULL;
     }
-    int ret = snprintf(host_id_full, host_id_len, "%s:%s", config->host_id_type,
-                       host_id);
-    if (ret < 0) {
-      free(host_id_full);
-      return failure(EXITCODE_PANIC, error_tag, "generate-host-id-full");
-    }
-    if ((size_t)ret >= host_id_len) {
-      free(host_id_full);
-      return failure(EXITCODE_PANIC, error_tag, "generate-host-id-full");
-    }
-    free(host_id);
-    host_id = host_id_full;
   }
 
   char* action = NULL;
   size_t action_len = 0;
 
   if (shell_action(config->username, &action, &action_len, error_tag)) {
+    free(host_id_type);
     free(host_id);
-    return EXITCODE_PANIC;
+    return NULL;
   }
 
   if (config->options & VERBOSE) {
-    login_syslog(config, pamh, LOG_DEBUG, "host ID: %s, action: %s", host_id,
-                 action);
+    login_syslog(config, pamh, LOG_DEBUG,
+                 "host ID type: %s, host ID: %s, action: %s", host_id_type,
+                 host_id, action);
   }
 
+  return glome_login_message(host_id_type, host_id, action);
+}
+
+int login_authenticate(glome_login_config_t* config, pam_handle_t* pamh,
+                       const char** error_tag) {
+  uint8_t public_key[PUBLIC_KEY_LENGTH] = {0};
+
+  // Sanity check key material.
+
+  if (is_zeroed(config->service_key, sizeof config->service_key)) {
+    return failure(EXITCODE_PANIC, error_tag, "no-service-key");
+  }
+
+  if (derive_or_generate_key(config->secret_key, public_key)) {
+    return failure(EXITCODE_PANIC, error_tag, "derive-or-generate-key");
+  }
+
+  // Derive content for the GLOME Login message.
+
+  char* message = create_login_message(config, pamh, error_tag);
+  if (!message) {
+    return failure(EXITCODE_PANIC, error_tag, "glome-login-message");
+  }
+
+  // Prepare auth code for verification of response.
+
   uint8_t authcode[GLOME_MAX_TAG_LENGTH];
-  if (get_authcode(host_id, action, config->service_key, config->secret_key,
-                   authcode)) {
-    free(host_id);
-    free(action);
+  if (glome_tag(/*verify=*/true, 0, config->secret_key, config->service_key,
+                (uint8_t*)message, strlen(message), authcode)) {
+    free(message);
     return failure(EXITCODE_PANIC, error_tag, "get-authcode");
   }
 
-  char* challenge = NULL;
-  int challenge_len = 0;
-  if (request_challenge(config->service_key, config->service_key_id, public_key,
-                        host_id, action, /*prefix_tag=*/NULL,
-                        /*prefix_tag_len=*/0, &challenge, &challenge_len,
-                        error_tag)) {
-    free(host_id);
-    free(action);
-    return EXITCODE_PANIC;
-  }
+  // Create the final prompt.
 
-  free(host_id);
-  host_id = NULL;
-  free(action);
-  action = NULL;
+  char* prompt = NULL;
+  {
+    char* challenge = NULL;
+    // TODO: Why does this not do a prefix?
+    if (request_challenge(config->service_key, config->service_key_id,
+                          public_key, message,
+                          /*prefix_tag=*/NULL,
+                          /*prefix_tag_len=*/0, &challenge, error_tag)) {
+      free(message);
+      return EXITCODE_PANIC;
+    }
 
-  const char* prompt = "";
-  if (config->prompt != NULL) {
-    prompt = config->prompt;
-  }
-  size_t message_len = strlen(prompt) + strlen(challenge) + 1;
-  char* message = malloc(message_len);
-  if (message == NULL) {
-    free(challenge);
-    return failure(EXITCODE_PANIC, error_tag, "malloc-message");
-  }
-  message[0] = '\0';  // required by strncat()
-  strncat(message, prompt, message_len - 1);
-  strncat(message, challenge, message_len - strlen(message) - 1);
-  free(challenge);
-  challenge = NULL;
-  if (message[message_len - 1] != '\0') {
     free(message);
-    return failure(EXITCODE_PANIC, error_tag, "strncat-failure");
+    message = NULL;
+
+    const char* prompt_prefix = "";
+    if (config->prompt != NULL) {
+      prompt_prefix = config->prompt;
+    }
+    size_t prompt_len = strlen(prompt_prefix) + strlen(challenge) + 1;
+    prompt = calloc(prompt_len, 1);
+    if (prompt == NULL) {
+      free(challenge);
+      return failure(EXITCODE_PANIC, error_tag, "malloc-message");
+    }
+    stpcpy(stpcpy(prompt, prompt_prefix), challenge);
+    free(challenge);
   }
 
   char input[ENCODED_BUFSIZE(GLOME_MAX_TAG_LENGTH)];
-  int rc = login_prompt(config, pamh, error_tag, message, input, sizeof(input));
-  free(message);
+  int rc = login_prompt(config, pamh, error_tag, prompt, input, sizeof(input));
+  free(prompt);
   message = NULL;
 
   if (rc != 0) {

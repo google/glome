@@ -60,18 +60,24 @@ int shell_action(const char* user, char** action, size_t* action_len,
 // Construct a challenge given the key parameters, host ID, an action, and
 // optionally a message prefix tag.
 //
-// The length of the message prefix tag is in bytes. Only tag sizes of multiples
-// by 8 is supported.
+// service_key_id is the numerical 7 bit identifier of the server's public key.
+// A negative service_key_id indicates to use the public key prefix instead.
 //
-// Caller is expected to free returned challenge.
-// On error, the error_tag is set to an error token which should NOT be freed.
+// If prefix_tag is supplied, it will be appended to the challenge for error
+// detection at the server side.
+//
+// On success, 0 is returned and challenge contains a pointer to a
+// NUL-terminated string, which must be freed by the caller.
+//
+// On error, a non-zero value is returned and the error_tag is set to an error
+// token which should NOT be freed.
 int request_challenge(const uint8_t service_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
                       int service_key_id,
                       const uint8_t public_key[PUBLIC_KEY_LENGTH],
-                      const char* host_id, const char* action,
+                      const char* message,
                       const uint8_t prefix_tag[GLOME_MAX_TAG_LENGTH],
                       size_t prefix_tag_len, char** challenge,
-                      int* challenge_len, const char** error_tag);
+                      const char** error_tag);
 
 // Set the error_tag to the given error token and return the error code.
 int failure(int code, const char** error_tag, const char* message);

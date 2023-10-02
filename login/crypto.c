@@ -14,6 +14,7 @@
 
 #include "crypto.h"
 
+#include <ctype.h>
 #include <glome.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,44 +39,84 @@ int derive_or_generate_key(uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
   }
 }
 
-static int login_tag(bool verify, const char* host_id, const char* action,
-                     const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                     const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
-                     uint8_t output[GLOME_MAX_TAG_LENGTH]) {
-  size_t message_len = strlen(host_id) + 1 + strlen(action) + 1;
-  char* message = calloc(message_len, 1);
+static const char* valid_url_path_chars = "-._~!$&'()*+,;=";
+
+static const size_t escaped_char_length = 3;
+
+// Escape a string for use as an URL path segment. All characters in the extra
+// string are escaped, even if they would not need to be by the spec, so that
+// they can be used as delimiters, too.
+//
+// See: https://url.spec.whatwg.org/#url-path-segment-string
+static char* urlescape_path(const char* src, const char* extra) {
+  if (!src) return NULL;
+  if (!extra) extra = "";
+
+  // First pass: output length
+
+  size_t output_length = 1;  // We need at least the trailing NUL byte.
+  for (const char* c = src; *c != '\0'; c++) {
+    if (!strchr(extra, *c) &&
+        (isalnum(*c) || strchr(valid_url_path_chars, *c))) {
+      output_length += 1;
+    } else {
+      output_length += escaped_char_length;
+    }
+  }
+  char* dst = calloc(output_length, 1);
+  if (!dst) return dst;
+
+  // Second pass: copy over and escape
+
+  int dst_offset = 0;
+  for (const char* next_char = src; *next_char != '\0'; next_char++) {
+    if (!strchr(extra, *next_char) &&
+        (isalnum(*next_char) || strchr(valid_url_path_chars, *next_char))) {
+      dst[dst_offset] = *next_char;
+      dst_offset++;
+    } else {
+      snprintf(dst + dst_offset, escaped_char_length + 1, "%%%02X", *next_char);
+      dst_offset += escaped_char_length;
+    }
+  }
+  return dst;
+}
+
+char* glome_login_message(const char* host_id_type, const char* host_id,
+                          const char* action) {
+  char *host_id_type_escaped = NULL, *host_id_escaped = NULL,
+       *action_escaped = NULL, *message = NULL;
+
+  host_id_escaped = urlescape_path(host_id, ":");
+  action_escaped = urlescape_path(action, "");
+  if (!host_id_escaped || !action_escaped) goto end;
+
+  size_t message_len = strlen(host_id_escaped) + 1 + strlen(action_escaped) + 1;
+
+  // Only prefix host_id_type if it's not empty.
+  if (host_id_type && *host_id_type) {
+    host_id_type_escaped = urlescape_path(host_id_type, ":");
+    if (!host_id_type_escaped) goto end;
+    message_len += strlen(host_id_type_escaped) + 1;
+  }
+
+  message = calloc(message_len, 1);
   if (message == NULL) {
-    return -1;
-  }
-  int ret = snprintf(message, message_len, "%s/%s", host_id, action);
-  if (ret < 0) {
-    free(message);
-    return -1;
-  }
-  if ((size_t)ret >= message_len) {
-    free(message);
-    return -1;
-  }
-  if (glome_tag(verify, 0, private_key, peer_key, (uint8_t*)message,
-                strlen(message), output) != 0) {
-    free(message);
-    return -1;
+    goto end;
   }
 
-  free(message);
-  return 0;
-}
+  char* dst = message;
+  if (host_id_type_escaped) {
+    dst = stpcpy(dst, host_id_type_escaped);
+    *(dst++) = ':';
+  }
+  dst = stpcpy(dst, host_id_escaped);
+  *(dst++) = '/';
+  dst = stpcpy(dst, action_escaped);
 
-int get_authcode(const char* host_id, const char* action,
-                 const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                 const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
-                 uint8_t authcode[GLOME_MAX_TAG_LENGTH]) {
-  return login_tag(true, host_id, action, peer_key, private_key, authcode);
-}
-
-int get_msg_tag(const char* host_id, const char* action,
-                const uint8_t peer_key[GLOME_MAX_PUBLIC_KEY_LENGTH],
-                const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
-                uint8_t tag[GLOME_MAX_TAG_LENGTH]) {
-  return login_tag(false, host_id, action, peer_key, private_key, tag);
+end:
+  free(host_id_type_escaped);
+  free(host_id_escaped);
+  free(action_escaped);
+  return message;
 }
