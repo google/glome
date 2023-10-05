@@ -17,6 +17,9 @@ If the authorization code matches the one calculated internally by
 `glome-login`, the user is authorized and glome-login executes the requested
 action - e.g. providing the login shell or rebooting the machine.
 
+This document describes version 2 of GLOME Login, see also
+[RFD001](rfd/001.md) for a rationale of the protocol elements.
+
 ## Implementation
 
 The current version of the GLOME login protocol uses the
@@ -24,54 +27,39 @@ The current version of the GLOME login protocol uses the
 Counters are set to constant `0` since only a single set of messages
 is exchanged.
 
-*   GLOME handshake information and tags are encoded as Base64-encoded URLs or
-    "base64url"
-    [[RFC4648 section 5](https://tools.ietf.org/html/rfc4648#section-5)].
-*   Initial message from the GLOME login client to the server contains the
-    context required for authorization (i.e. host identity, requested action).
-*   The authorization context is sent in clear for easier debuggability and
-    reducing the likelihood of human errors (e.g. incomplete URL copy and
-    paste).
-*   Server's public key can be identified by:
-    *   7-bit service key identifier and message tag prefix (of any
-        length, including 0).
-    *   7-bit service key prefix and message tag prefix (of any length,
-        including 0),
-*   Using a message tag prefix provides an additional protection against channel
-    errors (e.g. caused by operator errors).
-*   The message sent from the GLOME login client to the server contains the context required for authorization (i.e. host identity, requested action).
-*   In this protocol the client and the server sign identical messages.
-    the client to the server, and therefore is omitted.
+The protocol assumes that the client (i.e., the Linux machine being accessed),
+knows the public key of the server. Required elements of the protocol are:
+
+* A host identifier that uniquely identifies the client.
+* An action on the client that needs to be authorized by the server.
+
+These optional elements can provide additional information to the server:
+
+* A host identifier type, among which the host identifier is unique.
+* A server key index, to tell the server which private key to use.
+* A message tag prefix, to allow error detection on the server side.
+
+The client combines these elements into a challenge string, which the server
+validates and responds to with a GLOME tag. GLOME Login challenges are suitable
+for embedding into a URL.
 
 ### Challenge request format
 
 The GLOME login client generates the challenge in the form:
 
-```
-v<V>/<glome-handshake>[/<message>]/
+```abnf
+challenge = "v2/" handshake-segment "/" message "/"
 
-glome-handshake := base64url(
-    <prefix-type>
-    <prefix7>
-    <eph-key>
-    [<prefixN>]
-  )
+handshake-segment = Base64_urlsafe( prefix client-public-key [message-tag-prefix] )
 
-message := [<hostid-type>:]<hostid>[/<action>]
+message = host-segment "/" action-segment
+host-segment = EscapePathSegment( [hostid-type ":"] hostid )
+action-segment = EscapePathSegment(action)
 ```
 
-where <fields> have the following meanings:
+The individual elements of this specification are described in the subsections below.
 
-| Field           |      Length | Description                                      |
-| :-------------- | ----------: | :----------------------------------------------- |
-| V               | 1 byte      | Challenge format version. Currently always 1.    |
-| prefix-type     | 1 bits      | Determines the meaning of (prefix7; prefixN) fields: <br><ul><li>0: (service key indicator; message tag prefix)</li><li>1: reserved</li></ul>Service key indicator is either index, or if no index found will be matched<br>with the public key (to be administrator configurable) |
-| prefix7         | 7 bits      | Purpose determined by prefix-type.               |
-| eph-key         | 32 bytes    | Client's public key (ephemeral).                 |
-| prefixN         | 0..32 bytes | Purpose determined by prefix-type, right now message tag prefix. |
-| hostid-type     | 0..n bytes  | Type of identity; `hostname` if not set          |
-| hostid          | 1..n bytes  | Identity of the target (e.g. hostname, serial number, etc.) |
-| action          | 0..n bytes  | Action that is being authorized (e.g. reboot, shell).<br>Both parties should agree what the default action is if not set. |
+#### Challenge Transport Considerations
 
 The client should then output the resulting challenge prefixed by the
 configured prompt. In practice, that configurable prefix can be used to present
@@ -83,53 +71,62 @@ server to detect truncated requests and reject those early. Without the
 trailing slash requirement the request will still likely look correct but may
 result in an invalid request being signed causing confusion for the operator.
 
+#### Host ID
+
+The client identifies itself as a named host, using the host id field. This id
+often is a fully qualified domain name, so adhering to domain name restrictions
+when choosing host ids is a good idea. However, these restrictions are not
+enforced by this protocol, but the host id should not need to be encoded for
+inclusion as a URL path segment, and it should not include a `:` character, as
+that is used to separate type and id.
+
+Providing a host id type is optional, but can help with the interpretation of
+the host id itself. It is subject to the same encoding considerations as the id
+itself. If no host id type is provided, host ids should be interpreted as host
+names.
+
 #### Action
 
 The `<action>` field represents the action being authorized and should not
 be ambiguous in a way that affects security. The format of the action is left
 up to the implementer to decide but it has to take into account these points:
 
-  * The `<action>` needs to be suitable for embedding in a URL.
+  * The `<action>` should be suitable for embedding in a URL path element
+    (see also the section on encodings below).
   * The `<action>` should be human readable and easy to understand
     both as part of the URL and stand alone.
 
 Good examples:
 
-  * `shell/root` starts a shell as the given user, root in this case.
+  * `shell=root` starts a shell as the given user, root in this case.
   * `reboot` reboots the target.
-  * `show-logs/httpd` outputs debug logs for the HTTPD application.
+  * `show-logs=httpd` outputs debug logs for the `httpd` application.
 
 Bad examples:
 
   * `exec` executes a command.
     * This is bad because it does not specify which command is being executed.
-  * `exec/cm0gLWZyIC8=` executes a given command (Base64 encoded).
+  * `exec=cm0gLWZyIC8=` executes a given command (Base64 encoded).
     * This is not human readable.
   * `shell` starts a shell as an user-provided but undisclosed user.
     * This is bad if there exists ambiguity on which user the shell will launch
       as. E.g. if the system is hard-coded to only allow login as root, this
       example is OK - otherwise not.
+  * `shell/root`
+    * This used to be the recommended format in v1, but it creates ambiguity
+      between the host part and the action part and will thus be
+      percent-encoded, which harms legibility.
 
-#### Challenge construction
+#### Handshake
 
-Care must be taken to ensure that the challenge outputted by the GLOME login
-client is suitable to be embedded in an URL.
+The prefix is one byte, of which the most significant bit disambiguates the use
+of the low 7 bit. If the MSB is set, the low bits are interpreted as a 7 bit
+integer, which the server should interpret as the index of the key its supposed
+to use. If the MSB is not set, the entire byte represents the most significant
+byte of the public key that the server is supposed to use.
 
-A GLOME login client should make sure to format the challenge as per [[RFC 3986
-Section 2.4](https://tools.ietf.org/html/rfc3986#section-2.4)]. The intent
-should be to maximize the human readability of the URL.
-
-**Example:** If the challenge prefix is set to `https://glome.example.com/` and
-the challenge is `v1/ABCD…/serial:ab@!c/action/` the resulting challenge should
-be presented as `https://glome.example.com/v1/ABCD…/serial:ab@!c/action/`.
-The important lesson from this example is that `serial:ab@!c` is **not** encoded
-using percent encoding as there is no reason to and would sacrifice human
-readability needlessly.
-
-Finally it is recommended to verify that commonly used terminal emulators
-correctly identify the whole URL when outputted.
-
-#### Message tag prefix
+The public key corresponding to the client's ephemeral key for this challenge
+is appended as raw 32 bytes, in the encoding specified in RFC 7748.
 
 The message tag prefix is calculated by the client as the MAC tag over the
 `<message>` field. The client can choose to include as much of the tag as it
@@ -144,6 +141,22 @@ the server enforces its inclusion. However, the message tag prefix is still
 useful to detect accidental message corruption. It can also be used to
 resolve ambiguity in which service key was used by the client.
 
+For an efficient base64-encoding, the raw message tag prefix should have a
+length divisible by 3.
+
+#### Encodings
+
+In order to safely embed the handshake and message in a URL, the individual
+protocol elements need to be encoded.
+
+The handshake is encoded using URL-safe Base64, as specified in
+<https://www.rfc-editor.org/rfc/rfc4648#section-5>.
+
+The message consists of two path elements, which are encoded individually,
+using the percent-encoding scheme specified in
+<https://url.spec.whatwg.org/#percent-encoded-bytes>, and then joined by a `/`
+character.
+
 ### Response format
 
 The response is a Base64 URL-safe (base64url) MAC tag computed over the
@@ -154,74 +167,10 @@ slowed down by introducing an artificial delay before comparing the tags.
 
 ### Test vectors
 
-These are some example test cases that can be used to verify an implementation
-of the GLOME login protocol.  Octet strings (keys and tags) are represented in
-hexadecimal encoding, message counters in their decimal represenation and
-messages and strings in ASCII encoding.
-
-[Ka]: https://render.githubusercontent.com/render/math?math=K_a
-[Ka']: https://render.githubusercontent.com/render/math?math=K_a^%27
-[Kb]: https://render.githubusercontent.com/render/math?math=K_b
-[Kb']: https://render.githubusercontent.com/render/math?math=K_b^%27
-[Ks]: https://render.githubusercontent.com/render/math?math=K_s
-[Mn]: https://render.githubusercontent.com/render/math?math=M_n
-[T]: https://render.githubusercontent.com/render/math?math=T
-
-For in-depth definition of the GLOME variables, see the [protocol](protocol.md)
-specification. In summary note that
-![K_x'](https://render.githubusercontent.com/render/math?math=K_x^%27) is the
-private key and
-![K_x](https://render.githubusercontent.com/render/math?math=K_x) is the
-associated public key.
-
-#### Vector 1
-
-Login request using service key index 1, message tag prefix length of 16 bits,
-and response tag length of 60 bits.
-
-|               Variable | Value                                                              |
-|-----------------------:|:-------------------------------------------------------------------|
-| ![K_a'][Ka']           | `77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a` |
-| ![K_b'][Kb']           | `5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb` |
-| `prefix-type`          | `0`                                                                |
-| `prefix7`              | `1`                                                                |
-| `eph-key` (![K_a][Ka]) | `8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a` |
-| `hostid-type`          | Omitted                                                            |
-| `hostid`               | `my-server.local`                                                  |
-| `action`               | `shell/root`                                                       |
-|                        |                                                                    |
-| ![K_b][Kb]             | `de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f` |
-| ![K_s][Ks]             | `4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742` |
-| ![M_n][Mn]             | `my-server.local/shell/root`                                       |
-| `prefixN`              | `d0f59d0b17cb155a1b9cd2b5cdea3a17f37a200e95e3651af2c88e1c5fc8108e` |
-| ![T][T]                | `9721ee687b827249dbe6c244ba459216cf01d525012163025df358eb87c89059` |
-|                        |                                                                    |
-| Challenge              | `v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/` |
-| Response token         | `lyHuaHuCck`                                                       |
-
-#### Vector 2
-
-Login request using service key prefix, no message tag prefix, and full response tag.
-
-|               Variable | Value                                                              |
-|-----------------------:|:-------------------------------------------------------------------|
-| ![K_a'][Ka']           | `fee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1dead` |
-| ![K_b'][Kb']           | `b105f00db105f00db105f00db105f00db105f00db105f00db105f00db105f00d` |
-| `prefix-type`          | `0`                                                                |
-| `prefix7`              | `0x51`                                                             |
-| `eph-key` (![K_a][Ka]) | `872f435bb8b89d0e3ad62aa2e511074ee195e1c39ef6a88001418be656e3c376` |
-| `hostid-type`          | `serial-number`                                                    |
-| `hostid`               | `1234567890=ABCDFGH/#?`                                            |
-| `action`               | `reboot`                                                           |
-|                        |                                                                    |
-| ![K_b][Kb]             | `d1b6941bba120bcd131f335da15778d9c68dadd398ae61cf8e7d94484ee65647` |
-| ![K_s][Ks]             | `4b1ee05fcd2ae53ebe4c9ec94915cb057109389a2aa415f26986bddebf379d67` |
-| ![M_n][Mn]             | `serial-number:1234567890=ABCDFGH/#?/reboot`                       |
-| `prefixN`              | `dff5aae753a8bdce06038a20adcdb26c7be19cb6bd05a7850fae542f4af29720` |
-| ![T][T]                | `a7c33f0542a3ef35c154cd8995084d605c6ce09f83cf1440a6cf3765a343aae6` |
-|                        |                                                                    |
-| Challenge              | `v1/UYcvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/serial-number:1234567890=ABCDFGH%2F%23%3F/reboot/` |
-| Response token         | `p8M_BUKj7zXBVM2JlQhNYFxs4J-DzxRAps83ZaNDquY=`                     |
+Test vectors that conform to this specification are defined in
+[login-v2-test-vectors.yaml](login-v2-test-vectors.yaml). They describe two
+parties, Alice and Bob, who run through a GLOME Login challenge-response
+workflow. In these scenarios, Alice is always the client and Bob the server.
 
 ## Alternatives
 
