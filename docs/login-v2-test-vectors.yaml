@@ -1,6 +1,6 @@
 - vector: 1
 
-  alice: 
+  alice:
     private-key:
       hex: 77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a
       base64: dwdtCnMYpX08FsFyUbJmRd9ML4frwJkqsXf7pR25LCo=
@@ -12,7 +12,7 @@
     private-key:
       hex: 5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb
       base64: XasIfmJKikt54X+Lg4AO5m87sSkmGLb9HC+LJ/+I4Os=
-    public-key: 
+    public-key:
       hex: de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f
       glome-cli: "glome-v1 3p7bfXt9wbTTW2HC7OQ1Nz-DQ8hbeGdNrfx-FG-IK08="
 
@@ -27,7 +27,7 @@
 
 - vector: 2
 
-  alice: 
+  alice:
     private-key:
       hex: fee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1dead
       base64: /uHerf7h3q3+4d6t/uHerf7h3q3+4d6t/uHerf7h3q0=
@@ -39,7 +39,7 @@
     private-key:
       hex: b105f00db105f00db105f00db105f00db105f00db105f00db105f00db105f00d
       base64: sQXwDbEF8A2xBfANsQXwDbEF8A2xBfANsQXwDbEF8A0=
-    public-key: 
+    public-key:
       hex: d1b6941bba120bcd131f335da15778d9c68dadd398ae61cf8e7d94484ee65647
       glome-cli: "glome-v1 0baUG7oSC80THzNdoVd42caNrdOYrmHPjn2USE7mVkc="
 
