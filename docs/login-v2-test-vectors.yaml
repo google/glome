@@ -1,0 +1,53 @@
+- vector: 1
+
+  alice:
+    private-key:
+      hex: 77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a
+      base64: dwdtCnMYpX08FsFyUbJmRd9ML4frwJkqsXf7pR25LCo=
+    public-key:
+      hex: 8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a
+      glome-cli: "glome-v1 hSDwCYkwp1R0i33ctD73Wg2_Og0mOBr066SpjqqbTmo="
+
+  bob:
+    private-key:
+      hex: 5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb
+      base64: XasIfmJKikt54X+Lg4AO5m87sSkmGLb9HC+LJ/+I4Os=
+    public-key:
+      hex: de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f
+      glome-cli: "glome-v1 3p7bfXt9wbTTW2HC7OQ1Nz-DQ8hbeGdNrfx-FG-IK08="
+
+  prefix-length: 3
+  service-key-id: 0
+  host-id-type: mytype
+  host-id: myhost
+  action: root
+
+  message: "v2/gIUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05qlyPH/mytype:myhost/root/"
+  tag: BB4BYjXonlIRtXZORkQ5bF5xTZwW6o60ylqfCuyAHTQ=
+
+- vector: 2
+
+  alice:
+    private-key:
+      hex: fee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1deadfee1dead
+      base64: /uHerf7h3q3+4d6t/uHerf7h3q3+4d6t/uHerf7h3q0=
+    public-key:
+      hex: 872f435bb8b89d0e3ad62aa2e511074ee195e1c39ef6a88001418be656e3c376
+      glome-cli: "glome-v1 hy9DW7i4nQ461iqi5REHTuGV4cOe9qiAAUGL5lbjw3Y="
+
+  bob:
+    private-key:
+      hex: b105f00db105f00db105f00db105f00db105f00db105f00db105f00db105f00d
+      base64: sQXwDbEF8A2xBfANsQXwDbEF8A2xBfANsQXwDbEF8A0=
+    public-key:
+      hex: d1b6941bba120bcd131f335da15778d9c68dadd398ae61cf8e7d94484ee65647
+      glome-cli: "glome-v1 0baUG7oSC80THzNdoVd42caNrdOYrmHPjn2USE7mVkc="
+
+  prefix-length: 0
+  service-key-id: null
+  host-id-type: ""
+  host-id: myhost
+  action: "exec=/bin/sh"
+
+  message: "v2/R4cvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/myhost/exec=%2Fbin%2Fsh/"
+  tag: ZmxczN4x3g4goXu-A2AuuEEVftgS6xM-6gYj-dRrlis=
