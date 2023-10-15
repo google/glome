@@ -27,7 +27,7 @@ The current version of the GLOME login protocol uses the
 Counters are set to constant `0` since only a single set of messages
 is exchanged.
 
-The protocol assumes that the client (i.e., the Linux machine being accessed),
+The protocol assumes that the client (i.e., the machine being accessed),
 knows the public key of the server. Required elements of the protocol are:
 
 * A host identifier that uniquely identifies the client.
@@ -57,7 +57,8 @@ host-segment = EscapePathSegment( [hostid-type ":"] hostid )
 action-segment = EscapePathSegment(action)
 ```
 
-The individual elements of this specification are described in the subsections below.
+The individual elements of this specification and the encoding functions are
+described in the subsections below.
 
 #### Challenge Transport Considerations
 
@@ -73,7 +74,7 @@ result in an invalid request being signed causing confusion for the operator.
 
 #### Host ID
 
-The client identifies itself as a named host, using the host id field. This id
+The client identifies itself as a named host, using the `hostid` field. This ID
 often is a fully qualified domain name, so adhering to domain name restrictions
 when choosing host ids is a good idea. However, these restrictions are not
 enforced by this protocol, but the host id should not need to be encoded for
