@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdlib.h>
+#include <syslog.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -63,6 +64,11 @@ int main(int argc, char* argv[]) {
   if (r < 0) {
     handle_error("parse-args");
     return EXITCODE_PANIC;
+  }
+
+  // Initialize syslog, if we're going to log.
+  if (config.options & SYSLOG) {
+    openlog(NULL, LOG_PID | LOG_CONS, LOG_AUTH);
   }
 
   const char* error_tag = NULL;

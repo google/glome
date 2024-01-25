@@ -238,7 +238,7 @@ void login_syslog(glome_login_config_t* config, pam_handle_t* pamh,
   if (config->options & SYSLOG) {
     va_list args;
     va_start(args, format);
-    vsyslog(priority, format, args);
+    vsyslog(LOG_MAKEPRI(LOG_AUTH, priority), format, args);
     va_end(args);
   }
 }
@@ -516,9 +516,6 @@ int login_run(glome_login_config_t* config, const char** error_tag) {
         "debug: auth delay: %d seconds\n",
         config->options, config->username, config->login_path,
         config->auth_delay_sec);
-  }
-  if (config->options & SYSLOG) {
-    openlog("glome-login", LOG_PID | LOG_CONS, LOG_AUTH);
   }
 
   int r = login_authenticate(config, NULL, error_tag);
