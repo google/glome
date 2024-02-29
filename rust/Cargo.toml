@@ -1,0 +1,23 @@
+[package]
+name = "glome"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = [ "dalek" ]
+dalek = [ "dep:x25519-dalek" ]
+openssl = [ "dep:openssl" ]
+
+[dependencies]
+sha2 = "0.10"
+hmac = "0.12"
+x25519-dalek = { version = "2.0", features = ["getrandom", "static_secrets"], optional = true }
+openssl = { version = "0.10", optional = true }
+
+[dev-dependencies]
+# test
+hex-literal = "0.3"
+
+[lib]
+name = "glome"
+path = "src/lib.rs"
