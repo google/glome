@@ -359,10 +359,17 @@ int login(int argc, char **argv) {
     fprintf(stderr, "handshake size is invalid in path %s\n", path);
     goto out;
   }
-  if ((handshake[0] & 0x80) != 0) {
-    fprintf(stderr,
-            "only \"service-key-indicator\" prefix type is supported\n");
-    goto out;
+  if ((handshake[0] & 0x80) == 0) {
+    uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
+    if (glome_derive_key(private_key, public_key)) {
+      fprintf(stderr, "unable to generate a public key\n");
+      goto out;
+    }
+    uint8_t public_key_msb = public_key[GLOME_MAX_PUBLIC_KEY_LENGTH - 1];
+    if (handshake[0] != (public_key_msb & 0x7f)) {
+      fprintf(stderr, "unexpected public key prefix\n");
+      goto out;
+    }
   }
   uint8_t peer_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   memcpy(peer_key, handshake + 1, GLOME_MAX_PUBLIC_KEY_LENGTH);
