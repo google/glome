@@ -41,6 +41,7 @@
 #include "ui.h"
 
 #define PROMPT "> "
+#define BRACKETED_PASTE_FINISH "\033[?2004l\r"
 
 #define DMI_UUID_PATH "/sys/class/dmi/id/product_uuid"
 #define DMI_UUID_SIZE 36
@@ -269,6 +270,10 @@ int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
                  size_t input_size) {
   UNUSED(pamh);
   UNUSED(error_tag);
+
+  // Disable bracketed paste. Special characters in the auth tag cause
+  // authentication to fail.
+  puts(BRACKETED_PASTE_FINISH);
 
   puts(message);
   fputs(PROMPT, stdout);
