@@ -22,7 +22,7 @@
 #include "base64.h"
 #include "crypto.h"
 
-static void test_shell_action() {
+static void test_shell_action(void) {
   const char* error_tag = NULL;
   char* action = NULL;
   size_t action_len = 0;
@@ -33,7 +33,7 @@ static void test_shell_action() {
   g_assert_null(error_tag);
 }
 
-static void test_vector_1() {
+static void test_vector_1(void) {
   const char* host_id_type = "mytype";
   const char* host_id = "myhost";
   const char* action = "root";
@@ -90,7 +90,7 @@ static void test_vector_1() {
   }
 }
 
-static void test_vector_2() {
+static void test_vector_2(void) {
   const char* host_id_type = "";
   const char* host_id = "myhost";
   const char* action = "exec=/bin/sh";
