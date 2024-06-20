@@ -39,6 +39,7 @@ pkg.generate(login_lib,
 
 glome_login = executable(
     'glome-login', ['main.c', 'login.c'],
+    dependencies : [openssl_dep],
     link_with : login_lib,
     include_directories : glome_incdir,
     install : true,
