@@ -138,7 +138,7 @@ void login_error(glome_login_config_t *config, pam_handle_t *pamh,
   }
 
   struct pam_message msg[1] = {
-      {.msg = message, .msg_style = PAM_ERROR_MSG},
+      {.msg = (char *)message, .msg_style = PAM_ERROR_MSG},
   };
   const struct pam_message *pmsg[1] = {&msg[0]};
   struct pam_response *resp = NULL;
@@ -169,7 +169,7 @@ int login_prompt(glome_login_config_t *config, pam_handle_t *pamh,
                  size_t input_size) {
   UNUSED(config);
   struct pam_message msg[1] = {
-      {.msg = message, .msg_style = PAM_TEXT_INFO},
+      {.msg = (char *)message, .msg_style = PAM_TEXT_INFO},
   };
   const struct pam_message *pmsg[1] = {&msg[0]};
   struct pam_response *resp = NULL;
