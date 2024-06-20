@@ -1,10 +1,8 @@
 # Generic Low Overhead Message Exchange (GLOME)
 
-**GLOME Login** is a [challenge-response authentication
-mechanism](https://en.wikipedia.org/wiki/Challenge%E2%80%93response_authentication).
-It resembles [one-time authorization
-codes](https://en.wikipedia.org/wiki/One-time_password) (aka OTPs) but is
-different from [HOTP] and [TOTP] in the following ways:
+**GLOME Login** is a [challenge-response] authentication mechanism.
+It resembles [one-time authorization codes][OTP] (aka OTPs) but is different
+from [HOTP] and [TOTP] in the following ways:
 
 - It is stateless (unlike [HOTP]).
 - It does not depend on time (unlike [TOTP]).
@@ -24,8 +22,10 @@ GLOME Login can be easily integrated with existing systems through
 [GLOME Login protocol](docs/glome-login.md) is is built on top of the [Generic
 Low Overhead Message Exchange (GLOME) protocol](docs/protocol.md).
 
-[TOTP]: https://www.rfc-editor.org/rfc/rfc6238 [HOTP]:
-https://www.rfc-editor.org/rfc/rfc4226
+[challenge-response]: https://en.wikipedia.org/wiki/Challenge%E2%80%93response_authentication
+[OTP]: https://en.wikipedia.org/wiki/One-time_password
+[TOTP]: https://www.rfc-editor.org/rfc/rfc6238
+[HOTP]: https://www.rfc-editor.org/rfc/rfc4226
 
 ## How does it work?
 
