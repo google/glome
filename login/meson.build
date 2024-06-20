@@ -72,9 +72,18 @@ endif
 if get_option('pam-glome')
     cc = meson.get_compiler('c')
     libpam = cc.find_library('pam')
+
+    args = ['-DPAM_GLOME']
+    pam_ext_present = cc.has_function('pam_syslog',
+        dependencies: libpam,
+        prefix: '#include <security/pam_ext.h>')
+    if pam_ext_present
+        args += ['-DPAM_GLOME_LINUX']
+    endif
+
     pam_glome = shared_library(
         'pam_glome', ['pam.c', 'login.c'],
-        c_args : '-DPAM_GLOME',
+        c_args : args,
         dependencies : [libpam, openssl_dep],
         link_with : [glome_lib, login_lib],
         include_directories : glome_incdir,

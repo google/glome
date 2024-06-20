@@ -15,8 +15,12 @@
 #include <errno.h>
 #include <limits.h>
 #include <openssl/crypto.h>
-#include <security/pam_ext.h>
 #include <security/pam_modules.h>
+#ifdef PAM_GLOME_LINUX
+#include <security/pam_ext.h>
+#else
+#include <security/pam_appl.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -28,6 +32,11 @@
 #include "ui.h"
 
 #define MODULE_NAME "pam_glome"
+
+#ifndef PAM_GLOME_LINUX
+void pam_syslog(void *pamh, ...) { (void)(pamh); }
+void pam_vsyslog(void *pamh, ...) { (void)(pamh); }
+#endif
 
 #define MAX_ERROR_MESSAGE_SIZE 4095
 
