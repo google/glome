@@ -20,7 +20,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: cpplint
       run: pip install cpplint && cpplint --recursive .
-  test:
+  test-linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -68,3 +68,22 @@ jobs:
         test -f build/out/usr/local/lib/x86_64-linux-gnu/libglome.so
         test -f build/out/usr/local/lib/security/pam_glome.so || \
         test -f build/out/usr/local/lib/x86_64-linux-gnu/security/pam_glome.so
+  test-macos:
+    runs-on: macos-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: python -m pip install meson ninja
+    - name: Setup build directory
+      run: meson --werror build
+      env:
+        CFLAGS: -Wno-strict-prototypes
+    - name: Build
+      run: ninja -C build
+    - name: Test
+      run: meson test --print-errorlogs -C build
