@@ -207,14 +207,15 @@ void login_syslog(glome_login_config_t* config, pam_handle_t* pamh,
                   int priority, const char* format, ...) {
   UNUSED(pamh);
   if (config->options & SYSLOG) {
-    char* buf = calloc(1024, 1);
+    const size_t buf_size = 1024;
+    char* buf = calloc(buf_size, 1);
     if (!buf) {
       return;
     }
 
     va_list args;
     va_start(args, format);
-    vsnprintf(buf, 1024, format, args);
+    vsnprintf(buf, buf_size, format, args);
     syslog(priority, "%s", buf);
     va_end(args);
   }
