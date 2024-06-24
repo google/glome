@@ -69,14 +69,18 @@ for n in 1 2; do
 done
 
 key="$t/vector-2/a"
-path="v2/R4cvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/myhost/exec=%2Fbin%2Fsh/"
 expected_tag="ZmxczN4x3g4goXu-A2AuuEEVftgS6xM-6gYj-dRrlis="
-tag=$("$binary" login --key "$key" "$path")
-if [ "$tag" != "$expected_tag" ]; then
+for path in \
+  "v2/R4cvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/myhost/exec=%2Fbin%2Fsh/" \
+  "v2/x4cvQ1u4uJ0OOtYqouURB07hleHDnvaogAFBi-ZW48N2/myhost/exec=%2Fbin%2Fsh/"
+do
+  tag=$("$binary" login --key "$key" "$path")
+  if [ "$tag" != "$expected_tag" ]; then
     echo "Generated wrong tag for test path $path" >&2
     echo "$expected_tag <- expected" >&2
     echo "$tag <- actual" >&2
     errors=$((errors + 1))
-fi
+  fi
+done
 
 exit "$errors"
