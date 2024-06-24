@@ -308,7 +308,10 @@ int login_prompt(glome_login_config_t* config, pam_handle_t* pamh,
 static char* create_login_message(glome_login_config_t* config,
                                   pam_handle_t* pamh, const char** error_tag) {
   char* host_id = NULL;
-  int max_hostname_len = sysconf(_SC_HOST_NAME_MAX) + 1;
+  int max_hostname_len = sysconf(_SC_HOST_NAME_MAX);
+  if (max_hostname_len == -1) {
+    max_hostname_len = _POSIX_HOST_NAME_MAX;
+  }
 
   if (config->host_id != NULL) {
     host_id = strdup(config->host_id);
@@ -317,12 +320,12 @@ static char* create_login_message(glome_login_config_t* config,
       return NULL;
     }
   } else {
-    host_id = calloc(max_hostname_len, 1);
+    host_id = calloc(max_hostname_len + 1, 1);
     if (host_id == NULL) {
       *error_tag = "malloc-host-id";
       return NULL;
     }
-    if (get_machine_id(host_id, max_hostname_len, error_tag) < 0) {
+    if (get_machine_id(host_id, max_hostname_len + 1, error_tag) < 0) {
       *error_tag = "get-machine-id";
       return NULL;
     }
