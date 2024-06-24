@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// For vsyslog
-#define _BSD_SOURCE
-#define _DEFAULT_SOURCE
-
 #include "login.h"
 
 #include <assert.h>
@@ -211,9 +207,15 @@ void login_syslog(glome_login_config_t* config, pam_handle_t* pamh,
                   int priority, const char* format, ...) {
   UNUSED(pamh);
   if (config->options & SYSLOG) {
+    char* buf = calloc(1024, 1);
+    if (!buf) {
+      return;
+    }
+
     va_list args;
     va_start(args, format);
-    vsyslog(LOG_MAKEPRI(LOG_AUTH, priority), format, args);
+    vsnprintf(buf, 1024, format, args);
+    syslog(priority, "%s", buf);
     va_end(args);
   }
 }
