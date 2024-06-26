@@ -78,7 +78,7 @@ if get_option('pam-glome')
         dependencies: libpam,
         prefix: '#include <security/pam_ext.h>')
     if pam_ext_present
-        args += ['-DPAM_GLOME_LINUX']
+        args += ['-DHAVE_PAM_EXT']
     endif
 
     pam_glome = shared_library(

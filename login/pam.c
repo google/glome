@@ -16,7 +16,7 @@
 #include <limits.h>
 #include <openssl/crypto.h>
 #include <security/pam_modules.h>
-#ifdef PAM_GLOME_LINUX
+#ifdef HAVE_PAM_EXT
 #include <security/pam_ext.h>
 #else
 #include <security/pam_appl.h>
@@ -33,7 +33,7 @@
 
 #define MODULE_NAME "pam_glome"
 
-#ifndef PAM_GLOME_LINUX
+#ifndef HAVE_PAM_EXT
 void pam_syslog(void *pamh, ...) { (void)(pamh); }
 void pam_vsyslog(void *pamh, ...) { (void)(pamh); }
 #endif
