@@ -15,8 +15,12 @@
 #include <errno.h>
 #include <limits.h>
 #include <openssl/crypto.h>
-#include <security/pam_ext.h>
 #include <security/pam_modules.h>
+#ifdef HAVE_PAM_EXT
+#include <security/pam_ext.h>
+#else
+#include <security/pam_appl.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -28,6 +32,11 @@
 #include "ui.h"
 
 #define MODULE_NAME "pam_glome"
+
+#ifndef HAVE_PAM_EXT
+void pam_syslog(void *pamh, ...) { (void)(pamh); }
+void pam_vsyslog(void *pamh, ...) { (void)(pamh); }
+#endif
 
 #define MAX_ERROR_MESSAGE_SIZE 4095
 
@@ -129,7 +138,7 @@ void login_error(glome_login_config_t *config, pam_handle_t *pamh,
   }
 
   struct pam_message msg[1] = {
-      {.msg = message, .msg_style = PAM_ERROR_MSG},
+      {.msg = (char *)message, .msg_style = PAM_ERROR_MSG},
   };
   const struct pam_message *pmsg[1] = {&msg[0]};
   struct pam_response *resp = NULL;
@@ -160,7 +169,7 @@ int login_prompt(glome_login_config_t *config, pam_handle_t *pamh,
                  size_t input_size) {
   UNUSED(config);
   struct pam_message msg[1] = {
-      {.msg = message, .msg_style = PAM_TEXT_INFO},
+      {.msg = (char *)message, .msg_style = PAM_TEXT_INFO},
   };
   const struct pam_message *pmsg[1] = {&msg[0]};
   struct pam_response *resp = NULL;

@@ -22,7 +22,7 @@
 #include "base64.h"
 #include "login.h"
 
-static void test_derive() {
+static void test_derive(void) {
   uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t expected_public_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
@@ -37,7 +37,7 @@ static void test_derive() {
                   sizeof public_key);
 }
 
-static void test_generate() {
+static void test_generate(void) {
   uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t empty_public_key[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
@@ -48,7 +48,7 @@ static void test_generate() {
       memcmp(empty_private_key, private_key, sizeof empty_private_key));
 }
 
-static void test_authcode() {
+static void test_authcode(void) {
   const char* host_id = "myhost";
   const char* action = "exec=/bin/sh";
 

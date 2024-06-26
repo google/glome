@@ -27,7 +27,7 @@ static const uint8_t DECODED_PUBLIC_KEY[32] = {
     0xeb, 0x98, 0x26, 0xc5, 0xe3, 0x4c, 0x15, 0x52, 0x16, 0x29, 0xe7,
     0x41, 0x58, 0x65, 0x1f, 0x6a, 0xf3, 0xf5, 0xf9, 0x28, 0x5e};
 
-static void test_parse_public_key() {
+static void test_parse_public_key(void) {
   uint8_t decoded[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   g_assert_true(glome_login_parse_public_key(ENCODED_PUBLIC_KEY, decoded,
                                              sizeof(decoded)));
@@ -54,7 +54,7 @@ static void test_parse_public_key() {
 
 static char* EXAMPLE_CFG = NULL;
 
-static void test_parse_config_file() {
+static void test_parse_config_file(void) {
   g_assert_true(EXAMPLE_CFG != NULL);
 
   glome_login_config_t config = {0};

@@ -26,7 +26,7 @@ static void decode_hex(uint8_t *dst, const char *in) {
   }
 }
 
-static void test_vector1() {
+static void test_vector1(void) {
   uint8_t ka_priv[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   uint8_t ka_pub[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t kb_pub[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
@@ -52,7 +52,7 @@ static void test_vector1() {
   g_assert_cmpmem(tag, sizeof tag, expected_tag, sizeof expected_tag);
 }
 
-static void test_vector2() {
+static void test_vector2(void) {
   uint8_t ka_pub[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
   uint8_t kb_priv[GLOME_MAX_PRIVATE_KEY_LENGTH] = {0};
   uint8_t kb_pub[GLOME_MAX_PUBLIC_KEY_LENGTH] = {0};
