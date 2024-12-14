@@ -110,6 +110,7 @@ pub mod tests {
     use crate::PrivateKey;
     use hex_literal::hex;
 
+    #[doc(hidden)]
     pub fn run_vector_1<T, F>(load_keypair: &F)
     where
         T: PrivateKey,
@@ -147,6 +148,7 @@ pub mod tests {
         ));
     }
 
+    #[doc(hidden)]
     pub fn run_vector_2<T, F>(load_keypair: &F)
     where
         T: PrivateKey,
