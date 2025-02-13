@@ -4,6 +4,7 @@ on:
     branches: ['master']
   pull_request:
     paths: ['rust/**', '.github/workflows/presubmit-rust.yml']
+  workflow_dispatch: {}
 
 defaults:
   run:

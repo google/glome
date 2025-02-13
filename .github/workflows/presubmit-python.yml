@@ -4,6 +4,7 @@ on:
     branches: ['master']
   pull_request:
     paths: ['python/**', '.github/workflows/presubmit-python.yml']
+  workflow_dispatch: {}
 
 defaults:
   run:

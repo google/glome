@@ -4,6 +4,7 @@ on:
     branches: ['master']
   pull_request:
     paths: ['**.sh', '.github/workflows/presubmit-shell.yml']
+  workflow_dispatch: {}
 
 jobs:
   shellcheck:
