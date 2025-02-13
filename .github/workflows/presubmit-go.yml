@@ -4,6 +4,7 @@ on:
     branches: ['master']
   pull_request:
     paths: ['go/**', '.github/workflows/presubmit-go.yml']
+  workflow_dispatch: {}
 
 defaults:
   run:
