@@ -24,6 +24,7 @@ fi
 
 t=$(mktemp -d)
 cleanup() {
+  # shellcheck disable=SC2317
   rm -rf -- "${t?}"
 }
 trap cleanup EXIT
