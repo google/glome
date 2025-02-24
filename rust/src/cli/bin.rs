@@ -1,4 +1,4 @@
-use base64::{engine::general_purpose, Engine as _};
+use base64::{alphabet, engine, engine::general_purpose, Engine as _};
 use clap::{Args, Parser, Subcommand};
 use glome::PrivateKey;
 use std::convert::TryInto;
@@ -29,6 +29,28 @@ struct TagArgs {
 }
 
 #[derive(Args)]
+struct VerifyArgs {
+    /// Path to secret key
+    #[arg(short, long, value_name = "FILE")]
+    key: PathBuf,
+    /// Path to peer's public key
+    #[arg(short, long, value_name = "FILE")]
+    peer: PathBuf,
+    /// Message counter index
+    #[arg(short, long, value_name = "n")]
+    counter: Option<u8>,
+    /// Minimum tag length
+    ///
+    /// Ideally a multiple of 4, defaults to 10 matching the
+    /// MIN_ENCODED_AUTHCODE_LEN in login/login.h.
+    /// Must be at least 2 and will be increased to 2 if the argument is lower.
+    #[arg(long, value_name = "n", default_value_t = 10)]
+    min_tag_length: u8,
+    /// Tag to verify
+    tag: String,
+}
+
+#[derive(Args)]
 struct LoginArgs {
     /// Path to secret key
     #[arg(short, long, value_name = "FILE")]
@@ -45,6 +67,8 @@ enum Glome {
     Pubkey,
     /// Tag a message read from stdin
     Tag(TagArgs),
+    /// Verify a message tag
+    Verify(VerifyArgs),
     /// Generate a tag for a GLOME-Login challenge
     Login(LoginArgs),
 }
@@ -106,6 +130,51 @@ fn gentag(args: &TagArgs, stdin: &mut dyn io::Read, stdout: &mut dyn io::Write) 
     Ok(stdout.write_all(encoded.as_bytes())?)
 }
 
+fn verify(args: &VerifyArgs, stdin: &mut dyn io::Read) -> CommandResult {
+    let min_tag_length = if args.min_tag_length > 2 {
+        args.min_tag_length
+    } else {
+        2
+    };
+    let ours: StaticSecret = read_key(&args.key)?.into();
+    let theirs: PublicKey = read_pub(&args.peer)?.into();
+    let ctr = args.counter.unwrap_or_default();
+    let mut msg = Vec::new();
+    stdin.read_to_end(&mut msg)?;
+
+    // We want to allow truncated tags, but not all truncations are valid
+    // base64. A single encoded byte only holds 6 bits and can't be decoded
+    // into a byte, so we need to ignore it by stripping it off.
+    let mut tag_b64 = args.tag.clone();
+    if tag_b64.len() % 4 == 1 {
+        tag_b64.truncate(tag_b64.len() - 1);
+    }
+
+    // Ensure that we're comparing at least one byte.
+    if tag_b64.len() < min_tag_length.into() {
+        return Err("tag too short".into());
+    }
+
+    // Truncation can cause trailing bits and missing padding if the truncated
+    // length is not a multiple of 4. Make sure that the base64 engine can deal
+    // with that.
+    let permissive_config = engine::GeneralPurposeConfig::new()
+        .with_decode_allow_trailing_bits(true)
+        .with_decode_padding_mode(engine::DecodePaddingMode::Indifferent);
+    let permissive_engine = engine::GeneralPurpose::new(&alphabet::URL_SAFE, permissive_config);
+
+    if !glome::verify(
+        &ours,
+        &theirs,
+        ctr,
+        &msg,
+        &permissive_engine.decode(tag_b64)?,
+    ) {
+        return Err("tags did not match".into());
+    }
+    Ok(())
+}
+
 fn login(args: &LoginArgs, stdout: &mut dyn io::Write) -> CommandResult {
     let ours: StaticSecret = read_key(&args.key)?.into();
 
@@ -160,6 +229,7 @@ fn main() -> CommandResult {
         Glome::Genkey => genkey(&mut io::stdout()),
         Glome::Pubkey => pubkey(&mut io::stdin(), &mut io::stdout()),
         Glome::Tag(tag_args) => gentag(tag_args, &mut io::stdin(), &mut io::stdout()),
+        Glome::Verify(verify_args) => verify(verify_args, &mut io::stdin()),
         Glome::Login(login_args) => login(login_args, &mut io::stdout()),
     }
 }
@@ -272,18 +342,21 @@ mod tests {
         temp_file
     }
 
+    fn login_message(tc: &TestVector) -> Vec<u8> {
+        let host = if tc.host_id_type.is_empty() {
+            &tc.host_id
+        } else {
+            &format!("{}:{}", tc.host_id_type, tc.host_id)
+        };
+        // Some test messages contain slashes, but we don't want to add a dependency for URL
+        // escaping, so we just replace the one character that occurs in the test vectors.
+        format!("{}/{}", host, tc.action.replace("/", "%2F")).into_bytes()
+    }
+
     #[test]
     fn test_tag() {
         for tc in test_vectors() {
-            let host = if tc.host_id_type.is_empty() {
-                tc.host_id
-            } else {
-                format!("{}:{}", tc.host_id_type, tc.host_id)
-            };
-            // Some test messages contain slashes, but we don't want to add a dependency for URL
-            // escaping, so we just replace the one character that occurs in the test vectors.
-            let message = format!("{}/{}", host, tc.action.replace("/", "%2F"));
-            let mut stdin = io::Cursor::new(message.into_bytes());
+            let mut stdin = io::Cursor::new(login_message(&tc));
             let mut stdout = io::Cursor::new(Vec::new());
             let key_file = temp_file(&tc.bob.private);
             let peer_file = temp_file(tc.alice.public_cli.as_bytes());
@@ -296,6 +369,65 @@ mod tests {
 
             let actual = cursor_to_string(&stdout);
             assert_eq!(tc.tag, actual, "vector {}", tc.name)
+        }
+    }
+
+    #[test]
+    fn test_verify() {
+        for tc in test_vectors() {
+            let key_file = temp_file(&tc.alice.private);
+            let peer_file = temp_file(tc.bob.public_cli.as_bytes());
+
+            for n in 2..=tc.tag.len() {
+                let mut stdin = io::Cursor::new(login_message(&tc));
+                let mut tag = tc.tag.clone();
+                tag.truncate(n);
+                let args = VerifyArgs {
+                    key: key_file.path().to_path_buf(),
+                    peer: peer_file.path().to_path_buf(),
+                    counter: None,
+                    min_tag_length: 2,
+                    tag,
+                };
+                verify(&args, &mut stdin)
+                    .map_err(|e| format!("test case {}: tag length {}: {}", tc.name, n, e))
+                    .expect("should not fail")
+            }
+
+            {
+                let mut stdin = io::Cursor::new(login_message(&tc));
+                let args = VerifyArgs {
+                    key: key_file.path().to_path_buf(),
+                    peer: peer_file.path().to_path_buf(),
+                    counter: None,
+                    min_tag_length: 2,
+                    tag: "MDEyMzQ1Njc4".to_owned(),
+                };
+                assert!(
+                    verify(&args, &mut stdin).is_err(),
+                    "test case {}: verify should fail for bad tag",
+                    tc.name
+                );
+            }
+
+            for n in 0..16 {
+                let mut stdin = io::Cursor::new(login_message(&tc));
+                let mut tag = tc.tag.clone();
+                tag.truncate(n);
+                let args = VerifyArgs {
+                    key: key_file.path().to_path_buf(),
+                    peer: peer_file.path().to_path_buf(),
+                    counter: None,
+                    min_tag_length: 16,
+                    tag,
+                };
+                assert!(
+                    verify(&args, &mut stdin).is_err(),
+                    "test case {}: verify should fail for tag length {}",
+                    tc.name,
+                    n
+                );
+            }
         }
     }
 
