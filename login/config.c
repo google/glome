@@ -311,7 +311,13 @@ status_t glome_login_assign_config_option(glome_login_config_t *config,
                                           const char *section, const char *key,
                                           const char *val) {
   if (section == NULL) {
-    return status_createf("ERROR: section name not set");
+    return status_createf("ERROR: config section not set");
+  }
+  if (key == NULL) {
+    return status_createf("ERROR: config key not set");
+  }
+  if (val == NULL) {
+    return status_createf("ERROR: config value not set");
   }
 
   if (strcmp(section, "service") == 0) {
@@ -320,7 +326,7 @@ status_t glome_login_assign_config_option(glome_login_config_t *config,
     return assign_default_option(config, key, val);
   }
 
-  return status_createf("ERROR: section name not recognized: %s", section);
+  return status_createf("ERROR: config section not recognized: %s", section);
 }
 
 status_t glome_login_parse_config_file(glome_login_config_t *config) {

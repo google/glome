@@ -173,7 +173,7 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
             glome_login_assign_config_option(config, "service", "key", optarg);
         break;
       case 'l':
-        status = glome_login_assign_config_option(config, "service",
+        status = glome_login_assign_config_option(config, "default",
                                                   "login-path", optarg);
         break;
       case 'm':
@@ -186,7 +186,7 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
         break;
       case 's':
         status = glome_login_assign_config_option(config, "default",
-                                                  "disable-syslog", optarg);
+                                                  "disable-syslog", "true");
         break;
       case 't':
         status = glome_login_assign_config_option(config, "default", "timeout",
@@ -194,11 +194,11 @@ int parse_args(glome_login_config_t* config, int argc, char* argv[]) {
         break;
       case 'v':
         status = glome_login_assign_config_option(config, "default", "verbose",
-                                                  optarg);
+                                                  "true");
         break;
       case 'I':
         status = glome_login_assign_config_option(config, "default",
-                                                  "print-secrets", optarg);
+                                                  "print-secrets", "true");
         break;
       case 'K':
         status = glome_login_assign_config_option(config, "default",
