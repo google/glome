@@ -173,6 +173,21 @@ func (r *URLResponse) EncToken() string {
 	return base64.URLEncoding.EncodeToString(r.Tag(glome.MaxTagSize)) // TODO: passing the tag len as param?
 }
 
+// String returns a string representing the URLResponse.
+func (r *URLResponse) String() string {
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "Version: %d\n", r.V)
+	fmt.Fprintf(&sb, "Handshake:\n")
+	fmt.Fprintf(&sb, "  Prefix: %x\n", r.HandshakeInfo.Prefix)
+	fmt.Fprintf(&sb, "  User key: %x\n", r.HandshakeInfo.UserKey)
+	fmt.Fprintf(&sb, "  Message tag prefix: %x\n", r.HandshakeInfo.MessageTagPrefix)
+	fmt.Fprintf(&sb, "Message:\n")
+	fmt.Fprintf(&sb, "  Host ID type: %s\n", r.Msg.HostIDType)
+	fmt.Fprintf(&sb, "  Host ID: %s\n", r.Msg.HostID)
+	fmt.Fprintf(&sb, "  Action: %s", r.Msg.Action)
+	return sb.String()
+}
+
 // Client implements the client-side of the glome-login protocol. Should be constructed under NewClient constructor.
 type Client struct {
 	ServerKey   glome.PublicKey  // server's public key
