@@ -1,7 +1,12 @@
 [package]
 name = "glome"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
+
+description = "Generic low-overhead message exchange with cryptographic integrity protection"
+repository = "https://github.com/google/glome"
+license = "Apache-2.0"
+categories = ["authentication", "cryptography", "no-std"]
 
 [features]
 default = [ "dalek" ]
