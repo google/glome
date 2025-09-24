@@ -15,3 +15,4 @@
 option('tests', type: 'boolean', description: 'Build tests')
 option('pam-glome', type: 'boolean', description: 'Build glome PAM module')
 option('glome-cli', type: 'boolean', description: 'Build glome CLI tool')
+option('static-binaries', type: 'boolean', description: 'Produce static binaries', value : false)

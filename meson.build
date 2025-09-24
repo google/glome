@@ -24,7 +24,12 @@ add_project_arguments('-DOPENSSL_API_COMPAT=10100', language : 'c')
 
 openssl_dep = dependency('openssl', version : '>=1.1')
 
-glome_lib = shared_library('glome', 'glome.c', dependencies : openssl_dep,
+exe_linker_args = []
+if get_option('static-binaries')
+  exe_linker_args += ['-static', '-Wl,--gc-sections']
+endif
+
+glome_lib = both_libraries('glome', 'glome.c', dependencies : openssl_dep,
   install : true, version : meson.project_version())
 glome_incdir = include_directories('.')
 pkg.generate(glome_lib,

@@ -41,6 +41,7 @@ glome_login = executable(
     'glome-login', ['main.c', 'login.c'],
     dependencies : [openssl_dep],
     link_with : login_lib,
+    link_args : exe_linker_args,
     include_directories : glome_incdir,
     install : true,
     install_dir : get_option('sbindir'))
