@@ -45,27 +45,27 @@ type testVector struct {
 func (tv *testVector) Dialogs(t *testing.T) (*Dialog, *Dialog) {
 	aPriv, err := PrivateKeyFromSlice(tv.kap)
 	if err != nil {
-		t.Fatalf("Unexpected Error: " + err.Error())
+		t.Fatalf("Unexpected Error: %v", err)
 	}
 	aPub, err := PublicKeyFromSlice(tv.ka)
 	if err != nil {
-		t.Fatalf("Unexpected Error: " + err.Error())
+		t.Fatalf("Unexpected Error: %v", err)
 	}
 	bPriv, err := PrivateKeyFromSlice(tv.kbp)
 	if err != nil {
-		t.Fatalf("Unexpected Error: " + err.Error())
+		t.Fatalf("Unexpected Error: %v", err)
 	}
 	bPub, err := PublicKeyFromSlice(tv.kb)
 	if err != nil {
-		t.Fatalf("Unexpected Error: " + err.Error())
+		t.Fatalf("Unexpected Error: %v", err)
 	}
 	sending, err := aPriv.Exchange(bPub)
 	if err != nil {
-		t.Fatalf("Unexpected Error: " + err.Error())
+		t.Fatalf("Unexpected Error: %v", err)
 	}
 	receiving, err := bPriv.Exchange(aPub)
 	if err != nil {
-		t.Fatalf("Unexpected Error: " + err.Error())
+		t.Fatalf("Unexpected Error: %v", err)
 	}
 
 	return sending, receiving
