@@ -21,9 +21,9 @@ import (
 	"testing"
 )
 
-func handle(e error, t *testing.T) {
-	if e != nil {
-		t.Fatalf("Unexpected Error: " + e.Error())
+func handle(err error, t *testing.T) {
+	if err != nil {
+		t.Fatalf("Unexpected Error: %v", err)
 	}
 }
 
