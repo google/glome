@@ -93,7 +93,8 @@ if get_option('pam-glome')
 
     if get_option('tests')
         libpamtest = dependency('libpamtest', required : false)
-        if libpamtest.found()
+        pam_wrapper = dependency('pam_wrapper', required : false)
+        if libpamtest.found() and pam_wrapper.found()
             oldstyle_run_pamtest = cc.compiles('''#include <stddef.h>
             #include <libpamtest.h>
             void test() { run_pamtest(NULL, NULL, NULL, NULL); }
@@ -109,9 +110,9 @@ if get_option('pam-glome')
             test('pam test', pam_test,
                 env: [ 'LD_PRELOAD=libpam_wrapper.so', 'PAM_WRAPPER=1',
                     'PAM_WRAPPER_SERVICE_DIR=' +
-                    join_paths(meson.build_root(), 'login', 'pam_service'),
+                    join_paths(meson.project_build_root(), 'login', 'pam_service'),
                     'PAM_GLOME=' +
-                    join_paths(meson.build_root(), 'login', 'pam_glome.so') ])
+                    join_paths(meson.project_build_root(), 'login', 'pam_glome.so') ])
         endif
     endif
 endif
