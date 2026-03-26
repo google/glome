@@ -14,7 +14,8 @@
 //! recommended setting is to use [x25519_dalek]. Implementations should be
 //! verified with the test vectors in the `tests` module.
 
-use hmac::{Hmac, KeyInit, Mac};
+use hmac::digest::KeyInit;
+use hmac::{Hmac, Mac};
 use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
@@ -57,7 +58,7 @@ pub fn tag<T: PrivateKey>(ours: &T, theirs: &T::PublicKey, ctr: u8, msg: &[u8]) 
     ]
     .concat();
 
-    HmacSha256::new_from_slice(&key)
+    <HmacSha256 as KeyInit>::new_from_slice(&key)
         .expect("HMAC can take key of any size")
         .chain_update([ctr])
         .chain_update(msg)
@@ -89,7 +90,7 @@ pub fn verify<T: PrivateKey>(
     ]
     .concat();
 
-    HmacSha256::new_from_slice(&key)
+    <HmacSha256 as KeyInit>::new_from_slice(&key)
         .expect("HMAC can take key of any size")
         .chain_update([ctr])
         .chain_update(msg)

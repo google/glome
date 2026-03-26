@@ -39,7 +39,3 @@ if get_option('tests')
 endif
 
 subdir('login')
-
-if get_option('glome-cli')
-    subdir('cli')
-endif

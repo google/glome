@@ -23,7 +23,7 @@ _QuyLz_nkj5exUJscocS8LDnCMszvSmp9wpQuRshi30=
 Bob can verify that the tag matches:
 
 ```shell
-$ echo "Hello world!" | glome verify --key Bob --peer Alice.pub --tag "${tag?}"
+$ echo "Hello world!" | glome verify --key Bob --peer Alice.pub "${tag?}"
 
 $ echo $?
 0
@@ -32,7 +32,7 @@ $ echo $?
 Both parties can agree to shorten the tag to reduce the protocol overhead:
 
 ```shell
-$ echo "Hello world!" | glome verify --key Bob --peer Alice.pub --tag "${tag:0:12}"
+$ echo "Hello world!" | glome verify --key Bob --peer Alice.pub "${tag:0:12}"
 
 $ echo $?
 0
@@ -41,6 +41,6 @@ $ echo $?
 CLI also supports ganerating tags for the GLOME Login requests:
 
 ```shell
-$ glome login --key Bob v1/AYUg8AmJMKdUdIt93LQ-91oNvzoNJjga9OukqY6qm05q0PU=/my-server.local/shell/root/
+$ glome login --key Bob v2/gZ1iVXtwP0yuWtTBYPmAUB2oAnzhsPl7FDbzgAyby_MX/my-server.local/shell=root/
 MT_Zc-hucXRjTXTBEo53ehoeUsFn1oFyVadViXf-I4k=
 ```
