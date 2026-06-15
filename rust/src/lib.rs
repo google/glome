@@ -14,7 +14,7 @@
 //! recommended setting is to use [x25519_dalek]. Implementations should be
 //! verified with the test vectors in the `tests` module.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;

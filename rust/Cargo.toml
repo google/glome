@@ -17,13 +17,13 @@ cli = [ "dep:base64", "dep:clap" ]
 
 [dependencies]
 # lib
-sha2 = "0.10"
-hmac = "0.12"
+sha2 = "0.11"
+hmac = "0.13"
 x25519-dalek = { version = "2.0", features = ["getrandom", "static_secrets"], optional = true }
 openssl = { version = "0.10", optional = true }
 
 # cli
-base64 = { version = "0.21", optional = true }
+base64 = { version = "0.22", optional = true }
 clap = { version = "4", features = ["derive"], optional = true}
 
 [dev-dependencies]
