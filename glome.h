@@ -11,14 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef GLOME_H_
 #define GLOME_H_
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
+
 #define GLOME_MAX_PUBLIC_KEY_LENGTH 32
 #define GLOME_MAX_PRIVATE_KEY_LENGTH 32
 #define GLOME_MAX_TAG_LENGTH 32
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,7 +41,7 @@ extern "C" {
 //                 that receives the corresponding public key. The caller owns
 //                 this buffer.
 //
-// Returns 0 on success, or a negative value if key generation fails (e.g. the
+// Returns 0 on success, or a non-zero value if key generation fails (e.g. the
 // underlying random number source is unavailable).
 int glome_generate_key(uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
                        uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH]);
@@ -54,14 +58,14 @@ int glome_generate_key(uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
 //                 that receives the derived public key. The caller owns this
 //                 buffer.
 //
-// Returns 0 on success, or a negative value if derivation fails.
+// Returns 0 on success, or a non-zero value if derivation fails.
 int glome_derive_key(const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
                      uint8_t public_key[GLOME_MAX_PUBLIC_KEY_LENGTH]);
 
 // glome_tag generates or verifies a GLOME authentication tag for a message.
-// The tag is an HMAC-SHA256 truncated to GLOME_MAX_TAG_LENGTH bytes, computed
-// over a shared secret derived from a Diffie-Hellman exchange between the
-// local private key and the remote peer's public key.
+// The tag has a size of GLOME_MAX_TAG_LENGTH bytes, computed over a shared
+// secret derived from a Diffie-Hellman exchange between the local private key
+// and the remote peer's public key.
 //
 // Use verify=false (tag generation) on the sending side to produce a tag that
 // authenticates a message to the remote peer. Use verify=true (tag
@@ -71,7 +75,7 @@ int glome_derive_key(const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
 // Parameters:
 //   verify      - If false, generate a new tag and write it to `tag`.
 //                 If true, verify the tag in `tag` against the message and
-//                 return 0 on success or a negative value on mismatch.
+//                 return 0 on success or a non-zero value on mismatch.
 //   counter     - A per-message counter used to prevent replay attacks.
 //                 Both sides must agree on the counter value; it is typically
 //                 incremented for each message exchanged in a session.
@@ -91,8 +95,8 @@ int glome_derive_key(const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
 //                 GLOME_MAX_TAG_LENGTH bytes containing the tag to verify.
 //                 The caller retains ownership.
 //
-// Returns 0 on success. When verify=false, a negative value indicates a
-// failure to compute the shared secret or tag. When verify=true, a negative
+// Returns 0 on success. When verify=false, a non-zero value indicates a
+// failure to compute the shared secret or tag. When verify=true, a non-zero
 // value indicates that the tag is invalid or that computation failed.
 int glome_tag(bool verify, unsigned char counter,
               const uint8_t private_key[GLOME_MAX_PRIVATE_KEY_LENGTH],
@@ -103,4 +107,5 @@ int glome_tag(bool verify, unsigned char counter,
 #ifdef __cplusplus
 }  // extern "C"
 #endif
+
 #endif  // GLOME_H_
