@@ -54,7 +54,6 @@ jobs:
       run: |
         DESTDIR=out meson install -C build
         find build/out/
-        test -x build/out/usr/local/bin/glome
         test -x build/out/usr/local/sbin/glome-login
         test -f build/out/usr/local/etc/glome/config
         test -f build/out/usr/local/include/glome.h
@@ -63,6 +62,14 @@ jobs:
         test -f build/out/usr/local/lib/x86_64-linux-gnu/libglome.so
         test -f build/out/usr/local/lib/security/pam_glome.so || \
         test -f build/out/usr/local/lib/x86_64-linux-gnu/security/pam_glome.so
+    - name: install CLI
+      if: ${{ startsWith(matrix.container, 'debian:') }}
+      run: |
+        ./kokoro/rodete/debian_cargo.sh prepare-debian ./debian/cargo_registry --link-from-system
+        ./kokoro/rodete/debian_cargo.sh build
+        ./kokoro/rodete/debian_cargo.sh test
+        DEB_CARGO_INSTALL_PREFIX=$PWD/build/out/usr/local ./kokoro/rodete/debian_cargo.sh install --features=cli
+        test -x build/out/usr/local/bin/glome
   test-macos:
     runs-on: macos-latest
     steps:

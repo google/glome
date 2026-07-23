@@ -45,9 +45,9 @@ login prompt. He is then provided with a challenge that he forwards to Alice.
 The challenge contains information about the identity of accessed host and the
 requested action (i.e., root shell access). Alice verifies that the request is
 legitimate (e.g., the accessed host is indeed the one she's trying to
-diagnose), and uses the [`glome` CLI](cli) to generate an authorization code.
-She forwards that authorization code to Bob who provides it as a challenge
-response.
+diagnose), and uses the [`glome` CLI](rust/src/cli) to generate an
+authorization code.  She forwards that authorization code to Bob who provides
+it as a challenge response.
 
 The authorization succeeds and Bob is able to run diagnostic commands and share
 the results with Alice.
@@ -123,7 +123,7 @@ Core libraries:
 
 Binaries:
 
- - [glome](cli) *Command-line interface for GLOME*
+ - [glome](rust/src/cli) *Command-line interface for GLOME*
  - [glome-login](login) *Replacement of login(1) implementing GLOME Login
    protocol*
 
