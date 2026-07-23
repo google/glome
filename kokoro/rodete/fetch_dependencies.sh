@@ -4,5 +4,5 @@ set -e
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  build-essential meson pkg-config \
+  build-essential meson pkg-config pandoc \
   libssl-dev libglib2.0-dev libpam0g-dev libpam-wrapper libpamtest0-dev
