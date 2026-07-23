@@ -91,6 +91,18 @@ if get_option('pam-glome')
         install : true,
         install_dir : join_paths(get_option('libdir'), 'security'))
 
+    pandoc = find_program('pandoc', required : false)
+    if pandoc.found()
+        custom_target(
+            'pam_glome.8',
+            input : 'pam.8.md',
+            output : 'pam_glome.8',
+            command : [pandoc, '--standalone', '--to', 'man', '@INPUT@'],
+            capture : true,
+            install : true,
+            install_dir : join_paths(get_option('mandir'), 'man8'))
+    endif
+
     if get_option('tests')
         libpamtest = dependency('libpamtest', required : false)
         pam_wrapper = dependency('pam_wrapper', required : false)
