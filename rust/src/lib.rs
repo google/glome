@@ -1,4 +1,3 @@
-#![no_std]
 #![warn(missing_docs)]
 
 //! # GLOME - Generic Low-Overhead Message Exchange
@@ -103,6 +102,9 @@ pub mod dalek;
 
 #[cfg(feature = "openssl")]
 pub mod openssl;
+
+#[cfg(feature = "pam")]
+mod pam;
 
 /// The [tests] module provides functions to test implementations of [PrivateKey]/[PublicKey].
 #[cfg(test)]

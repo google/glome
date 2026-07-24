@@ -200,7 +200,7 @@ fn login(args: &LoginArgs, stdout: &mut dyn io::Write) -> CommandResult {
 
     // Check public key prefix, if present.
     let prefix = handshake[0];
-    if prefix & 1 << 7 == 0 {
+    if prefix & (1 << 7) == 0 {
         let pubkey = ours.public_key().to_bytes();
         if pubkey[31] != prefix {
             return Err(format!("challenge was generated for a different key: our key has MSB {}, challenge requests {}", pubkey[31], prefix).into());

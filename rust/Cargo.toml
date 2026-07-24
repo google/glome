@@ -7,13 +7,14 @@ description = "Generic low-overhead message exchange with cryptographic integrit
 repository = "https://github.com/google/glome"
 readme = "../README.md"
 license = "Apache-2.0"
-categories = ["authentication", "cryptography", "no-std"]
+categories = ["authentication", "cryptography"]
 
 [features]
 default = [ "dalek" ]
 dalek = [ "dep:x25519-dalek" ]
 openssl = [ "dep:openssl" ]
 cli = [ "dep:base64", "dep:clap" ]
+pam = [ "dep:nonstick", "dep:libc", "dep:hostname", "dep:dns-lookup", "dep:subtle", "dep:base64", "dalek" ]
 
 [dependencies]
 # lib
@@ -26,6 +27,13 @@ openssl = { version = "0.10", optional = true }
 base64 = { version = "0.22", optional = true }
 clap = { version = "4", features = ["derive"], optional = true}
 
+# pam
+nonstick = { version = "0.1", optional = true }
+libc = { version = "0.2", optional = true }
+hostname = { version = "0.4", optional = true }
+dns-lookup = { version = "3", optional = true }
+subtle = { version = "2", optional = true }
+
 [dev-dependencies]
 # test
 hex = "0.4"
@@ -36,6 +44,10 @@ yaml-rust2 = ">=0.9"
 [lib]
 name = "glome"
 path = "src/lib.rs"
+# "cdylib" is needed so that building with the "pam" feature produces a
+# loadable pam_glome.so; it is a no-op extra artifact for consumers who just
+# use the rlib.
+crate-type = ["lib", "cdylib"]
 
 [[bin]]
 name = "glome"
