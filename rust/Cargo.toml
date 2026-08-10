@@ -19,7 +19,7 @@ cli = [ "dep:base64", "dep:clap" ]
 # lib
 sha2 = ">=0.10"
 hmac = ">=0.12"
-x25519-dalek = { version = "2.0", features = ["getrandom", "static_secrets"], optional = true }
+x25519-dalek = { version = ">=2.0", features = ["getrandom", "static_secrets"], optional = true }
 openssl = { version = "0.10", optional = true }
 
 # cli
@@ -47,4 +47,5 @@ required-features = ["cli"]
 
 [build-dependencies]
 clap = { version = "4", features = ["derive"] }
-clap_mangen = "0.3.2"
+clap_complete = ">=4.5.40"
+clap_mangen = ">=0.2.20"
