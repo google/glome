@@ -44,3 +44,7 @@ path = "src/cli/bin.rs"
 # The binary has more dependencies than the library. We allow skipping the binary and its
 # dependencies by hiding it behind a feature.
 required-features = ["cli"]
+
+[build-dependencies]
+clap = { version = "4", features = ["derive"] }
+clap_mangen = "0.3.2"

@@ -1,77 +1,15 @@
 use base64::{alphabet, engine, engine::general_purpose, Engine as _};
-use clap::{Args, Parser, Subcommand};
 use glome::PrivateKey;
 use std::convert::TryInto;
 use std::error::Error;
 use std::fs;
 use std::io;
-use std::path::PathBuf;
 use x25519_dalek::{PublicKey, StaticSecret};
 
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Glome,
-}
-
-#[derive(Args)]
-struct TagArgs {
-    /// Path to secret key
-    #[arg(short, long, value_name = "FILE")]
-    key: PathBuf,
-    /// Path to peer's public key
-    #[arg(short, long, value_name = "FILE")]
-    peer: PathBuf,
-    /// Message counter index
-    #[arg(short, long, value_name = "n")]
-    counter: Option<u8>,
-}
-
-#[derive(Args)]
-struct VerifyArgs {
-    /// Path to secret key
-    #[arg(short, long, value_name = "FILE")]
-    key: PathBuf,
-    /// Path to peer's public key
-    #[arg(short, long, value_name = "FILE")]
-    peer: PathBuf,
-    /// Message counter index
-    #[arg(short, long, value_name = "n")]
-    counter: Option<u8>,
-    /// Minimum tag length
-    ///
-    /// Ideally a multiple of 4, defaults to 10 matching the
-    /// MIN_ENCODED_AUTHCODE_LEN in login/login.h.
-    /// Must be at least 2 and will be increased to 2 if the argument is lower.
-    #[arg(long, value_name = "n", default_value_t = 10)]
-    min_tag_length: u8,
-    /// Tag to verify
-    tag: String,
-}
-
-#[derive(Args)]
-struct LoginArgs {
-    /// Path to secret key
-    #[arg(short, long, value_name = "FILE")]
-    key: PathBuf,
-    /// Challenge to generate a tag for
-    challenge: String,
-}
-
-#[derive(Subcommand)]
-enum Glome {
-    /// Generate a new secret key and print it to stdout
-    Genkey,
-    /// Read a private key from stdin and write its public key to stdout
-    Pubkey,
-    /// Tag a message read from stdin
-    Tag(TagArgs),
-    /// Verify a message tag
-    Verify(VerifyArgs),
-    /// Generate a tag for a GLOME-Login challenge
-    Login(LoginArgs),
-}
+// Shared with build.rs, which generates man pages from the same argument
+// definitions. See the comment there for why this is an include! rather than
+// a module.
+include!("args.rs");
 
 type CommandResult = Result<(), Box<dyn Error>>;
 
