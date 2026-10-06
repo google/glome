@@ -138,7 +138,7 @@ func TestServer(t *testing.T) {
 			r := httptest.NewRequest("GET", url, nil)
 			w := httptest.NewRecorder()
 
-			login, err := NewLoginServer(tv.authFunc, ResponseLen(tv.ResponseLen))
+			login, err := NewLoginServer(tv.authFunc, ResponseLen(tv.ResponseLen), UserHeader("authenticated-user"))
 			if err != nil {
 				t.Fatalf("test %v, unexpected error: %v ", name, err.Error())
 			}

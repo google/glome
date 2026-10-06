@@ -87,7 +87,7 @@ func NewLoginServer(a Authorizer, options ...func(*LoginServer) error) (*LoginSe
 		auth:        a,
 		Keys:        NewKeyManager(),
 		responseLen: MaxResponseSize,
-		userHeader:  "authenticated-user",
+		userHeader:  "",
 	}
 	srv.loginParser = srv.newLoginParser()
 
@@ -115,7 +115,13 @@ func ResponseLen(length uint8) func(srv *LoginServer) error {
 }
 
 // UserHeader is an option to be provided to NewServer on creation. It sets the name of the
-// HTTP header from which to read the user id. It defaults to "authenticated-user".
+// HTTP header from which to read the user id.
+//
+// LoginServer is intended to be deployed behind an authenticating reverse proxy
+// that injects this header after verifying the caller's identity. The reverse
+// proxy MUST strip any inbound copy of this header before setting it; otherwise
+// clients can spoof identity (CWE-290). There is no default; you must set this
+// explicitly.
 func UserHeader(s string) func(srv *LoginServer) error {
 	return func(srv *LoginServer) error {
 		srv.userHeader = s
@@ -133,6 +139,13 @@ func (s *LoginServer) newLoginParser() *login.Server {
 func (s *LoginServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/" {
 		s.printServerKeys(w)
+		return
+	}
+
+	if s.userHeader == "" {
+		http.Error(w, "server misconfigured: no UserHeader option set; "+
+			"LoginServer requires an authenticating reverse proxy that sets a "+
+			"trusted user-identity header", http.StatusInternalServerError)
 		return
 	}
 
