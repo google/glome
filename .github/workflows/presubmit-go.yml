@@ -1,7 +1,7 @@
 name: go-presubmit
 on:
   push:
-    branches: ['master']
+    branches: ['main']
   pull_request:
     paths: ['go/**', '.github/workflows/presubmit-go.yml']
   workflow_dispatch: {}
